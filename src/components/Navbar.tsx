@@ -12,8 +12,6 @@ const Navbar = React.memo(() => {
           </div>
           <div className="hidden md:flex space-x-8">
             <a href="#studios" className="text-gray-700 hover:text-indigo-600 transition-colors">Studios</a>
-            <a href="#portfolio" className="text-gray-700 hover:text-indigo-600 transition-colors">Portfolio</a>
-            <a href="#pricing" className="text-gray-700 hover:text-indigo-600 transition-colors">Pricing</a>
             <a href="#booking" className="text-gray-700 hover:text-indigo-600 transition-colors">Book Now</a>
           </div>
           <div>
