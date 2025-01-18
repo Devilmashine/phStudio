@@ -17,6 +17,9 @@ const Footer = React.memo(() => {
             <p className="text-gray-400">
               Сайт создан @Devilmashine
             </p>
+            <p className="text-sm text-gray-500">
+              &ldquo;Luxe Studio: Where Elegance Meets Precision&rdquo; - Your Premier Booking Experience
+            </p>
           </div>
           <div>
             <h3 className="text-lg font-semibold mb-4">Навигация</h3>

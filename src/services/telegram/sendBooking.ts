@@ -65,14 +65,14 @@ export class TelegramNotificationService {
       ? booking.phone 
       : `+${booking.phone}`;
 
-    return `
-📅 Новое бронирование:
-👤 Имя: ${booking.name}
-📞 Телефон: ${formattedPhone}
-📆 Дата: ${booking.date}
-⏰ Время: ${booking.times.join(', ')}
-💰 Стоимость: ${booking.totalPrice} руб.
-    `;
+    // Convert date to DD.MM.YYYY format
+    const [year, month, day] = booking.date.split('-');
+    const formattedDate = `${day}.${month}.${year}`;
+
+    return `${formattedDate}
+${booking.times.join(', ')}
+${booking.name}
+${formattedPhone}`;
   }
 
   private generateLogId(): string {
