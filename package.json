@@ -14,7 +14,7 @@
   "dependencies": {
     "date-fns": "^4.1.0",
     "gaxios": "^6.7.1",
-    "google-auth-library": "^9.15.0",
+    "google-auth-library": "^9.15.1",
     "googleapis": "^144.0.0",
     "ical-generator": "^8.1.1",
     "jose": "^5.9.6",
