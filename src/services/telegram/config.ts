@@ -36,17 +36,6 @@ console.log('🌍 ALL Environment Variables:',
     }, {} as Record<string, string>)
 );
 
-// Принудительная установка переменных, если они не загрузились
-if (!process.env.VITE_TELEGRAM_BOT_TOKEN) {
-  process.env.VITE_TELEGRAM_BOT_TOKEN = '7555400885:AAEQ3vXvFc38h_IPpKGnU3_I7SAVWkRgQSo';
-  console.warn('🚨 FORCEFULLY SET BOT TOKEN 🚨');
-}
-
-if (!process.env.VITE_TELEGRAM_ADMIN_CHAT_ID) {
-  process.env.VITE_TELEGRAM_ADMIN_CHAT_ID = '-1002383056319';
-  console.warn('🚨 FORCEFULLY SET ADMIN CHAT ID 🚨');
-}
-
 // Additional runtime environment check
 console.warn('🚨 RUNTIME ENVIRONMENT CHECK 🚨');
 console.log('🌐 Runtime Environment:', {

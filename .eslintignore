@@ -1,0 +1,6 @@
+venv/
+.venv/
+node_modules/
+**/site-packages/
+**/emscripten_fetch_worker.js
+**/debugger.js 

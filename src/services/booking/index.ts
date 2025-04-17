@@ -117,13 +117,6 @@ export async function createBooking(bookingData: BookingRequest): Promise<Bookin
 
   console.warn('🚨 ATTEMPTING TELEGRAM NOTIFICATION 🚨');
   
-  // Forcefully log Telegram configuration
-  console.log('🤖 Telegram Configuration:', {
-    botToken: process.env.TELEGRAM_BOT_TOKEN || process.env.VITE_TELEGRAM_BOT_TOKEN ? '✅ PRESENT (masked)' : '❌ MISSING',
-    adminChatId: process.env.TELEGRAM_ADMIN_CHAT_ID || process.env.VITE_TELEGRAM_ADMIN_CHAT_ID ? '✅ PRESENT' : '❌ MISSING',
-    importedFunction: true
-  });
-
   try {
     // Принудительная отправка Telegram-уведомления
     console.warn('🚨 FORCING TELEGRAM NOTIFICATION 🚨');

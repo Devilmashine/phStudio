@@ -1,7 +1,5 @@
 export const ENV = {
   GOOGLE_CALENDAR_ID: process.env.REACT_APP_GOOGLE_CALENDAR_ID || '',
   GOOGLE_CALENDAR_API_KEY: process.env.REACT_APP_GOOGLE_CALENDAR_API_KEY || '',
-  TELEGRAM_BOT_TOKEN: process.env.REACT_APP_TELEGRAM_BOT_TOKEN || '',
-  TELEGRAM_CHAT_ID: process.env.REACT_APP_TELEGRAM_CHAT_ID || '',
   API_URL: process.env.REACT_APP_API_URL || 'http://localhost:8000'
 }; 

@@ -1,4 +1,4 @@
-import { FC, useEffect } from 'react';
+import { FC, useEffect, useCallback } from 'react';
 import TimeSlotGrid from './TimeSlotGrid';
 import { useTimeSlots } from '../../hooks/useTimeSlots';
 
@@ -11,19 +11,18 @@ interface TimeSlotsProps {
 const TimeSlots: FC<TimeSlotsProps> = ({ date, selectedTimes, onSelectTime }) => {
   const { slots, loading, fetchTimeSlots } = useTimeSlots();
 
-  // Fetch slots when component mounts or date changes
-  const handleFetchSlots = async () => {
+  // Оборачиваем handleFetchSlots в useCallback
+  const handleFetchSlots = useCallback(async () => {
     try {
       await fetchTimeSlots(date);
     } catch (err) {
       console.error('Failed to fetch time slots', err);
     }
-  };
+  }, [date, fetchTimeSlots]);
 
-  // Fetch slots on mount and when date changes
   useEffect(() => {
     handleFetchSlots();
-  }, [date]);
+  }, [handleFetchSlots]);
 
   if (loading) return <div>Загрузка...</div>;
 

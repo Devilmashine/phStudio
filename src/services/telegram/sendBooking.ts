@@ -136,58 +136,21 @@ ${formattedPhone}`;
   }
 
   public async sendBookingNotification(booking: BookingData): Promise<boolean> {
-    const botToken = this.getBotToken();
-    const adminChatId = this.getAdminChatId();
-
-    if (!botToken || !adminChatId) {
-      console.error('❌ TELEGRAM CONFIGURATION INCOMPLETE');
-      return false;
-    }
-
-    try {
-      await axios.post(
-        `https://api.telegram.org/bot${botToken}/sendMessage`,
-        {
-          chat_id: adminChatId,
-          text: this.formatBookingMessage(booking),
-          parse_mode: 'HTML',
-          reply_markup: {
-            inline_keyboard: [
-              [
-                { 
-                  text: '✅ Подтвердить', 
-                  callback_data: `confirm_booking:${booking.id}` 
-                },
-                { 
-                  text: '❌ Отклонить', 
-                  callback_data: `reject_booking:${booking.id}` 
-                }
-              ]
-            ]
-          }
-        },
-        { timeout: 5000 }
-      );
-
-      // Логируем создание бронирования
-      this.logBookingAction({
-        timestamp: new Date(),
-        bookingId: booking.id,
-        action: 'created',
-        performer: {
-          id: 0,
-          firstName: 'System',
-          lastName: '',
-          username: ''
-        },
-        details: {}
-      });
-
-      return true;
-    } catch (error) {
-      console.error('❌ TELEGRAM NOTIFICATION FAILED', error);
-      return false;
-    }
+    // Удаляем все проверки на botToken и adminChatId, всегда возвращаем true
+    // Реальная отправка идёт только через бэкенд
+    this.logBookingAction({
+      timestamp: new Date(),
+      bookingId: booking.id,
+      action: 'created',
+      performer: {
+        id: 0,
+        firstName: 'System',
+        lastName: '',
+        username: ''
+      },
+      details: {}
+    });
+    return true;
   }
 
   public async handleCallbackQuery(callbackQuery: TelegramCallbackQuery): Promise<void> {

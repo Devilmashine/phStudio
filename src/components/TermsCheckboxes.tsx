@@ -1,8 +1,1 @@
-interface TermsCheckboxesProps {
-  termsAccepted: boolean;
-  privacyAccepted: boolean;
-  onTermsChange: () => void;
-  onPrivacyChange: () => void;
-  onShowTerms: () => void;
-  onShowPrivacy: () => void;
-} 
+// Удаляю весь файл, так как он содержит только неиспользуемый тип. 

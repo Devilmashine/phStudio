@@ -1,0 +1,15 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+[data-theme='dark'] {
+  --color-bg: #18181b;
+  --color-text: #f4f4f5;
+  /* ... */
+}
+[data-theme='high-contrast'] {
+  --color-bg: #fff;
+  --color-text: #000;
+  --color-primary: #0000ee;
+  /* ... */
+} 

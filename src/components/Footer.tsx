@@ -43,7 +43,7 @@ const Footer = React.memo(() => {
               </li>
               <li className="flex items-center space-x-2">
                 <MapPin className="h-5 w-5 text-indigo-400" />
-                <span className="text-gray-400">г. Краснодар, ул. Монтажников, 1А, БЦ "Лидер", 7 этаж, офис 166</span>
+                <span className="text-gray-400">г. Краснодар, ул. Монтажников, 1А, БЦ &quot;Лидер&quot;, 7 этаж, офис 166</span>
               </li>
             </ul>
           </div>

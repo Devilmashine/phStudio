@@ -1,5 +1,5 @@
-from app.services.google_calendar import GoogleCalendarService
-from app.services.telegram_bot import TelegramBotService
+from backend.app.services.google_calendar import GoogleCalendarService
+from backend.app.services.telegram_bot import TelegramBotService
 from datetime import datetime
 import logging
 

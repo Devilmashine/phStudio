@@ -1,10 +1,5 @@
 import React from 'react';
 import { 
-  FormControl, 
-  InputLabel, 
-  MenuItem, 
-  Select, 
-  SelectChangeEvent,
   Box,
   Typography,
   Paper
@@ -41,10 +36,6 @@ const services = [
 ];
 
 export const ServiceSelector: React.FC<ServiceSelectorProps> = ({ value = '', onChange }) => {
-  const handleChange = (event: SelectChangeEvent) => {
-    onChange(event.target.value);
-  };
-
   return (
     <Box sx={{ mt: 3 }}>
       <Typography variant="h6" gutterBottom sx={{ mb: 2 }}>

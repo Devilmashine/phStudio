@@ -6,7 +6,7 @@ import tsParser from '@typescript-eslint/parser';
 
 export default [
   {
-    ignores: ['dist', 'node_modules', '.eslintrc.cjs'],
+    ignores: ['venv/', '.venv/', 'node_modules/', 'dist/', '**/site-packages/', '**/emscripten_fetch_worker.js', '**/debugger.js'],
   },
   eslintConfig.configs.recommended,
   {
@@ -40,6 +40,13 @@ export default [
         'alert': 'readonly',
         'React': 'readonly',
         'HTMLInputElement': 'readonly',
+        'localStorage': 'readonly',
+        'HTMLElement': 'readonly',
+        'RequestInit': 'readonly',
+        'self': 'readonly',
+        'TextEncoder': 'readonly',
+        'requestAnimationFrame': 'readonly',
+        'JSX': 'readonly'
       },
       parser: tsParser,
       parserOptions: {
