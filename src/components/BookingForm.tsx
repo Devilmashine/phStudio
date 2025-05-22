@@ -203,7 +203,7 @@ export default function BookingForm() {
             phone: bookingData.phone,
             date: bookingData.date,
             times: bookingData.times,
-            totalPrice: bookingData.totalPrice,
+            total_price: bookingData.totalPrice, // исправлено на snake_case
             service: bookingData.service || 'Студийная фотосессия'
           })
         });

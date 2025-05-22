@@ -18,7 +18,6 @@ from logging.handlers import RotatingFileHandler
 from backend.api.routes.calendar import router as calendar_router
 from backend.api.routes.telegram import router as telegram_router
 from typing import List, Dict, Any
-from backend.app.services.telegram_templates import booking_message_template
 from backend.app.services.telegram_templates import booking_message_with_buttons
 import sentry_sdk
 from typing import Optional
@@ -328,13 +327,14 @@ async def create_calendar_event(event_data: CalendarEventData):
 
 @app.post("/api/telegram/notify")
 async def send_telegram_notification(notification_data: TelegramNotificationData):
+    logger.info(f"Входящий payload в /api/telegram/notify: {notification_data}")
     try:
         if telegram_service is None:
             logger.error("Telegram Bot Service не инициализирован")
             raise HTTPException(status_code=500, detail="Сервис уведомлений недоступен")
         
         # Формирование сообщения
-        booking_message = booking_message_template(
+        booking_message, _ = booking_message_with_buttons(
             service=notification_data.service,
             date=notification_data.date,
             times=notification_data.times,
