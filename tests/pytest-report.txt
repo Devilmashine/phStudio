@@ -1,0 +1,40 @@
+============================= test session starts ==============================
+platform linux -- Python 3.12.1, pytest-8.3.5, pluggy-1.5.0 -- /usr/local/python/3.12.1/bin/python3
+cachedir: .pytest_cache
+rootdir: /workspaces/phStudio
+plugins: anyio-4.9.0, time-machine-2.16.0
+collecting ... collected 35 items
+
+backend/tests/test_telegram_notifications.py::test_booking_message_template PASSED [  2%]
+tests/test_api_endpoints.py::test_get_available_slots PASSED             [  5%]
+tests/test_api_endpoints.py::test_get_calendar_events PASSED             [  8%]
+tests/test_api_endpoints.py::test_create_booking_and_notify PASSED       [ 11%]
+tests/test_api_endpoints.py::test_create_calendar_event_and_notify PASSED [ 14%]
+tests/test_api_endpoints.py::test_send_telegram_notification PASSED      [ 17%]
+tests/test_api_endpoints.py::test_calendar_event_missing_fields PASSED   [ 20%]
+tests/test_api_endpoints.py::test_booking_missing_fields FAILED          [ 22%]
+
+=================================== FAILURES ===================================
+_________________________ test_booking_missing_fields __________________________
+
+    def test_booking_missing_fields():
+        payload = {
+            "date": "2025-05-22",
+            "times": [],
+            "name": "",
+            "phone": "",
+            "total_price": 0
+        }
+        resp = client.post("/api/bookings", json=payload)
+        assert resp.status_code == 400
+        detail = resp.json().get("detail", "")
+>       assert "обязателен" in detail or "должны быть указаны" in detail
+E       AssertionError: assert ('обязателен' in '400: Имя клиента обязательно' or 'должны быть указаны' in '400: Имя клиента обязательно')
+
+tests/test_api_endpoints.py:95: AssertionError
+------------------------------ Captured log call -------------------------------
+ERROR    backend.app.main:main.py:247 Ошибка создания бронирования: 400: Имя клиента обязательно
+=========================== short test summary info ============================
+FAILED tests/test_api_endpoints.py::test_booking_missing_fields - AssertionEr...
+!!!!!!!!!!!!!!!!!!!!!!!!!! stopping after 1 failures !!!!!!!!!!!!!!!!!!!!!!!!!!!
+==================== 1 failed, 7 passed, 1 warning in 2.29s ====================

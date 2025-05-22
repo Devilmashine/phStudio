@@ -100,6 +100,7 @@ export const mockAvailability = {
     startTime: string;
     name: string;
     phone: string;
+    totalPrice: number; // добавлено для строгой типизации
     times?: string[]; // Optional array of times for multi-slot bookings
   }): Promise<{ id: string }> => {
     // Get the current date in the local timezone
@@ -165,7 +166,11 @@ export const mockAvailability = {
         status: 'confirmed'
       };
 
-      return createCalendarEvent(calendarEvent);
+      return createCalendarEvent({
+        ...calendarEvent,
+        phone: bookingData.phone || '',
+        total_price: bookingData.totalPrice // строгое значение, без any и дефолта 1
+      });
     }));
 
     // Return the IDs of created events

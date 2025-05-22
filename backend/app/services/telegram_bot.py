@@ -17,28 +17,42 @@ class TelegramBotService:
         """
         Отправляет уведомление о бронировании в Telegram с inline-кнопками
         """
+        # Явная строгая валидация всех параметров
+        if not service or not isinstance(service, str) or not service.strip():
+            raise ValueError("Параметр 'service' обязателен и должен быть строкой")
+        if not date or not isinstance(date, str) or not date.strip():
+            raise ValueError("Параметр 'date' обязателен и должен быть строкой")
+        if not times or not isinstance(times, (list, tuple)) or not all(isinstance(t, str) and t.strip() for t in times):
+            raise ValueError("Параметр 'times' обязателен и должен быть списком строк и не пустым")
+        if not name or not isinstance(name, str) or not name.strip():
+            raise ValueError("Имя клиента обязательно и должно быть строкой")
+        if not phone or not isinstance(phone, str) or not phone.strip():
+            raise ValueError("Телефон клиента обязателен и должен быть строкой")
         try:
-            if booking_id and service and date and times and name is not None and phone is not None and total_price is not None:
-                text, buttons = booking_message_with_buttons(booking_id, service, date, times, name, phone, total_price)
-                payload = {
-                    "chat_id": self.chat_id,
-                    "text": text,
-                    "parse_mode": "HTML",
-                    "reply_markup": {"inline_keyboard": buttons}
-                }
-            else:
-                payload = {
-                    "chat_id": self.chat_id,
-                    "text": message,
-                    "parse_mode": "HTML"
-                }
+            price_val = int(total_price)
+            if price_val <= 0:
+                raise ValueError("Цена должна быть больше 0")
+        except Exception as e:
+            raise ValueError(f"Некорректная цена: {total_price}, ошибка: {e}")
+
+        logger.info(f"Параметры для отправки уведомления: service={service}, date={date}, times={times}, name={name}, phone={phone}, total_price={total_price}")
+        text, buttons = booking_message_with_buttons(service, date, times, name, phone, total_price)
+        payload = {
+            "chat_id": self.chat_id,
+            "text": text,
+            "parse_mode": "HTML",
+            "reply_markup": {"inline_keyboard": buttons}
+        }
+
+        try:
             async with aiohttp.ClientSession() as session:
-                async with session.post(self.api_url, data=payload) as resp:
+                async with session.post(self.api_url, json=payload) as resp:
                     if resp.status == 200:
                         logger.info(f"Sending Telegram notification: {payload['text']}")
                         return True
                     else:
-                        logger.error(f"Telegram API error: {resp.status}")
+                        logger.error(f"Telegram API error: {resp.status}, Response: {await resp.text()}")
+                        logger.info(f"Ответ Telegram API: {await resp.text()}")
                         return False
         except Exception as e:
             logger.error(f"Failed to send Telegram notification: {e}")
@@ -73,12 +87,12 @@ class TelegramBotService:
                     "text": message,
                     "parse_mode": "HTML"
                 }
-                async with session.post(self.api_url, data=payload) as resp:
+                async with session.post(self.api_url, json=payload) as resp:
                     if resp.status == 200:
                         logger.info(f"Sending booking confirmation: {message}")
                         return True
                     else:
-                        logger.error(f"Telegram API error: {resp.status}")
+                        logger.error(f"Telegram API error: {resp.status}, Response: {await resp.text()}")
                         return False
         except Exception as e:
             logger.error(f"Failed to send booking confirmation: {e}")
@@ -109,13 +123,13 @@ class TelegramBotService:
                     "text": message,
                     "parse_mode": "HTML"
                 }
-                async with session.post(self.api_url, data=payload) as resp:
+                async with session.post(self.api_url, json=payload) as resp:
                     if resp.status == 200:
                         logger.info(f"Sending cancellation notification: {message}")
                         return True
                     else:
-                        logger.error(f"Telegram API error: {resp.status}")
+                        logger.error(f"Telegram API error: {resp.status}, Response: {await resp.text()}")
                         return False
         except Exception as e:
             logger.error(f"Failed to send cancellation notification: {e}")
-            return False 
+            return False

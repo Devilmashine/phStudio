@@ -19,7 +19,9 @@ from backend.api.routes.calendar import router as calendar_router
 from backend.api.routes.telegram import router as telegram_router
 from typing import List, Dict, Any
 from backend.app.services.telegram_templates import booking_message_template
+from backend.app.services.telegram_templates import booking_message_with_buttons
 import sentry_sdk
+from typing import Optional
 
 # Настройка логирования
 def setup_logging():
@@ -103,7 +105,7 @@ class BookingData(BaseModel):
     times: list[str]
     name: str
     phone: str
-    totalPrice: int
+    total_price: int  # исправлено с totalPrice
     service: str = "Студийная фотосессия"
 
 class CalendarEventData(BaseModel):
@@ -111,13 +113,31 @@ class CalendarEventData(BaseModel):
     description: str
     start_time: str
     duration_hours: int = Field(default=1, ge=1, le=8)
+    phone: str  # теперь обязательное поле
+    total_price: int  # теперь обязательное поле
+    times: list[str] = []  # добавлено для сквозной передачи
+
+    @classmethod
+    def __get_validators__(cls):
+        yield cls.validate_duration_hours
+        yield from super().__get_validators__()
+
+    @classmethod
+    def validate_duration_hours(cls, values):
+        if 'duration_hours' in values:
+            try:
+                values['duration_hours'] = int(values['duration_hours'])
+            except Exception:
+                raise ValueError('duration_hours должен быть целым числом')
+        return values
 
 class TelegramNotificationData(BaseModel):
     name: str
     phone: str
     date: str
     times: list[str]
-    totalPrice: int
+    total_price: int  # исправлено с totalPrice
+    service: str  # добавлено поле service
 
 @app.get("/api/calendar/available-slots")
 async def get_available_slots(date: str):
@@ -132,6 +152,7 @@ async def get_available_slots(date: str):
 @app.post("/api/bookings")
 async def create_booking(booking_data: BookingData):
     try:
+        logger.info(f"Входящие данные в create_booking: {booking_data}")
         # Проверка инициализации сервисов
         if calendar_service is None:
             logger.error("Google Calendar Service не инициализирован")
@@ -141,36 +162,60 @@ async def create_booking(booking_data: BookingData):
             logger.error("Telegram Bot Service не инициализирован")
             raise HTTPException(status_code=500, detail="Сервис уведомлений недоступен")
 
+        # Проверка обязательных полей
+        if not booking_data.name:
+            raise HTTPException(status_code=400, detail="Имя клиента обязательно")
+        if not booking_data.phone:
+            logger.error("Телефон клиента обязателен, но отсутствует")
+            raise HTTPException(status_code=400, detail="Телефон клиента обязателен")
+        if booking_data.total_price <= 0:
+            logger.error("Итоговая сумма должна быть больше 0")
+            raise HTTPException(status_code=400, detail="Итоговая сумма должна быть больше 0")
+
+        # Проверка наличия элементов в списке times
+        if not booking_data.times or len(booking_data.times) < 2:
+            logger.error("Список times пуст или содержит недостаточно элементов")
+            raise HTTPException(status_code=400, detail="Некорректный формат времени бронирования")
+
+        # Удаление дублирования имени клиента в названии услуги
+        if booking_data.service == booking_data.name:
+            booking_data.service = "Студийная фотосессия"
+
+        # Преобразование строк в объекты datetime
+        start_datetime = datetime.fromisoformat(f'{booking_data.date}T{booking_data.times[0]}:00')
+        end_datetime = datetime.fromisoformat(f'{booking_data.date}T{booking_data.times[-1]}:00')
+
         # Создание события в Google Calendar
-        event_data = {
-            'summary': f'Фотосессия для {booking_data.name}',
-            'description': f'Бронирование фотостудии. Клиент: {booking_data.name}, Телефон: {booking_data.phone}',
-            'start': {
-                'dateTime': f'{booking_data.date}T{booking_data.times[0]}:00',
-                'timeZone': 'Europe/Moscow',
-            },
-            'end': {
-                'dateTime': f'{booking_data.date}T{booking_data.times[-1].split("-")[1]}:00',
-                'timeZone': 'Europe/Moscow',
-            },
-        }
-        
-        calendar_event = calendar_service.create_event(event_data)
+        calendar_event = calendar_service.create_event(
+            summary=f'Фотосессия для {booking_data.name}',
+            start_time=start_datetime,
+            end_time=end_datetime,
+            description=f'Бронирование фотостудии. Клиент: {booking_data.name}, Телефон: {booking_data.phone}'
+        )
         
         if not calendar_event:
             logger.error("Не удалось создать событие в календаре")
             raise HTTPException(status_code=500, detail="Не удалось создать событие в календаре")
         
-        # Формирование сообщения для Telegram
-        booking_message = booking_message_template(
+        # Проверка корректности данных перед отправкой уведомления
+        if not booking_data.phone:
+            logger.warning("Номер телефона отсутствует")
+        if booking_data.total_price == 0:
+            logger.warning("Итоговая сумма равна 0")
+
+        # Удаление дублирования имени клиента в сообщении
+        logger.info(f"Данные для формирования сообщения: service={booking_data.service}, date={booking_data.date}, times={booking_data.times}, name={booking_data.name}, phone={booking_data.phone}, total_price={booking_data.total_price}")
+        booking_message, buttons = booking_message_with_buttons(
             service=booking_data.service,
             date=booking_data.date,
             times=booking_data.times,
             name=booking_data.name,
             phone=booking_data.phone,
-            total_price=booking_data.totalPrice
+            total_price=booking_data.total_price
         )
+        logger.info(f"Результат booking_message_with_buttons: message={booking_message}, buttons={buttons}")
         logger.info(f"Пробую отправить уведомление в Telegram: {booking_message}")
+        logger.info(f"Данные перед вызовом send_booking_notification: message={booking_message}, booking_id={calendar_event.get('id')}, service={booking_data.service}, date={booking_data.date}, times={booking_data.times}, name={booking_data.name}, phone={booking_data.phone}, total_price={booking_data.total_price}")
         telegram_notification_sent = await telegram_service.send_booking_notification(
             message=booking_message,
             booking_id=calendar_event.get('id'),
@@ -179,7 +224,7 @@ async def create_booking(booking_data: BookingData):
             times=booking_data.times,
             name=booking_data.name,
             phone=booking_data.phone,
-            total_price=booking_data.totalPrice
+            total_price=booking_data.total_price
         )
         logger.info(f"Результат отправки в Telegram: {telegram_notification_sent}")
         if not telegram_notification_sent:
@@ -195,7 +240,7 @@ async def create_booking(booking_data: BookingData):
                 "times": booking_data.times,
                 "name": booking_data.name,
                 "phone": booking_data.phone,
-                "total_price": booking_data.totalPrice
+                "total_price": booking_data.total_price
             }
         }
     except Exception as e:
@@ -208,44 +253,75 @@ async def create_calendar_event(event_data: CalendarEventData):
         if calendar_service is None:
             logger.error("Google Calendar Service не инициализирован")
             raise HTTPException(status_code=500, detail="Сервис календаря недоступен")
-        
+        # Проверка обязательных параметров ДО любых вычислений
+        if not event_data.title or not str(event_data.title).strip():
+            logger.error("title обязателен и не может быть пустым")
+            raise HTTPException(status_code=400, detail="title обязателен и не может быть пустым")
+        if not event_data.start_time or not str(event_data.start_time).strip():
+            logger.error("start_time обязателен и не может быть пустым")
+            raise HTTPException(status_code=400, detail="start_time обязателен и не может быть пустым")
+        if not event_data.duration_hours or int(event_data.duration_hours) <= 0:
+            logger.error("duration_hours обязателен и должен быть больше 0")
+            raise HTTPException(status_code=400, detail="duration_hours обязателен и должен быть больше 0")
+        if not event_data.phone or not str(event_data.phone).strip():
+            logger.error("Телефон обязателен и не может быть пустым")
+            raise HTTPException(status_code=400, detail="Телефон обязателен и не может быть пустым")
+        if not event_data.total_price or int(event_data.total_price) <= 0:
+            logger.error(f"Некорректная сумма для уведомления: {event_data.total_price}")
+            raise HTTPException(status_code=400, detail="Сумма должна быть больше 0")
         # Парсинг времени начала
-        start_datetime = datetime.fromisoformat(event_data.start_time)
-        end_datetime = start_datetime + timedelta(hours=event_data.duration_hours)
-        
-        # Передаём параметры по сигнатуре create_event
+        try:
+            start_datetime = datetime.fromisoformat(event_data.start_time)
+        except Exception as e:
+            logger.error(f"Некорректный формат start_time: {event_data.start_time}, ошибка: {e}")
+            raise HTTPException(status_code=400, detail="Некорректный формат start_time")
+        duration_hours = int(event_data.duration_hours)
+        end_datetime = start_datetime + timedelta(hours=duration_hours)
+        # times для уведомления (строго список строк)
+        if hasattr(event_data, 'times') and event_data.times and isinstance(event_data.times, list) and all(isinstance(t, str) and t.strip() for t in event_data.times):
+            times = event_data.times
+        else:
+            times = [start_datetime.strftime('%H:%M'), end_datetime.strftime('%H:%M')]
+        # Создание события в календаре
         calendar_event = calendar_service.create_event(
             summary=event_data.title,
             start_time=start_datetime,
             end_time=end_datetime,
             description=event_data.description
         )
-        
-        if not calendar_event:
-            logger.error("Не удалось создать событие в календаре")
-            raise HTTPException(status_code=500, detail="Не удалось создать событие в календаре")
-        
-        # Формирование сообщения для Telegram
-        booking_message = booking_message_template(
+        logger.info(f"Перед вызовом booking_message_with_buttons: service={event_data.title}, date={start_datetime.strftime('%d.%m.%Y')}, times={times}, name={event_data.title}, phone={event_data.phone}, total_price={event_data.total_price}")
+        booking_message, buttons = booking_message_with_buttons(
             service=event_data.title,
             date=start_datetime.strftime('%d.%m.%Y'),
-            times=[start_datetime.strftime('%H:%M'), end_datetime.strftime('%H:%M')],
+            times=times,
             name=event_data.title,
-            phone="",
-            total_price=0
+            phone=event_data.phone,
+            total_price=event_data.total_price
         )
+        logger.info(f"Результат booking_message_with_buttons: message={booking_message}, buttons={buttons}")
         logger.info(f"Пробую отправить уведомление в Telegram (calendar.events): {booking_message}")
-        telegram_notification_sent = await telegram_service.send_booking_notification(booking_message)
+        telegram_notification_sent = await telegram_service.send_booking_notification(
+            message=booking_message,
+            booking_id=calendar_event.get('id'),
+            service=event_data.title,
+            date=start_datetime.strftime('%Y-%m-%d'),
+            times=times,
+            name=event_data.title,
+            phone=event_data.phone,
+            total_price=event_data.total_price
+        )
         logger.info(f"Результат отправки в Telegram (calendar.events): {telegram_notification_sent}")
         if not telegram_notification_sent:
             logger.warning("Не удалось отправить уведомление в Telegram (calendar.events)")
-        
         return {
             "id": calendar_event.get('id'),
             "link": calendar_event.get('htmlLink'),
             "status": "success",
             "telegram_notification": telegram_notification_sent
         }
+    except ValueError as ve:
+        logger.error(f"Ошибка валидации параметров: {ve}")
+        raise HTTPException(status_code=400, detail=str(ve))
     except Exception as e:
         logger.error(f"Ошибка создания события в календаре: {str(e)}")
         raise HTTPException(status_code=400, detail=str(e))
@@ -264,11 +340,19 @@ async def send_telegram_notification(notification_data: TelegramNotificationData
             times=notification_data.times,
             name=notification_data.name,
             phone=notification_data.phone,
-            total_price=notification_data.totalPrice
+            total_price=notification_data.total_price
         )
         
         # Отправка уведомления
-        telegram_notification_sent = await telegram_service.send_booking_notification(booking_message)
+        telegram_notification_sent = await telegram_service.send_booking_notification(
+            message=booking_message,
+            service=notification_data.service,
+            date=notification_data.date,
+            times=notification_data.times,
+            name=notification_data.name,
+            phone=notification_data.phone,
+            total_price=notification_data.total_price
+        )
         
         if not telegram_notification_sent:
             logger.warning("Не удалось отправить уведомление в Telegram")
@@ -278,6 +362,9 @@ async def send_telegram_notification(notification_data: TelegramNotificationData
             "status": "success",
             "message": "Уведомление отправлено"
         }
+    except ValueError as ve:
+        logger.error(f"Ошибка валидации параметров: {ve}")
+        raise HTTPException(status_code=400, detail=str(ve))
     except Exception as e:
         logger.error(f"Ошибка отправки уведомления: {str(e)}")
         raise HTTPException(status_code=400, detail=str(e))
@@ -337,8 +424,13 @@ async def telegram_webhook(request: Request):
         return {"ok": True}
     return {"ok": False}
 
-sentry_sdk.init(
-    dsn="ВАШ_SENTRY_DSN", # TODO: заменить на реальный DSN
-    traces_sample_rate=1.0,
-    environment="production"
-)
+# Проверка наличия DSN перед инициализацией Sentry
+sentry_dsn = os.getenv("SENTRY_DSN")
+if sentry_dsn:
+    sentry_sdk.init(
+        dsn=sentry_dsn,
+        traces_sample_rate=1.0,
+        environment="production"
+    )
+else:
+    logger.warning("Sentry DSN не указан. Логирование ошибок в Sentry отключено.")

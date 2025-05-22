@@ -6,7 +6,6 @@ import TimeSlots from './TimeSlots';
 import Modal from './Modal';
 import { termsContent, privacyContent } from '../data/terms';
 import { mockAvailability } from '../services/calendar/mock';
-import { telegramNotificationService } from '../services/telegram/sendBooking';
 
 // Валидация телефона с помощью регулярного выражения
 const validatePhone = (phone: string): boolean => {
@@ -179,6 +178,7 @@ export default function BookingForm() {
       name,
       phone: phone.replace(/\D/g, ''), // Очистка номера от форматирования
       totalPrice,
+      service: 'Студийная фотосессия', // всегда передаем service
       id: `booking_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`
     };
     
@@ -189,12 +189,24 @@ export default function BookingForm() {
         startTime: selectedTimes[0],
         name: bookingData.name,
         phone: bookingData.phone,
-        times: bookingData.times
+        times: bookingData.times,
+        totalPrice: bookingData.totalPrice // обязательно передаем totalPrice
       });
 
-      // Параллельная отправка Telegram-уведомления
+      // Параллельная отправка Telegram-уведомления через backend
       try {
-        await telegramNotificationService.sendBookingNotification(bookingData);
+        await fetch('/api/telegram/notify', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            name: bookingData.name,
+            phone: bookingData.phone,
+            date: bookingData.date,
+            times: bookingData.times,
+            totalPrice: bookingData.totalPrice,
+            service: bookingData.service || 'Студийная фотосессия'
+          })
+        });
         console.log('Telegram notification sent successfully');
       } catch (telegramError) {
         console.error('Failed to send Telegram notification:', telegramError);

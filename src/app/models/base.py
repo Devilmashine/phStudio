@@ -1,4 +1,4 @@
-from datetime import datetime
+from datetime import datetime, timezone
 from typing import Any
 from sqlalchemy.ext.declarative import as_declarative, declared_attr
 from sqlalchemy import Column, DateTime
@@ -13,5 +13,5 @@ class Base:
     def __tablename__(cls) -> str:
         return cls.__name__.lower()
     
-    created_at = Column(DateTime, default=datetime.utcnow)
-    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow) 
+    created_at = Column(DateTime, default=lambda: datetime.now(timezone.utc))
+    updated_at = Column(DateTime, default=lambda: datetime.now(timezone.utc), onupdate=lambda: datetime.now(timezone.utc))

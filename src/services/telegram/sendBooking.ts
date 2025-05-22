@@ -16,6 +16,7 @@ interface TelegramMessage {
   phone: string;
   date: string;
   times: string[];
+  totalPrice: number; // добавлено для строгой типизации
 }
 
 interface TelegramCallbackQuery {
@@ -28,7 +29,7 @@ interface TelegramCallbackQuery {
 interface BookingActionLog {
   id: string; // Уникальный идентификатор лога
   timestamp: Date;
-  bookingId?: string; 
+  bookingId?: string;
   action: 'confirmed' | 'rejected' | 'created';
   performer: {
     id: number;
@@ -61,8 +62,8 @@ export class TelegramNotificationService {
   }
 
   private formatBookingMessage(booking: BookingData): string {
-    const formattedPhone = booking.phone.startsWith('+') 
-      ? booking.phone 
+    const formattedPhone = booking.phone.startsWith('+')
+      ? booking.phone
       : `+${booking.phone}`;
 
     // Convert date to DD.MM.YYYY format
@@ -80,7 +81,7 @@ ${formattedPhone}`;
   }
 
   private logBookingAction(
-    logEntry: Omit<BookingActionLog, 'id' | 'status'>, 
+    logEntry: Omit<BookingActionLog, 'id' | 'status'>,
     status: BookingActionLog['status'] = 'success'
   ): BookingActionLog {
     const safeLogEntry = {
@@ -95,7 +96,7 @@ ${formattedPhone}`;
     };
 
     this.bookingActionLogs.push(logWithId);
-    
+
     console.log(`📝 Booking Action Log [${logWithId.id}]: 
     Action: ${logWithId.action} 
     Booking ID: ${logWithId.bookingId || 'N/A'}
@@ -107,10 +108,10 @@ ${formattedPhone}`;
 
   // Метод для получения логов с возможностью фильтрации
   public getBookingActionLogs(filters: Partial<BookingActionLog> = {}): BookingActionLog[] {
-    return this.bookingActionLogs.filter(log => 
-      Object.entries(filters).every(([key, value]) => 
-        key === 'bookingId' 
-          ? log.bookingId === value 
+    return this.bookingActionLogs.filter(log =>
+      Object.entries(filters).every(([key, value]) =>
+        key === 'bookingId'
+          ? log.bookingId === value
           : log[key as keyof BookingActionLog] === value
       )
     );
@@ -187,11 +188,11 @@ ${formattedPhone}`;
       }
     } catch (error) {
       console.error('❌ CALLBACK QUERY PROCESSING FAILED', error);
-      
+
       // Отправляем сообщение об ошибке в Telegram
       try {
         await this.sendErrorNotification(
-          message.chat.id, 
+          message.chat.id,
           `Ошибка при обработке действия: ${action}\n${error instanceof Error ? error.message : 'Неизвестная ошибка'}`
         );
       } catch (notificationError) {
@@ -203,7 +204,7 @@ ${formattedPhone}`;
   // Новый метод для отправки уведомлений об ошибках
   private async sendErrorNotification(chatId: string, errorMessage: string): Promise<void> {
     const botToken = this.getBotToken();
-    
+
     if (!botToken) {
       console.error('❌ BOT TOKEN IS MISSING');
       return;
@@ -226,7 +227,7 @@ ${formattedPhone}`;
 
   private async confirmBooking(bookingId: string, user: TelegramUser, message: TelegramMessage): Promise<void> {
     console.log(`🔔 Confirm Booking Method Called - Booking ID: ${bookingId}`);
-    
+
     try {
       // Проверяем наличие всех необходимых данных
       if (!bookingId) {
@@ -237,12 +238,14 @@ ${formattedPhone}`;
       const calendarEvent = await createCalendarEvent({
         summary: `Бронирование: ${user.first_name} ${user.last_name || ''}`,
         description: `Бронирование для ${user.first_name} ${user.last_name || ''}`,
-        start: { 
-          dateTime: new Date(message.date + 'T' + message.times[0]).toISOString() 
+        start: {
+          dateTime: new Date(message.date + 'T' + message.times[0]).toISOString()
         },
-        end: { 
-          dateTime: new Date(message.date + 'T' + message.times[message.times.length - 1]).toISOString() 
-        }
+        end: {
+          dateTime: new Date(message.date + 'T' + message.times[message.times.length - 1]).toISOString()
+        },
+        phone: message.phone || '', // обязательно передаём телефон
+        total_price: message.totalPrice // строгое значение, без any и дефолта 1
       });
 
       console.log(`📅 Calendar Event Created: ${calendarEvent.id}`);
@@ -267,12 +270,12 @@ ${formattedPhone}`;
 
       // Обновляем сообщение в Telegram
       await this.answerCallbackQuery(bookingId, '✅ Бронирование подтверждено', true);
-      
+
       console.log(`📤 Callback Query Answered`);
 
       await this.editMessageText(
-        message.chat.id, 
-        message.message_id, 
+        message.chat.id,
+        message.message_id,
         `${this.formatBookingMessage} \n\n✅ Подтверждено администратором ${user.first_name} ${user.last_name || ''}`
       );
 
@@ -287,10 +290,10 @@ ${formattedPhone}`;
 
     } catch (error) {
       console.error('❌ BOOKING CONFIRMATION FAILED', error);
-      
+
       // Отправляем подробное сообщение об ошибке
       await this.sendErrorNotification(
-        message.chat.id, 
+        message.chat.id,
         `Ошибка подтверждения бронирования: ${error instanceof Error ? error.message : 'Неизвестная ошибка'}`
       );
 
@@ -319,8 +322,8 @@ ${formattedPhone}`;
       // Обновляем сообщение в Telegram
       await this.answerCallbackQuery(bookingId, '❌ Бронирование отклонено', true);
       await this.editMessageText(
-        message.chat.id, 
-        message.message_id, 
+        message.chat.id,
+        message.message_id,
         `${this.formatBookingMessage} \n\n❌ Отклонено администратором ${user.first_name} ${user.last_name || ''}`
       );
 
@@ -395,18 +398,18 @@ ${formattedPhone}`;
   // Методы для получения токена и chat ID с дополнительной проверкой
   private getBotToken(): string {
     return (
-      import.meta.env.VITE_TELEGRAM_BOT_TOKEN || 
-      process.env.VITE_TELEGRAM_BOT_TOKEN || 
-      process.env.TELEGRAM_BOT_TOKEN || 
+      import.meta.env.VITE_TELEGRAM_BOT_TOKEN ||
+      process.env.VITE_TELEGRAM_BOT_TOKEN ||
+      process.env.TELEGRAM_BOT_TOKEN ||
       ''
     );
   }
 
   private getAdminChatId(): string {
     return (
-      import.meta.env.VITE_TELEGRAM_ADMIN_CHAT_ID || 
-      process.env.VITE_TELEGRAM_ADMIN_CHAT_ID || 
-      process.env.TELEGRAM_ADMIN_CHAT_ID || 
+      import.meta.env.VITE_TELEGRAM_ADMIN_CHAT_ID ||
+      process.env.VITE_TELEGRAM_ADMIN_CHAT_ID ||
+      process.env.TELEGRAM_ADMIN_CHAT_ID ||
       ''
     );
   }
@@ -419,13 +422,13 @@ export const telegramNotificationService = TelegramNotificationService.getInstan
 
 // Функция с повторными попытками
 export async function sendBookingToTelegramWithRetry(
-  booking: BookingData, 
+  booking: BookingData,
   maxRetries: number = 3
 ): Promise<boolean> {
   for (let attempt = 1; attempt <= maxRetries; attempt++) {
     try {
       const result = await telegramNotificationService.sendBookingNotification(booking);
-      
+
       if (result) {
         return true;
       }
@@ -443,7 +446,7 @@ export async function sendBookingToTelegramWithRetry(
   return false;
 }
 
-export async function sendBookingToTelegram(booking: BookingData): Promise<{success: boolean, result?: any}> {
+export async function sendBookingToTelegram(booking: BookingData): Promise<{ success: boolean, result?: any }> {
   const result = await telegramNotificationService.sendBookingNotification(booking);
   return { success: result };
 }

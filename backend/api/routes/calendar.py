@@ -1,6 +1,6 @@
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
-from datetime import datetime, date, timedelta
+from datetime import datetime, date, timedelta, timezone
 from typing import List, Dict, Any
 from backend.app.core.database import get_db
 from backend.app.services.google_calendar import GoogleCalendarService
@@ -37,7 +37,7 @@ def get_slots(start: str, end: str, calendar_service: GoogleCalendarService = De
 
 @router.get("/calendar/bookings/export")
 def export_bookings(calendar_service: GoogleCalendarService = Depends(get_calendar_service)):
-    now = datetime.utcnow()
+    now = datetime.now(timezone.utc)
     events = calendar_service.get_available_slots(now - timedelta(days=30), now + timedelta(days=1))
     output = StringIO()
     writer = csv.DictWriter(output, fieldnames=["start", "end"])
@@ -73,4 +73,4 @@ async def get_events(
         singleEvents=True,
         orderBy='startTime'
     ).execute().get('items', [])
-    return events 
+    return events

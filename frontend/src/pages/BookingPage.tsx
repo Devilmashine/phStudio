@@ -27,7 +27,12 @@ const BookingPage: React.FC = () => {
     };
 
     fetchBookings();
-  }, [getBookings]);
+  }, []); // Убрана зависимость getBookings
+
+  const calculateTotalPrice = (selectedTime: string): number => {
+    const pricePerHour = 2500; // Стоимость за час, можно вынести в конфигурацию
+    return pricePerHour; // В данном случае расчет фиксирован, но можно усложнить при необходимости
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -37,14 +42,29 @@ const BookingPage: React.FC = () => {
       return;
     }
 
+    if (!formData.client_name) {
+      alert('Имя клиента обязательно');
+      return;
+    }
+    if (!formData.client_phone) {
+      alert('Телефон клиента обязателен');
+      return;
+    }
+    const totalPrice = calculateTotalPrice(selectedTime);
+    if (totalPrice <= 0) {
+      alert('Цена должна быть больше 0');
+      return;
+    }
+
     try {
       const [hours, minutes] = selectedTime.split(':');
       const endTime = `${(parseInt(hours) + 1).toString().padStart(2, '0')}:${minutes}`;
-      
+
       await createBooking({
         date: selectedDate,
         start_time: selectedTime,
         end_time: endTime,
+        total_price: totalPrice,
         ...formData,
       });
 
@@ -60,14 +80,15 @@ const BookingPage: React.FC = () => {
 
   return (
     <div className="max-w-4xl mx-auto py-8 px-4">
-      <h1 className="text-3xl font-bold mb-8">Забронировать фотосессию</h1>
+      <h1 className="text-3xl font-bold mb-8">Форма бронирования</h1>
       
       <form onSubmit={handleSubmit} className="space-y-6">
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-2">
+          <label htmlFor="date" className="block text-sm font-medium text-gray-700 mb-2">
             Дата
           </label>
           <input
+            id="date"
             type="date"
             value={selectedDate}
             onChange={(e) => setSelectedDate(e.target.value)}
@@ -78,10 +99,11 @@ const BookingPage: React.FC = () => {
         </div>
 
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-2">
+          <label htmlFor="time" className="block text-sm font-medium text-gray-700 mb-2">
             Время
           </label>
           <select
+            id="time"
             value={selectedTime}
             onChange={(e) => setSelectedTime(e.target.value)}
             className="w-full px-4 py-2 border rounded-md"
@@ -97,10 +119,11 @@ const BookingPage: React.FC = () => {
         </div>
 
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-2">
+          <label htmlFor="name" className="block text-sm font-medium text-gray-700 mb-2">
             Имя
           </label>
           <input
+            id="name"
             type="text"
             value={formData.client_name}
             onChange={(e) => setFormData({ ...formData, client_name: e.target.value })}
@@ -110,10 +133,11 @@ const BookingPage: React.FC = () => {
         </div>
 
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-2">
+          <label htmlFor="phone" className="block text-sm font-medium text-gray-700 mb-2">
             Телефон
           </label>
           <input
+            id="phone"
             type="tel"
             value={formData.client_phone}
             onChange={(e) => setFormData({ ...formData, client_phone: e.target.value })}
@@ -123,10 +147,11 @@ const BookingPage: React.FC = () => {
         </div>
 
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-2">
+          <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-2">
             Email
           </label>
           <input
+            id="email"
             type="email"
             value={formData.client_email}
             onChange={(e) => setFormData({ ...formData, client_email: e.target.value })}
@@ -136,10 +161,11 @@ const BookingPage: React.FC = () => {
         </div>
 
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-2">
+          <label htmlFor="notes" className="block text-sm font-medium text-gray-700 mb-2">
             Дополнительная информация
           </label>
           <textarea
+            id="notes"
             value={formData.notes}
             onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
             className="w-full px-4 py-2 border rounded-md"
@@ -158,11 +184,11 @@ const BookingPage: React.FC = () => {
           disabled={loading}
           className="w-full bg-blue-600 text-white py-2 px-4 rounded-md hover:bg-blue-700 disabled:bg-blue-300"
         >
-          {loading ? 'Отправка...' : 'Забронировать'}
+          {loading ? 'Забронировать' : 'Забронировать'}
         </button>
       </form>
     </div>
   );
 };
 
-export default BookingPage; 
+export default BookingPage;

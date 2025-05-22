@@ -1,5 +1,5 @@
 from fastapi import APIRouter, HTTPException, Depends, status
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from app.services.google_calendar import GoogleCalendarService
 from app.utils.auth import get_current_user, require_role
 from app.services.log_service import log_action, export_logs
@@ -56,7 +56,7 @@ def export_logs_api():
 
 @router.get("/bookings/export", dependencies=[Depends(require_role(UserRole.admin))])
 def export_bookings(calendar_service: GoogleCalendarService = Depends(get_calendar_service)):
-    now = datetime.utcnow()
+    now = datetime.now(timezone.utc)
     events = calendar_service.get_available_slots(now - timedelta(days=30), now + timedelta(days=1))
     output = StringIO()
     writer = csv.DictWriter(output, fieldnames=["start", "end"])
@@ -64,4 +64,4 @@ def export_bookings(calendar_service: GoogleCalendarService = Depends(get_calend
     for e in events:
         writer.writerow(e)
     output.seek(0)
-    return StreamingResponse(output, media_type="text/csv", headers={"Content-Disposition": "attachment; filename=bookings.csv"}) 
+    return StreamingResponse(output, media_type="text/csv", headers={"Content-Disposition": "attachment; filename=bookings.csv"})

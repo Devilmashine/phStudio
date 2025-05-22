@@ -1,4 +1,4 @@
-from datetime import datetime
+from datetime import datetime, timezone
 from sqlalchemy import Column, Integer, String, DateTime, ForeignKey, Float, Enum
 from sqlalchemy.orm import relationship
 import enum
@@ -28,8 +28,8 @@ class Booking(Base):
     
     # Дополнительная информация
     notes = Column(String, nullable=True)
-    created_at = Column(DateTime, default=datetime.utcnow)
-    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    created_at = Column(DateTime, default=lambda: datetime.now(timezone.utc))
+    updated_at = Column(DateTime, default=lambda: datetime.now(timezone.utc), onupdate=lambda: datetime.now(timezone.utc))
     
     # Связи
-    calendar_event_id = Column(String, nullable=True)  # ID события в Google Calendar 
+    calendar_event_id = Column(String, nullable=True)  # ID события в Google Calendar

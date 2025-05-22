@@ -1,5 +1,5 @@
 from sqlalchemy import Column, Integer, String, Enum as SAEnum
-from datetime import datetime
+from datetime import datetime, timezone
 from backend.app.models.base import Base
 from enum import Enum
 from pydantic import BaseModel
@@ -22,5 +22,5 @@ class User(Base):
     hashed_password = Column(String, nullable=False)
     role = Column(SAEnum(UserRole), nullable=False)
     full_name = Column(String)
-    created_at = Column(String, default=lambda: datetime.utcnow().isoformat())
-    last_login = Column(String, nullable=True) 
+    created_at = Column(String, default=lambda: datetime.now(timezone.utc).isoformat())
+    last_login = Column(String, nullable=True)

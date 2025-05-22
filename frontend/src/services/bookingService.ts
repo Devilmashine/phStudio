@@ -22,6 +22,7 @@ export interface CreateBookingDto {
   client_name: string;
   client_phone: string;
   client_email: string;
+  total_price: number; // Добавлено поле для передачи итоговой суммы
   notes?: string;
 }
 
@@ -37,9 +38,17 @@ export const useBookingService = () => {
   };
 
   const createBooking = async (data: CreateBookingDto) => {
+    const transformedData = {
+      date: data.date,
+      times: [data.start_time, data.end_time],
+      name: data.client_name,
+      phone: data.client_phone,
+      totalPrice: data.total_price,
+      notes: data.notes,
+    };
     return api.fetchData('/bookings', {
       method: 'POST',
-      body: JSON.stringify(data),
+      body: JSON.stringify(transformedData),
     });
   };
 
@@ -64,4 +73,4 @@ export const useBookingService = () => {
     updateBookingStatus,
     deleteBooking,
   };
-}; 
+};

@@ -10,7 +10,7 @@ class Settings(BaseSettings):
     TELEGRAM_BOT_TOKEN: str = ""
     TELEGRAM_CHAT_ID: str = ""
 
-    class Config:
+    class ConfigDict:
         env_file = ".env"
 
 settings = Settings()

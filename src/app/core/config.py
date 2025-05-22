@@ -27,8 +27,8 @@ class Settings(BaseSettings):
     TELEGRAM_BOT_TOKEN: str | None = None
     TELEGRAM_CHAT_ID: str | None = None
     
-    class Config:
+    class ConfigDict:
         case_sensitive = True
         env_file = ".env"
 
-settings = Settings() 
+settings = Settings()

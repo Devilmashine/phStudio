@@ -26,5 +26,5 @@ class UserResponse(UserBase):
     created_at: str
     last_login: Optional[str] = None
 
-    class Config:
-        from_attributes = True 
+    class ConfigDict:
+        from_attributes = True

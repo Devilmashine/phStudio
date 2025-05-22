@@ -1,4 +1,4 @@
-from datetime import datetime
+from datetime import datetime, timezone
 from sqlalchemy.orm import Session
 from sqlalchemy.exc import IntegrityError
 from fastapi import HTTPException
@@ -91,6 +91,6 @@ class UserService:
         if not user or not self.verify_password(password, user.hashed_password):
             return None
 
-        user.last_login = datetime.utcnow().isoformat()
+        user.last_login = datetime.now(timezone.utc).isoformat()
         self.db.commit()
-        return user 
+        return user

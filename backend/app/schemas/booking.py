@@ -22,5 +22,5 @@ class Booking(BookingBase):
     updated_at: datetime
     calendar_event_id: Optional[str] = None
 
-    class Config:
-        from_attributes = True 
+    class ConfigDict:
+        from_attributes = True

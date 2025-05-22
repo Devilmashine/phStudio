@@ -20,11 +20,20 @@ async def test_send_booking_notification(monkeypatch):
         def post(self, *a, **k):
             return FakeResp()
     monkeypatch.setattr("aiohttp.ClientSession", lambda: FakeSession())
-    result = await service.send_booking_notification("Test message")
+    # Передаём все обязательные параметры
+    result = await service.send_booking_notification(
+        message="Test message",
+        service="Тестовая услуга",
+        date="2025-05-22",
+        times=["10:00", "11:00"],
+        name="Тест Клиент",
+        phone="+79998887766",
+        total_price=2500
+    )
     assert result is True
 
 def test_telegram_webhook():
     data = {"message": {"chat": {"id": 123}, "text": "/start"}}
     response = client.post("/telegram/webhook", json=data)
     assert response.status_code == 200
-    assert response.json() == {"status": "ok"} 
+    assert response.json() == {"status": "ok"}
