@@ -8,7 +8,7 @@ from typing import List
 from backend.app.core.database import get_db
 from backend.app.services.user import UserService
 from backend.app.schemas.user import UserCreate, UserResponse, UserUpdate, UserLogin
-from backend.app.models.user import UserRole
+from backend.app.models.user import User, UserRole
 from backend.app.core.config import settings
 
 router = APIRouter()
