@@ -193,25 +193,6 @@ export default function BookingForm() {
         totalPrice: bookingData.totalPrice // обязательно передаем totalPrice
       });
 
-      // Параллельная отправка Telegram-уведомления через backend
-      try {
-        await fetch('/api/telegram/notify', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            name: bookingData.name,
-            phone: bookingData.phone,
-            date: bookingData.date,
-            times: bookingData.times,
-            total_price: bookingData.totalPrice, // исправлено на snake_case
-            service: bookingData.service || 'Студийная фотосессия'
-          })
-        });
-        console.log('Telegram notification sent successfully');
-      } catch (telegramError) {
-        console.error('Failed to send Telegram notification:', telegramError);
-      }
-
       console.log('Booking submitted:', bookingData);
       alert('Заявка отправлена! Мы свяжемся с вами в ближайшее время.');
       

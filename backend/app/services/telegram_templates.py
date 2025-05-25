@@ -2,13 +2,12 @@ import logging
 
 logger = logging.getLogger(__name__)
 
-# Шаблон сообщения для Telegram (только с кнопками, без дублирования)
+# Шаблон сообщения для Telegram (только одно упоминание клиента)
 def booking_message_with_buttons(service, date, times, name, phone, total_price):
     logger.info(f"Получены данные: service={service}, date={date}, times={times}, name={name}, phone={phone}, total_price={total_price}")
+    # Жёстко фиксируем услугу как 'Студийная фотосессия' для всех сообщений
+    fixed_service = 'Студийная фотосессия'
     # Явная строгая валидация всех параметров
-    if not service or not isinstance(service, str) or not service.strip():
-        logger.error("Параметр 'service' обязателен и должен быть строкой")
-        raise ValueError("Параметр 'service' обязателен и должен быть строкой")
     if not date or not isinstance(date, str) or not date.strip():
         logger.error("Параметр 'date' обязателен и должен быть строкой")
         raise ValueError("Параметр 'date' обязателен и должен быть строкой")
@@ -34,7 +33,7 @@ def booking_message_with_buttons(service, date, times, name, phone, total_price)
     logger.debug(f"Обновленные данные: phone={phone}, total_price={price_str}")
     message = (
         f"🎨 Новое бронирование:\n"
-        f"Услуга: {service}\n"
+        f"Услуга: {fixed_service}\n"
         f"Дата: {date}\n"
         f"Время: {', '.join(times)}\n"
         f"Клиент: {name}\n"
