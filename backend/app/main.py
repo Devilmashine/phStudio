@@ -106,6 +106,7 @@ class BookingData(BaseModel):
     phone: str
     total_price: int  # исправлено с totalPrice
     service: str = "Студийная фотосессия"
+    people_count: int  # новое поле
 
 class CalendarEventData(BaseModel):
     title: str
@@ -115,6 +116,7 @@ class CalendarEventData(BaseModel):
     phone: str  # теперь обязательное поле
     total_price: int  # теперь обязательное поле
     times: list[str] = []  # добавлено для сквозной передачи
+    people_count: int  # новое поле
 
     @classmethod
     def __get_validators__(cls):
@@ -137,6 +139,7 @@ class TelegramNotificationData(BaseModel):
     times: list[str]
     total_price: int  # исправлено с totalPrice
     service: str  # добавлено поле service
+    people_count: int  # новое поле
 
 @app.get("/api/calendar/available-slots")
 async def get_available_slots(date: str):
@@ -210,7 +213,8 @@ async def create_booking(booking_data: BookingData):
             times=booking_data.times,
             name=booking_data.name,
             phone=booking_data.phone,
-            total_price=booking_data.total_price
+            total_price=booking_data.total_price,
+            people_count=booking_data.people_count
         )
         logger.info(f"Результат booking_message_with_buttons: message={booking_message}, buttons={buttons}")
         logger.info(f"Пробую отправить уведомление в Telegram: {booking_message}")
@@ -223,7 +227,8 @@ async def create_booking(booking_data: BookingData):
             times=booking_data.times,
             name=booking_data.name,
             phone=booking_data.phone,
-            total_price=booking_data.total_price
+            total_price=booking_data.total_price,
+            people_count=booking_data.people_count
         )
         logger.info(f"Результат отправки в Telegram: {telegram_notification_sent}")
         if not telegram_notification_sent:
@@ -295,7 +300,8 @@ async def create_calendar_event(event_data: CalendarEventData):
             times=times,
             name=event_data.title,
             phone=event_data.phone,
-            total_price=event_data.total_price
+            total_price=event_data.total_price,
+            people_count=event_data.people_count
         )
         logger.info(f"Результат booking_message_with_buttons: message={booking_message}, buttons={buttons}")
         logger.info(f"Пробую отправить уведомление в Telegram (calendar.events): {booking_message}")
@@ -307,7 +313,8 @@ async def create_calendar_event(event_data: CalendarEventData):
             times=times,
             name=event_data.title,
             phone=event_data.phone,
-            total_price=event_data.total_price
+            total_price=event_data.total_price,
+            people_count=event_data.people_count
         )
         logger.info(f"Результат отправки в Telegram (calendar.events): {telegram_notification_sent}")
         if not telegram_notification_sent:
@@ -340,7 +347,8 @@ async def send_telegram_notification(notification_data: TelegramNotificationData
             times=notification_data.times,
             name=notification_data.name,
             phone=notification_data.phone,
-            total_price=notification_data.total_price
+            total_price=notification_data.total_price,
+            people_count=notification_data.people_count
         )
         
         # Отправка уведомления
@@ -351,7 +359,8 @@ async def send_telegram_notification(notification_data: TelegramNotificationData
             times=notification_data.times,
             name=notification_data.name,
             phone=notification_data.phone,
-            total_price=notification_data.total_price
+            total_price=notification_data.total_price,
+            people_count=notification_data.people_count
         )
         
         if not telegram_notification_sent:

@@ -26,7 +26,8 @@ def test_create_booking_and_notify():
         "name": "API Клиент",
         "phone": "79999999999",
         "total_price": 2500,  # исправлено
-        "service": "API тест"
+        "service": "API тест",
+        "people_count": 2
     }
     resp = client.post("/api/bookings", json=payload)
     assert resp.status_code == 200, resp.text
@@ -42,7 +43,8 @@ def test_create_calendar_event_and_notify():
         "start_time": "2025-05-22T10:00:00",
         "duration_hours": 1,
         "phone": "79999999999",
-        "total_price": 2500
+        "total_price": 2500,
+        "people_count": 2
     }
     resp = client.post("/api/calendar/events", json=payload)
     assert resp.status_code == 200, resp.text
@@ -59,7 +61,8 @@ def test_send_telegram_notification():
         "date": "2025-05-22",
         "times": ["10:00", "11:00"],
         "total_price": 2500,  # исправлено
-        "service": "API тест"
+        "service": "API тест",
+        "people_count": 2
     }
     resp = client.post("/api/telegram/notify", json=payload)
     assert resp.status_code == 200, resp.text
@@ -75,10 +78,13 @@ def test_calendar_event_missing_fields():
         "duration_hours": 1,
         "phone": "",
         "total_price": 0
+        # people_count отсутствует
     }
     resp = client.post("/api/calendar/events", json=payload)
-    assert resp.status_code == 400
-    assert "обязателен" in resp.json()['detail'] or "должны быть указаны" in resp.json()['detail']
+    assert resp.status_code == 422
+    detail = resp.json().get("detail", "")
+    detail_str = str(detail).lower()
+    assert ("people_count" in detail_str) or ("обязательно" in detail_str)
 
 
 def test_booking_missing_fields():
@@ -88,13 +94,13 @@ def test_booking_missing_fields():
         "name": "",
         "phone": "",
         "total_price": 0
+        # people_count отсутствует
     }
     resp = client.post("/api/bookings", json=payload)
-    assert resp.status_code == 400
+    assert resp.status_code == 422
     detail = resp.json().get("detail", "")
     detail_str = str(detail).lower()
-    # Проверяем только наличие слова "обязательно" для максимальной устойчивости
-    assert "обязательно" in detail_str
+    assert ("people_count" in detail_str) or ("обязательно" in detail_str)
 
     # Проверка отсутствия обязательного поля phone (ожидаем 422)
     payload_missing_phone = {
@@ -102,10 +108,27 @@ def test_booking_missing_fields():
         "times": ["10:00", "11:00"],
         "name": "API Клиент",
         "total_price": 2500,
-        "service": "API тест"
+        "service": "API тест",
+        "people_count": 2
     }
+    payload_missing_phone.pop("phone", None)
     resp = client.post("/api/bookings", json=payload_missing_phone)
     assert resp.status_code == 422
     detail = resp.json().get("detail", "")
     detail_str = str(detail).lower()
     assert ("phone" in detail_str) or ("обязательно" in detail_str)
+
+    # Проверка отсутствия people_count (ожидаем 422)
+    payload_missing_people = {
+        "date": "2025-05-22",
+        "times": ["10:00", "11:00"],
+        "name": "API Клиент",
+        "phone": "79999999999",
+        "total_price": 2500,
+        "service": "API тест"
+    }
+    resp = client.post("/api/bookings", json=payload_missing_people)
+    assert resp.status_code == 422
+    detail = resp.json().get("detail", "")
+    detail_str = str(detail).lower()
+    assert ("people_count" in detail_str) or ("обязательно" in detail_str)

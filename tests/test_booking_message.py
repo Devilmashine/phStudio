@@ -9,8 +9,9 @@ class TestBookingMessageWithButtons(unittest.TestCase):
         name = "Иван Иванов"
         phone = "+79991234567"
         total_price = 5000
+        people_count = 2
 
-        message, buttons = booking_message_with_buttons(service, date, times, name, phone, total_price)
+        message, buttons = booking_message_with_buttons(service, date, times, name, phone, total_price, people_count)
 
         expected_message = (
             f"🎨 Новое бронирование:\n"
@@ -19,6 +20,7 @@ class TestBookingMessageWithButtons(unittest.TestCase):
             f"Время: {', '.join(times)}\n"
             f"Клиент: {name}\n"
             f"Телефон: {phone}\n"
+            f"Количество человек: {people_count}\n"
             f"Сумма: {total_price} руб."
         )
 
@@ -34,9 +36,10 @@ class TestBookingMessageWithButtons(unittest.TestCase):
         name = "Иван Иванов"
         phone = None
         total_price = 0
+        people_count = 2
 
         with self.assertRaises(ValueError):
-            booking_message_with_buttons(service, date, times, name, phone, total_price)
+            booking_message_with_buttons(service, date, times, name, phone, total_price, people_count)
 
     def test_booking_message_with_empty_name(self):
         service = "Студийная фотосессия"
@@ -45,9 +48,10 @@ class TestBookingMessageWithButtons(unittest.TestCase):
         name = ""
         phone = "+79991234567"
         total_price = 5000
+        people_count = 2
 
         with self.assertRaises(ValueError):
-            booking_message_with_buttons(service, date, times, name, phone, total_price)
+            booking_message_with_buttons(service, date, times, name, phone, total_price, people_count)
 
     def test_booking_message_with_empty_phone(self):
         service = "Студийная фотосессия"
@@ -56,9 +60,10 @@ class TestBookingMessageWithButtons(unittest.TestCase):
         name = "Иван Иванов"
         phone = ""
         total_price = 5000
+        people_count = 2
 
         with self.assertRaises(ValueError):
-            booking_message_with_buttons(service, date, times, name, phone, total_price)
+            booking_message_with_buttons(service, date, times, name, phone, total_price, people_count)
 
     def test_booking_message_with_zero_price(self):
         service = "Студийная фотосессия"
@@ -67,9 +72,10 @@ class TestBookingMessageWithButtons(unittest.TestCase):
         name = "Иван Иванов"
         phone = "+79991234567"
         total_price = 0
+        people_count = 2
 
         with self.assertRaises(ValueError) as exc:
-            booking_message_with_buttons(service, date, times, name, phone, total_price)
+            booking_message_with_buttons(service, date, times, name, phone, total_price, people_count)
         assert "Цена должна быть больше 0" in str(exc.exception)
 
 if __name__ == "__main__":

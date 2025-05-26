@@ -13,7 +13,7 @@ class TelegramBotService:
         self.chat_id = settings.TELEGRAM_CHAT_ID
         self.api_url = f"https://api.telegram.org/bot{self.bot_token}/sendMessage"
 
-    async def send_booking_notification(self, message: str, booking_id: str = None, service=None, date=None, times=None, name=None, phone=None, total_price=None) -> bool:
+    async def send_booking_notification(self, message: str, booking_id: str = None, service=None, date=None, times=None, name=None, phone=None, total_price=None, people_count=None) -> bool:
         """
         Отправляет уведомление о бронировании в Telegram с inline-кнопками
         """
@@ -34,9 +34,11 @@ class TelegramBotService:
                 raise ValueError("Цена должна быть больше 0")
         except Exception as e:
             raise ValueError(f"Некорректная цена: {total_price}, ошибка: {e}")
+        if people_count is None or not isinstance(people_count, int) or people_count < 1:
+            raise ValueError("Количество человек обязательно и должно быть положительным целым числом")
 
-        logger.info(f"Параметры для отправки уведомления: service={service}, date={date}, times={times}, name={name}, phone={phone}, total_price={total_price}")
-        text, buttons = booking_message_with_buttons(service, date, times, name, phone, total_price)
+        logger.info(f"Параметры для отправки уведомления: service={service}, date={date}, times={times}, name={name}, phone={phone}, total_price={total_price}, people_count={people_count}")
+        text, buttons = booking_message_with_buttons(service, date, times, name, phone, total_price, people_count)
         payload = {
             "chat_id": self.chat_id,
             "text": text,

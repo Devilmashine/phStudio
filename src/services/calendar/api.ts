@@ -59,6 +59,7 @@ export async function createCalendarEvent(event: CalendarEvent & { phone: string
     duration_hours: Number(duration),
     phone: event.phone,
     total_price: event.total_price,
+    people_count: (event as any).people_count || (event as any).peopleCount || 1,
     times: [
       event.start?.dateTime ? new Date(event.start.dateTime).toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit' }) : '',
       event.end?.dateTime ? new Date(event.end.dateTime).toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit' }) : ''

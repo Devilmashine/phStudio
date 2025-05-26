@@ -100,8 +100,9 @@ export const mockAvailability = {
     startTime: string;
     name: string;
     phone: string;
-    totalPrice: number; // добавлено для строгой типизации
-    times?: string[]; // Optional array of times for multi-slot bookings
+    totalPrice: number;
+    peopleCount?: number;
+    times?: string[];
   }): Promise<{ id: string }> => {
     // Get the current date in the local timezone
     const localTimezone = Intl.DateTimeFormat().resolvedOptions().timeZone;
@@ -169,7 +170,8 @@ export const mockAvailability = {
       return createCalendarEvent({
         ...calendarEvent,
         phone: bookingData.phone || '',
-        total_price: bookingData.totalPrice // строгое значение, без any и дефолта 1
+        total_price: bookingData.totalPrice,
+        people_count: bookingData.peopleCount || 1
       });
     }));
 

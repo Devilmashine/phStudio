@@ -31,6 +31,7 @@ async def get_current_user(token: str = Depends(oauth2_scheme), db: Session = De
     try:
         payload = jwt.decode(token, settings.SECRET_KEY, algorithms=[settings.ALGORITHM])
         username: str = payload.get("sub")
+        role: str = payload.get("role")
         if username is None:
             raise credentials_exception
     except JWTError:
@@ -39,6 +40,9 @@ async def get_current_user(token: str = Depends(oauth2_scheme), db: Session = De
     user_service = UserService(db)
     user = user_service.get_user_by_username(username)
     if user is None:
+        raise credentials_exception
+    # Если роль в токене не совпадает с ролью в БД — считаем токен недействительным
+    if role and user.role.name != role:
         raise credentials_exception
     return user
 
@@ -71,8 +75,8 @@ async def login(
             detail="Неверное имя пользователя или пароль",
             headers={"WWW-Authenticate": "Bearer"},
         )
-    
-    access_token = create_access_token(data={"sub": user.username})
+    # В токен добавляем роль пользователя для оптимизации проверки прав
+    access_token = create_access_token(data={"sub": user.username, "role": user.role.name})
     return {"access_token": access_token, "token_type": "bearer"}
 
 @router.post("/users", response_model=UserResponse)

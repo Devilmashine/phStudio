@@ -118,6 +118,10 @@ export default function BookingForm() {
   const [privacyAccepted, setPrivacyAccepted] = useState(false);
   const [showTermsModal, setShowTermsModal] = useState(false);
   const [showPrivacyModal, setShowPrivacyModal] = useState(false);
+  const [peopleCount, setPeopleCount] = useState(1);
+  const [peopleError, setPeopleError] = useState('');
+  const [studioRulesAccepted, setStudioRulesAccepted] = useState(false);
+  const [showStudioRulesModal, setShowStudioRulesModal] = useState(false);
   
   // Состояния для ошибок
   const [nameError, setNameError] = useState('');
@@ -141,6 +145,16 @@ export default function BookingForm() {
     }
   }, [phone]);
 
+  useEffect(() => {
+    if (peopleCount < 1) {
+      setPeopleError('Укажите количество человек (минимум 1)');
+    } else if (peopleCount > 30) {
+      setPeopleError('Слишком много человек для одной брони');
+    } else {
+      setPeopleError('');
+    }
+  }, [peopleCount]);
+
   const handleTimeSelect = useCallback((time: string) => {
     setSelectedTimes(prev => {
       if (prev.includes(time)) {
@@ -150,7 +164,11 @@ export default function BookingForm() {
     });
   }, []);
 
-  const totalPrice = selectedTimes.length * studio.pricePerHour;
+  // Пересчёт стоимости с учётом количества человек
+  const basePeople = 5;
+  const extraPeople = Math.max(0, peopleCount - basePeople);
+  const extraFee = extraPeople * 200 * selectedTimes.length;
+  const totalPrice = selectedTimes.length * studio.pricePerHour + extraFee;
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -168,6 +186,16 @@ export default function BookingForm() {
       hasError = true;
     }
     
+    if (peopleCount < 1) {
+      setPeopleError('Укажите количество человек (минимум 1)');
+      hasError = true;
+    } else if (peopleCount > 30) {
+      setPeopleError('Слишком много человек для одной брони');
+      hasError = true;
+    } else {
+      setPeopleError('');
+    }
+    
     if (hasError) return;
 
     setIsSubmitting(true);
@@ -176,21 +204,23 @@ export default function BookingForm() {
       date: selectedDate ? format(selectedDate, 'yyyy-MM-dd') : '',
       times: selectedTimes,
       name,
-      phone: phone.replace(/\D/g, ''), // Очистка номера от форматирования
-      totalPrice,
-      service: 'Студийная фотосессия', // всегда передаем service
+      phone: phone.replace(/\D/g, ''),
+      total_price: totalPrice, // snake_case для backend
+      people_count: peopleCount, // snake_case для backend
+      service: 'Студийная фотосессия',
       id: `booking_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`
     };
     
     try {
-      // Создание события в календаре
+      // Для mockAvailability используем camelCase, для API — snake_case
       await mockAvailability.createBookingEvent({
         date: bookingData.date,
         startTime: selectedTimes[0],
         name: bookingData.name,
         phone: bookingData.phone,
         times: bookingData.times,
-        totalPrice: bookingData.totalPrice // обязательно передаем totalPrice
+        totalPrice: bookingData.total_price, // camelCase для mock
+        peopleCount: bookingData.people_count // camelCase для mock
       });
 
       console.log('Booking submitted:', bookingData);
@@ -203,6 +233,8 @@ export default function BookingForm() {
       handlePhoneChange({ target: { value: '' } } as React.ChangeEvent<HTMLInputElement>);
       setTermsAccepted(false);
       setPrivacyAccepted(false);
+      setPeopleCount(1);
+      setStudioRulesAccepted(false);
     } catch (error) {
       console.error('Failed to create booking events:', error);
       alert('Не удалось создать бронирование. Пожалуйста, попробуйте еще раз.');
@@ -252,6 +284,14 @@ export default function BookingForm() {
               type="tel"
               error={phoneError}
             />
+            <InputField
+              label="Количество человек"
+              value={peopleCount.toString()}
+              onChange={e => setPeopleCount(Math.max(1, parseInt(e.target.value) || 1))}
+              type="number"
+              required
+              error={peopleError}
+            />
 
             <div className="bg-gray-50 p-4 rounded-lg">
               <h4 className="font-medium text-gray-900 mb-2">Детали бронирования</h4>
@@ -283,6 +323,13 @@ export default function BookingForm() {
                 linkText="обработку персональных данных"
                 onLinkClick={() => setShowPrivacyModal(true)}
               />
+              <CheckboxField
+                checked={studioRulesAccepted}
+                onChange={e => setStudioRulesAccepted(e.target.checked)}
+                label="Я согласен с правилами студии"
+                linkText="правилами студии"
+                onLinkClick={() => setShowStudioRulesModal(true)}
+              />
             </div>
 
             <button
@@ -292,8 +339,10 @@ export default function BookingForm() {
                 selectedTimes.length === 0 || 
                 !termsAccepted || 
                 !privacyAccepted || 
+                !studioRulesAccepted ||
                 !!nameError || 
                 !!phoneError ||
+                !!peopleError ||
                 isSubmitting
               }
               className="w-full bg-indigo-600 text-white py-3 rounded-lg hover:bg-indigo-700 transition-colors disabled:bg-gray-300 disabled:cursor-not-allowed"
@@ -331,6 +380,29 @@ export default function BookingForm() {
                   {paragraph}
                 </p>
               ))}
+            </div>
+          </Modal>
+        )}
+        {showStudioRulesModal && (
+          <Modal 
+            isOpen={true}
+            onClose={() => setShowStudioRulesModal(false)}
+            title="Правила студии"
+          >
+            <div className="prose prose-sm max-w-none">
+              {/* Здесь будут правила студии */}
+              <ul className="list-disc pl-5 space-y-2">
+                <li>Максимум 5 человек бесплатно, за каждого дополнительного — 200 руб/час.</li>
+                <li>В студии запрещено курить, распивать алкоголь, использовать открытый огонь.</li>
+                <li>Использование реквизита и оборудования — бережно, после использования вернуть на место.</li>
+                <li>Дети допускаются только в сопровождении взрослых.</li>
+                <li>Время бронирования включает время на сборы и уборку.</li>
+                <li>Запрещено шуметь, мешать другим арендаторам и нарушать общественный порядок.</li>
+                <li>За порчу имущества взыскивается компенсация по оценке студии.</li>
+                <li>Соблюдайте чистоту, уважайте персонал и других гостей.</li>
+                <li>Администрация оставляет за собой право отказать в обслуживании без объяснения причин.</li>
+                <li>Подробные правила — на сайте и у администратора.</li>
+              </ul>
             </div>
           </Modal>
         )}

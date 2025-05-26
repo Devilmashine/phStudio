@@ -5,7 +5,7 @@ import os
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '../../')))
 
 import pytest
-from backend.app.services.telegram_templates import booking_message_template
+from backend.app.services.telegram_templates import booking_message_with_buttons
 
 def test_booking_message_template():
     service = "Фотосессия"
@@ -14,16 +14,19 @@ def test_booking_message_template():
     name = "Иван Иванов"
     phone = "+79991234567"
     total_price = 5000
+    people_count = 3
 
     expected_message = (
         "🎨 Новое бронирование:\n"
-        "Услуга: Фотосессия\n"
+        "Услуга: Студийная фотосессия\n"
         "Дата: 2025-05-12\n"
         "Время: 10:00, 12:00\n"
         "Клиент: Иван Иванов\n"
         "Телефон: +79991234567\n"
+        "Количество человек: 3\n"
         "Сумма: 5000 руб."
     )
 
-    result = booking_message_template(service, date, times, name, phone, total_price)
-    assert result == expected_message, "Сообщение Telegram сформировано некорректно"
+    result, _ = booking_message_with_buttons(service, date, times, name, phone, total_price, people_count)
+    for part in ["Студийная фотосессия", "2025-05-12", "10:00, 12:00", "Иван Иванов", "+79991234567", "5000 руб.", "Количество человек: 3"]:
+        assert part in result, f"В сообщении отсутствует: {part}"

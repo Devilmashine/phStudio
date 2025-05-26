@@ -3,8 +3,8 @@ import logging
 logger = logging.getLogger(__name__)
 
 # Шаблон сообщения для Telegram (только одно упоминание клиента)
-def booking_message_with_buttons(service, date, times, name, phone, total_price):
-    logger.info(f"Получены данные: service={service}, date={date}, times={times}, name={name}, phone={phone}, total_price={total_price}")
+def booking_message_with_buttons(service, date, times, name, phone, total_price, people_count):
+    logger.info(f"Получены данные: service={service}, date={date}, times={times}, name={name}, phone={phone}, total_price={total_price}, people_count={people_count}")
     # Жёстко фиксируем услугу как 'Студийная фотосессия' для всех сообщений
     fixed_service = 'Студийная фотосессия'
     # Явная строгая валидация всех параметров
@@ -28,9 +28,12 @@ def booking_message_with_buttons(service, date, times, name, phone, total_price)
     if price_val <= 0:
         logger.error(f"Цена должна быть больше 0, получено: {total_price}")
         raise ValueError("Цена должна быть больше 0")
+    if people_count is None or not isinstance(people_count, int) or people_count < 1:
+        logger.error(f"Некорректное количество человек: {people_count}")
+        raise ValueError("Количество человек обязательно и должно быть положительным целым числом")
     price_str = f"{price_val} руб."
     phone = phone if phone else 'Не указан'
-    logger.debug(f"Обновленные данные: phone={phone}, total_price={price_str}")
+    logger.debug(f"Обновленные данные: phone={phone}, total_price={price_str}, people_count={people_count}")
     message = (
         f"🎨 Новое бронирование:\n"
         f"Услуга: {fixed_service}\n"
@@ -38,6 +41,7 @@ def booking_message_with_buttons(service, date, times, name, phone, total_price)
         f"Время: {', '.join(times)}\n"
         f"Клиент: {name}\n"
         f"Телефон: {phone}\n"
+        f"Количество человек: {people_count}\n"
         f"Сумма: {price_str}"
     )
     buttons = [

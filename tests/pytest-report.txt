@@ -2,39 +2,121 @@
 platform linux -- Python 3.12.1, pytest-8.3.5, pluggy-1.5.0 -- /usr/local/python/3.12.1/bin/python3
 cachedir: .pytest_cache
 rootdir: /workspaces/phStudio
-plugins: anyio-4.9.0, time-machine-2.16.0
-collecting ... collected 35 items
+plugins: anyio-4.9.0, asyncio-0.26.0, time-machine-2.16.0
+asyncio: mode=Mode.STRICT, asyncio_default_fixture_loop_scope=None, asyncio_default_test_loop_scope=function
+collecting ... collected 36 items
 
 backend/tests/test_telegram_notifications.py::test_booking_message_template PASSED [  2%]
 tests/test_api_endpoints.py::test_get_available_slots PASSED             [  5%]
 tests/test_api_endpoints.py::test_get_calendar_events PASSED             [  8%]
 tests/test_api_endpoints.py::test_create_booking_and_notify PASSED       [ 11%]
-tests/test_api_endpoints.py::test_create_calendar_event_and_notify PASSED [ 14%]
-tests/test_api_endpoints.py::test_send_telegram_notification PASSED      [ 17%]
-tests/test_api_endpoints.py::test_calendar_event_missing_fields PASSED   [ 20%]
-tests/test_api_endpoints.py::test_booking_missing_fields FAILED          [ 22%]
+tests/test_api_endpoints.py::test_create_calendar_event_and_notify PASSED [ 13%]
+tests/test_api_endpoints.py::test_send_telegram_notification PASSED      [ 16%]
+tests/test_api_endpoints.py::test_calendar_event_missing_fields PASSED   [ 19%]
+tests/test_api_endpoints.py::test_booking_missing_fields PASSED          [ 22%]
+tests/test_auth.py::test_require_role_admin PASSED                       [ 25%]
+tests/test_auth.py::test_require_role_forbidden PASSED                   [ 27%]
+tests/test_booking_data_flow.py::test_create_booking_full_flow PASSED    [ 30%]
+tests/test_booking_data_flow.py::test_create_calendar_event_full_flow PASSED [ 33%]
+tests/test_booking_data_flow.py::test_booking_missing_fields PASSED      [ 36%]
+tests/test_booking_data_flow.py::test_calendar_event_missing_fields PASSED [ 38%]
+tests/test_booking_data_flow.py::test_telegram_notify PASSED             [ 41%]
+tests/test_booking_message.py::TestBookingMessageWithButtons::test_booking_message_with_empty_name FAILED [ 44%]
+tests/test_booking_message.py::TestBookingMessageWithButtons::test_booking_message_with_empty_phone FAILED [ 47%]
+tests/test_booking_message.py::TestBookingMessageWithButtons::test_booking_message_with_missing_phone_and_price FAILED [ 50%]
+tests/test_booking_message.py::TestBookingMessageWithButtons::test_booking_message_with_valid_data FAILED [ 52%]
+tests/test_booking_message.py::TestBookingMessageWithButtons::test_booking_message_with_zero_price FAILED [ 55%]
 
 =================================== FAILURES ===================================
-_________________________ test_booking_missing_fields __________________________
+______ TestBookingMessageWithButtons.test_booking_message_with_empty_name ______
 
-    def test_booking_missing_fields():
-        payload = {
-            "date": "2025-05-22",
-            "times": [],
-            "name": "",
-            "phone": "",
-            "total_price": 0
-        }
-        resp = client.post("/api/bookings", json=payload)
-        assert resp.status_code == 400
-        detail = resp.json().get("detail", "")
->       assert "обязателен" in detail or "должны быть указаны" in detail
-E       AssertionError: assert ('обязателен' in '400: Имя клиента обязательно' or 'должны быть указаны' in '400: Имя клиента обязательно')
+self = <tests.test_booking_message.TestBookingMessageWithButtons testMethod=test_booking_message_with_empty_name>
 
-tests/test_api_endpoints.py:95: AssertionError
------------------------------- Captured log call -------------------------------
-ERROR    backend.app.main:main.py:247 Ошибка создания бронирования: 400: Имя клиента обязательно
+    def test_booking_message_with_empty_name(self):
+        service = "Студийная фотосессия"
+        date = "2025-05-12"
+        times = ["10:00", "12:00"]
+        name = ""
+        phone = "+79991234567"
+        total_price = 5000
+    
+        with self.assertRaises(ValueError):
+>           booking_message_with_buttons(service, date, times, name, phone, total_price)
+E           TypeError: booking_message_with_buttons() missing 1 required positional argument: 'people_count'
+
+tests/test_booking_message.py:50: TypeError
+_____ TestBookingMessageWithButtons.test_booking_message_with_empty_phone ______
+
+self = <tests.test_booking_message.TestBookingMessageWithButtons testMethod=test_booking_message_with_empty_phone>
+
+    def test_booking_message_with_empty_phone(self):
+        service = "Студийная фотосессия"
+        date = "2025-05-12"
+        times = ["10:00", "12:00"]
+        name = "Иван Иванов"
+        phone = ""
+        total_price = 5000
+    
+        with self.assertRaises(ValueError):
+>           booking_message_with_buttons(service, date, times, name, phone, total_price)
+E           TypeError: booking_message_with_buttons() missing 1 required positional argument: 'people_count'
+
+tests/test_booking_message.py:61: TypeError
+_ TestBookingMessageWithButtons.test_booking_message_with_missing_phone_and_price _
+
+self = <tests.test_booking_message.TestBookingMessageWithButtons testMethod=test_booking_message_with_missing_phone_and_price>
+
+    def test_booking_message_with_missing_phone_and_price(self):
+        service = "Студийная фотосессия"
+        date = "2025-05-12"
+        times = ["10:00", "12:00"]
+        name = "Иван Иванов"
+        phone = None
+        total_price = 0
+    
+        with self.assertRaises(ValueError):
+>           booking_message_with_buttons(service, date, times, name, phone, total_price)
+E           TypeError: booking_message_with_buttons() missing 1 required positional argument: 'people_count'
+
+tests/test_booking_message.py:39: TypeError
+______ TestBookingMessageWithButtons.test_booking_message_with_valid_data ______
+
+self = <tests.test_booking_message.TestBookingMessageWithButtons testMethod=test_booking_message_with_valid_data>
+
+    def test_booking_message_with_valid_data(self):
+        service = "Студийная фотосессия"
+        date = "2025-05-12"
+        times = ["10:00", "12:00"]
+        name = "Иван Иванов"
+        phone = "+79991234567"
+        total_price = 5000
+    
+>       message, buttons = booking_message_with_buttons(service, date, times, name, phone, total_price)
+E       TypeError: booking_message_with_buttons() missing 1 required positional argument: 'people_count'
+
+tests/test_booking_message.py:13: TypeError
+______ TestBookingMessageWithButtons.test_booking_message_with_zero_price ______
+
+self = <tests.test_booking_message.TestBookingMessageWithButtons testMethod=test_booking_message_with_zero_price>
+
+    def test_booking_message_with_zero_price(self):
+        service = "Студийная фотосессия"
+        date = "2025-05-12"
+        times = ["10:00", "12:00"]
+        name = "Иван Иванов"
+        phone = "+79991234567"
+        total_price = 0
+    
+        with self.assertRaises(ValueError) as exc:
+>           booking_message_with_buttons(service, date, times, name, phone, total_price)
+E           TypeError: booking_message_with_buttons() missing 1 required positional argument: 'people_count'
+
+tests/test_booking_message.py:72: TypeError
 =========================== short test summary info ============================
-FAILED tests/test_api_endpoints.py::test_booking_missing_fields - AssertionEr...
-!!!!!!!!!!!!!!!!!!!!!!!!!! stopping after 1 failures !!!!!!!!!!!!!!!!!!!!!!!!!!!
-==================== 1 failed, 7 passed, 1 warning in 2.29s ====================
+FAILED tests/test_booking_message.py::TestBookingMessageWithButtons::test_booking_message_with_empty_name
+FAILED tests/test_booking_message.py::TestBookingMessageWithButtons::test_booking_message_with_empty_phone
+FAILED tests/test_booking_message.py::TestBookingMessageWithButtons::test_booking_message_with_missing_phone_and_price
+FAILED tests/test_booking_message.py::TestBookingMessageWithButtons::test_booking_message_with_valid_data
+FAILED tests/test_booking_message.py::TestBookingMessageWithButtons::test_booking_message_with_zero_price
+!!!!!!!!!!!!!!!!!!!!!!!!!! stopping after 5 failures !!!!!!!!!!!!!!!!!!!!!!!!!!!
+========================= 5 failed, 15 passed in 4.07s =========================
