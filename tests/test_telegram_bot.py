@@ -24,7 +24,8 @@ class TestTelegramBotService(unittest.IsolatedAsyncioTestCase):
                 times=times,
                 name=name,
                 phone=phone,
-                total_price=total_price
+                total_price=total_price,
+                people_count=2
             )
 
             self.assertTrue(result)

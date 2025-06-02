@@ -17,6 +17,7 @@ import os
 from logging.handlers import RotatingFileHandler
 from backend.api.routes.calendar import router as calendar_router
 from backend.api.routes.telegram import router as telegram_router
+from backend.app.api.routes.calendar_events import router as calendar_events_router
 from typing import List, Dict, Any
 from backend.app.services.telegram_templates import booking_message_with_buttons
 import sentry_sdk
@@ -57,6 +58,7 @@ from backend.app.services.telegram_bot import TelegramBotService
 app = FastAPI()
 app.include_router(calendar_router)
 app.include_router(telegram_router)
+app.include_router(calendar_events_router)
 
 # Настройка CORS
 app.add_middleware(

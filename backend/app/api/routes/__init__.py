@@ -1,3 +1,3 @@
-from . import booking, calendar, telegram
+from . import booking, calendar, telegram, calendar_events
 
-__all__ = ['booking', 'calendar', 'telegram']
+__all__ = ['booking', 'calendar', 'telegram', 'calendar_events']

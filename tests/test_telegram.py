@@ -28,7 +28,8 @@ async def test_send_booking_notification(monkeypatch):
         times=["10:00", "11:00"],
         name="Тест Клиент",
         phone="+79998887766",
-        total_price=2500
+        total_price=2500,
+        people_count=2
     )
     assert result is True
 

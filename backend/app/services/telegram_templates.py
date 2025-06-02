@@ -20,6 +20,9 @@ def booking_message_with_buttons(service, date, times, name, phone, total_price,
     if not phone or not isinstance(phone, str) or not phone.strip():
         logger.error("Телефон клиента обязателен и должен быть строкой")
         raise ValueError("Телефон клиента обязателен и должен быть строкой")
+    if not service or not isinstance(service, str) or not service.strip():
+        logger.error("Параметр 'service' обязателен и должен быть строкой")
+        raise ValueError("Параметр 'service' обязателен и должен быть строкой")
     try:
         price_val = int(total_price)
     except Exception as e:

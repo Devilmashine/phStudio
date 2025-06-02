@@ -1,0 +1,4 @@
+
+> luxe-studio@0.0.0 test
+> jest --config jest.config.js --no-cache
+

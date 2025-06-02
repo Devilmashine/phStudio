@@ -14,6 +14,7 @@ const BookingPage: React.FC = () => {
     client_phone: '',
     client_email: '',
     notes: '',
+    people_count: 1, // добавлено обязательное поле
   });
 
   useEffect(() => {
@@ -65,6 +66,7 @@ const BookingPage: React.FC = () => {
         start_time: selectedTime,
         end_time: endTime,
         total_price: totalPrice,
+        people_count: formData.people_count, // обязательно
         ...formData,
       });
 
@@ -170,6 +172,21 @@ const BookingPage: React.FC = () => {
             onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
             className="w-full px-4 py-2 border rounded-md"
             rows={4}
+          />
+        </div>
+
+        <div>
+          <label htmlFor="people_count" className="block text-sm font-medium text-gray-700 mb-2">
+            Количество человек
+          </label>
+          <input
+            id="people_count"
+            type="number"
+            min={1}
+            value={formData.people_count}
+            onChange={e => setFormData({ ...formData, people_count: Number(e.target.value) })}
+            className="w-full px-4 py-2 border rounded-md"
+            required
           />
         </div>
 

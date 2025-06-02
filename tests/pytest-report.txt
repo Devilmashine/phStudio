@@ -1,122 +1,19 @@
 ============================= test session starts ==============================
-platform linux -- Python 3.12.1, pytest-8.3.5, pluggy-1.5.0 -- /usr/local/python/3.12.1/bin/python3
-cachedir: .pytest_cache
+platform linux -- Python 3.12.1, pytest-8.3.5, pluggy-1.5.0
 rootdir: /workspaces/phStudio
+configfile: pytest.ini
 plugins: anyio-4.9.0, asyncio-0.26.0, time-machine-2.16.0
-asyncio: mode=Mode.STRICT, asyncio_default_fixture_loop_scope=None, asyncio_default_test_loop_scope=function
-collecting ... collected 36 items
+asyncio: mode=Mode.STRICT, asyncio_default_fixture_loop_scope=function, asyncio_default_test_loop_scope=function
+collected 36 items
 
-backend/tests/test_telegram_notifications.py::test_booking_message_template PASSED [  2%]
-tests/test_api_endpoints.py::test_get_available_slots PASSED             [  5%]
-tests/test_api_endpoints.py::test_get_calendar_events PASSED             [  8%]
-tests/test_api_endpoints.py::test_create_booking_and_notify PASSED       [ 11%]
-tests/test_api_endpoints.py::test_create_calendar_event_and_notify PASSED [ 13%]
-tests/test_api_endpoints.py::test_send_telegram_notification PASSED      [ 16%]
-tests/test_api_endpoints.py::test_calendar_event_missing_fields PASSED   [ 19%]
-tests/test_api_endpoints.py::test_booking_missing_fields PASSED          [ 22%]
-tests/test_auth.py::test_require_role_admin PASSED                       [ 25%]
-tests/test_auth.py::test_require_role_forbidden PASSED                   [ 27%]
-tests/test_booking_data_flow.py::test_create_booking_full_flow PASSED    [ 30%]
-tests/test_booking_data_flow.py::test_create_calendar_event_full_flow PASSED [ 33%]
-tests/test_booking_data_flow.py::test_booking_missing_fields PASSED      [ 36%]
-tests/test_booking_data_flow.py::test_calendar_event_missing_fields PASSED [ 38%]
-tests/test_booking_data_flow.py::test_telegram_notify PASSED             [ 41%]
-tests/test_booking_message.py::TestBookingMessageWithButtons::test_booking_message_with_empty_name FAILED [ 44%]
-tests/test_booking_message.py::TestBookingMessageWithButtons::test_booking_message_with_empty_phone FAILED [ 47%]
-tests/test_booking_message.py::TestBookingMessageWithButtons::test_booking_message_with_missing_phone_and_price FAILED [ 50%]
-tests/test_booking_message.py::TestBookingMessageWithButtons::test_booking_message_with_valid_data FAILED [ 52%]
-tests/test_booking_message.py::TestBookingMessageWithButtons::test_booking_message_with_zero_price FAILED [ 55%]
+backend/tests/test_telegram_notifications.py .                           [  2%]
+tests/test_api_endpoints.py .......                                      [ 22%]
+tests/test_auth.py ..                                                    [ 27%]
+tests/test_booking_data_flow.py .....                                    [ 41%]
+tests/test_booking_message.py .....                                      [ 55%]
+tests/test_calendar.py ....                                              [ 66%]
+tests/test_telegram.py ..                                                [ 72%]
+tests/test_telegram_bot.py ..                                            [ 77%]
+tests/test_telegram_templates.py ........                                [100%]
 
-=================================== FAILURES ===================================
-______ TestBookingMessageWithButtons.test_booking_message_with_empty_name ______
-
-self = <tests.test_booking_message.TestBookingMessageWithButtons testMethod=test_booking_message_with_empty_name>
-
-    def test_booking_message_with_empty_name(self):
-        service = "Студийная фотосессия"
-        date = "2025-05-12"
-        times = ["10:00", "12:00"]
-        name = ""
-        phone = "+79991234567"
-        total_price = 5000
-    
-        with self.assertRaises(ValueError):
->           booking_message_with_buttons(service, date, times, name, phone, total_price)
-E           TypeError: booking_message_with_buttons() missing 1 required positional argument: 'people_count'
-
-tests/test_booking_message.py:50: TypeError
-_____ TestBookingMessageWithButtons.test_booking_message_with_empty_phone ______
-
-self = <tests.test_booking_message.TestBookingMessageWithButtons testMethod=test_booking_message_with_empty_phone>
-
-    def test_booking_message_with_empty_phone(self):
-        service = "Студийная фотосессия"
-        date = "2025-05-12"
-        times = ["10:00", "12:00"]
-        name = "Иван Иванов"
-        phone = ""
-        total_price = 5000
-    
-        with self.assertRaises(ValueError):
->           booking_message_with_buttons(service, date, times, name, phone, total_price)
-E           TypeError: booking_message_with_buttons() missing 1 required positional argument: 'people_count'
-
-tests/test_booking_message.py:61: TypeError
-_ TestBookingMessageWithButtons.test_booking_message_with_missing_phone_and_price _
-
-self = <tests.test_booking_message.TestBookingMessageWithButtons testMethod=test_booking_message_with_missing_phone_and_price>
-
-    def test_booking_message_with_missing_phone_and_price(self):
-        service = "Студийная фотосессия"
-        date = "2025-05-12"
-        times = ["10:00", "12:00"]
-        name = "Иван Иванов"
-        phone = None
-        total_price = 0
-    
-        with self.assertRaises(ValueError):
->           booking_message_with_buttons(service, date, times, name, phone, total_price)
-E           TypeError: booking_message_with_buttons() missing 1 required positional argument: 'people_count'
-
-tests/test_booking_message.py:39: TypeError
-______ TestBookingMessageWithButtons.test_booking_message_with_valid_data ______
-
-self = <tests.test_booking_message.TestBookingMessageWithButtons testMethod=test_booking_message_with_valid_data>
-
-    def test_booking_message_with_valid_data(self):
-        service = "Студийная фотосессия"
-        date = "2025-05-12"
-        times = ["10:00", "12:00"]
-        name = "Иван Иванов"
-        phone = "+79991234567"
-        total_price = 5000
-    
->       message, buttons = booking_message_with_buttons(service, date, times, name, phone, total_price)
-E       TypeError: booking_message_with_buttons() missing 1 required positional argument: 'people_count'
-
-tests/test_booking_message.py:13: TypeError
-______ TestBookingMessageWithButtons.test_booking_message_with_zero_price ______
-
-self = <tests.test_booking_message.TestBookingMessageWithButtons testMethod=test_booking_message_with_zero_price>
-
-    def test_booking_message_with_zero_price(self):
-        service = "Студийная фотосессия"
-        date = "2025-05-12"
-        times = ["10:00", "12:00"]
-        name = "Иван Иванов"
-        phone = "+79991234567"
-        total_price = 0
-    
-        with self.assertRaises(ValueError) as exc:
->           booking_message_with_buttons(service, date, times, name, phone, total_price)
-E           TypeError: booking_message_with_buttons() missing 1 required positional argument: 'people_count'
-
-tests/test_booking_message.py:72: TypeError
-=========================== short test summary info ============================
-FAILED tests/test_booking_message.py::TestBookingMessageWithButtons::test_booking_message_with_empty_name
-FAILED tests/test_booking_message.py::TestBookingMessageWithButtons::test_booking_message_with_empty_phone
-FAILED tests/test_booking_message.py::TestBookingMessageWithButtons::test_booking_message_with_missing_phone_and_price
-FAILED tests/test_booking_message.py::TestBookingMessageWithButtons::test_booking_message_with_valid_data
-FAILED tests/test_booking_message.py::TestBookingMessageWithButtons::test_booking_message_with_zero_price
-!!!!!!!!!!!!!!!!!!!!!!!!!! stopping after 5 failures !!!!!!!!!!!!!!!!!!!!!!!!!!!
-========================= 5 failed, 15 passed in 4.07s =========================
+======================== 36 passed, 3 warnings in 4.57s ========================
