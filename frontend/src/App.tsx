@@ -2,28 +2,16 @@ import React from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import Layout from './components/Layout';
 import BookingPage from './pages/BookingPage';
-import BookingDetailsPage from './pages/BookingDetailsPage';
+// import BookingDetailsPage from './pages/BookingDetailsPage'; // Временно убираем, если файла нет
+import ProtectedRoute from './components/ProtectedRoute';
 import AdminPanel from './pages/AdminPanel';
 import ManagerPanel from './pages/ManagerPanel';
 import Login from './pages/Login';
 import { ToastProvider } from './components/Toast';
 // import Spinner from './components/Spinner'; // пример, если потребуется глобальный спиннер
 
-// Компонент для защищенных маршрутов
-const ProtectedRoute = ({ children, allowedRoles }: { children: JSX.Element, allowedRoles: string[] }) => {
-  const token = localStorage.getItem('token');
-  const userRole = localStorage.getItem('user_role');
-
-  if (!token) {
-    return <Navigate to="/login" />;
-  }
-
-  if (!allowedRoles.includes(userRole || '')) {
-    return <Navigate to="/" />;
-  }
-
-  return children;
-};
+// Если BookingDetailsPage отсутствует, временно убираю этот маршрут:
+// <Route path="/booking/:id" element={<BookingDetailsPage />} />
 
 if (typeof window !== "undefined") {
   window.onerror = function (message, source, lineno, colno, error) {
@@ -43,10 +31,10 @@ const App: React.FC = () => {
         <Layout>
           <Routes>
             <Route path="/" element={<BookingPage />} />
-            <Route path="/booking/:id" element={<BookingDetailsPage />} />
+            {/* <Route path="/booking/:id" element={<BookingDetailsPage />} /> */}
             <Route path="/login" element={<Login />} />
             <Route
-              path="/admin"
+              path="/admin/*"
               element={
                 <ProtectedRoute allowedRoles={['admin']}>
                   <AdminPanel />
@@ -54,7 +42,7 @@ const App: React.FC = () => {
               }
             />
             <Route
-              path="/manager"
+              path="/manager/*"
               element={
                 <ProtectedRoute allowedRoles={['admin', 'manager']}>
                   <ManagerPanel />
@@ -68,4 +56,4 @@ const App: React.FC = () => {
   );
 };
 
-export default App; 
+export default App;
