@@ -18,6 +18,11 @@ from logging.handlers import RotatingFileHandler
 from backend.api.routes.calendar import router as calendar_router
 from backend.api.routes.telegram import router as telegram_router
 from backend.app.api.routes.calendar_events import router as calendar_events_router
+from backend.app.api.routes.settings import router as settings_router
+from backend.app.api.routes.gallery import router as gallery_router
+from backend.app.api.routes.news import router as news_router
+from backend.app.api.routes.auth import router as auth_router
+from backend.app.api.routes.booking import router as booking_router
 from typing import List, Dict, Any
 from backend.app.services.telegram_templates import booking_message_with_buttons
 import sentry_sdk
@@ -59,11 +64,21 @@ app = FastAPI()
 app.include_router(calendar_router)
 app.include_router(telegram_router)
 app.include_router(calendar_events_router)
+app.include_router(settings_router, prefix="/api/settings", tags=["settings"])
+app.include_router(gallery_router, prefix="/api/gallery", tags=["gallery"])
+app.include_router(news_router, prefix="/api/news", tags=["news"])
+app.include_router(auth_router, prefix="/api")
+app.include_router(booking_router, prefix="/api/bookings", tags=["bookings"])
 
 # Настройка CORS
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:5173", "http://localhost:3000"],
+    allow_origins=[
+        "http://localhost:5173",
+        "http://localhost:3000",
+        "https://laughing-waffle-g7xxww4jqwwcg7q-5173.app.github.dev",
+        "https://laughing-waffle-g7xxww4jqwwcg7q.app.github.dev:8000"
+    ],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],

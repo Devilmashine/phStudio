@@ -62,6 +62,40 @@ POST /api/clients
 GET /api/users
 ```
 
+## StudioSettings (Настройки студии)
+
+### GET /api/settings/
+- Получить текущие настройки студии (требуется роль admin/manager)
+- Ответ: объект StudioSettings
+
+### POST /api/settings/
+- Создать настройки студии (только для admin, если не существует)
+- Тело запроса: StudioSettingsCreate
+- Ответ: объект StudioSettings
+
+### PUT /api/settings/
+- Обновить настройки студии (только для admin)
+- Тело запроса: StudioSettingsUpdate
+- Ответ: объект StudioSettings
+
+#### Пример объекта StudioSettings
+```json
+{
+  "id": 1,
+  "work_days": ["mon", "tue", "wed", "thu", "fri"],
+  "work_start_time": "09:00",
+  "work_end_time": "20:00",
+  "base_price_per_hour": 2500,
+  "weekend_price_multiplier": 1.5,
+  "telegram_notifications_enabled": true,
+  "email_notifications_enabled": true,
+  "holidays": ["2025-01-01"],
+  "min_booking_duration": 1,
+  "max_booking_duration": 8,
+  "advance_booking_days": 30
+}
+```
+
 ---
 
 ## Примечания

@@ -1,12 +1,12 @@
 import { defineConfig } from 'vite';
 import react from '@vitejs/plugin-react';
 import { nodePolyfills } from 'vite-plugin-node-polyfills';
+import { resolve } from 'path';
 
 export default defineConfig({
   plugins: [
     react(),
     nodePolyfills({
-      // Укажите необходимые полифиллы
       globals: {
         Buffer: true,
         global: true,
@@ -14,6 +14,15 @@ export default defineConfig({
       },
     }),
   ],
+  root: 'frontend',
+  build: {
+    outDir: '../dist',
+    rollupOptions: {
+      input: {
+        main: resolve(__dirname, 'frontend/index.html'),
+      },
+    },
+  },
   server: {
     proxy: {
       '/api': 'http://localhost:8000',

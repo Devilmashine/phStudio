@@ -7,6 +7,7 @@ from pydantic import BaseModel
 class UserRole(str, Enum):
     user = "user"
     admin = "admin"
+    manager = "manager"
 
 class UserSchema(BaseModel):
     username: str

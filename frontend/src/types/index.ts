@@ -1,62 +1,61 @@
-export interface User {
+import { AvailabilityState } from '../services/google/calendar';
+
+export interface Studio {
   id: number;
-  username: string;
-  email: string;
-  role: UserRole;
-  full_name: string;
-  created_at: string;
-  last_login: string | null;
+  name: string;
+  description: string;
+  size: string;
+  pricePerHour: number;
+  features: StudioFeature[];
+  equipment: string[];
+  images: string[];
 }
 
-export enum UserRole {
-  ADMIN = 'admin',
-  MANAGER = 'manager',
+export interface StudioFeature {
+  id: string;
+  title: string;
+  description: string;
+  icon: string;
 }
 
-export interface Booking {
-  id: number;
+export interface TimeSlot {
+  time: string;
+  isBooked: boolean;
+  bookedPercentage?: number;
+  state?: AvailabilityState;
+}
+
+export enum DateAvailabilityStatusType {
+  AVAILABLE = 'available',
+  PARTIALLY_BOOKED = 'partially-booked',
+  FULLY_BOOKED = 'fully-booked',
+  UNKNOWN = 'unknown'
+}
+
+export interface BookingSlot {
   date: string;
-  start_time: string;
-  end_time: string;
-  status: BookingStatus;
-  client_name: string;
-  client_phone: string;
-  client_email: string;
-  total_price: number;
-  notes: string;
-  created_at: string;
-  updated_at: string;
+  startTime: string;
+  endTime: string;
+  available: boolean;
+  bookedPercentage: number;
+  state?: AvailabilityState;
 }
 
-export enum BookingStatus {
-  PENDING = 'pending',
-  CONFIRMED = 'confirmed',
-  CANCELLED = 'cancelled',
-  COMPLETED = 'completed',
+export interface BookingData {
+  id?: string;
+  date: string;
+  times: string[];
+  name: string;
+  phone: string;
+  totalPrice: number;
+  service?: string;
+  status?: 'pending' | 'confirmed' | 'cancelled';
+  studioId?: number;
 }
 
-export interface Statistics {
-  total_bookings: number;
-  total_hours: number;
-  total_revenue: number;
-  time_distribution: {
-    morning: number;
-    afternoon: number;
-    evening: number;
-  };
-  average_duration: number;
-  success_rate: number;
-  cancellation_rate: number;
-  popular_slots: Array<{
-    slot: string;
-    count: number;
-  }>;
-  new_vs_returning: {
-    new: number;
-    returning: number;
-  };
-  notification_stats: {
-    total_sent: number;
-    total_pending: number;
-  };
-} 
+export interface DayAvailability {
+  date: string;
+  isAvailable: boolean;
+  status: DateAvailabilityStatusType;
+  slots: BookingSlot[];
+}
