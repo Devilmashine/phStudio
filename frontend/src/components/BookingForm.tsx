@@ -61,18 +61,21 @@ const InputField = React.memo(({
   required = true, 
   error 
 }: InputFieldProps) => (
-  <div>
-    <label className="block text-sm font-medium text-gray-700 mb-2">{label}</label>
+  <div className="w-full">
+    <label className="block text-sm font-medium text-gray-700 mb-2" htmlFor={label}>{label}</label>
     <input
+      id={label}
       type={type}
       value={value}
       onChange={onChange}
       className={`w-full p-3 border ${
         error ? 'border-red-500' : 'border-gray-300'
-      } rounded-lg focus:ring-2 focus:ring-indigo-500`}
+      } rounded-lg focus:ring-2 focus:ring-indigo-500 focus:outline-none transition-colors duration-150`}
       required={required}
+      aria-invalid={!!error}
+      aria-describedby={error ? `${label}-error` : undefined}
     />
-    {error && <p className="text-red-500 text-xs mt-1">{error}</p>}
+    {error && <p id={`${label}-error`} className="text-red-500 text-xs mt-1" role="alert">{error}</p>}
   </div>
 ));
 
@@ -86,13 +89,14 @@ interface CheckboxFieldProps {
 }
 
 const CheckboxField = React.memo(({ checked, onChange, label, linkText, onLinkClick }: CheckboxFieldProps) => (
-  <label className="flex items-start space-x-3">
+  <label className="flex items-start space-x-3 cursor-pointer select-none">
     <input
       type="checkbox"
       checked={checked}
       onChange={onChange}
-      className="mt-1"
+      className="mt-1 accent-indigo-600 focus:ring-2 focus:ring-indigo-500 focus:outline-none transition-colors"
       required
+      aria-checked={checked}
     />
     <span className="text-sm text-gray-600">
       {label}{' '}
@@ -100,7 +104,8 @@ const CheckboxField = React.memo(({ checked, onChange, label, linkText, onLinkCl
         <button
           type="button"
           onClick={onLinkClick}
-          className="text-indigo-600 hover:underline"
+          className="text-indigo-600 hover:underline focus:outline-none focus:ring-2 focus:ring-indigo-500 rounded"
+          tabIndex={0}
         >
           {linkText}
         </button>
@@ -244,15 +249,14 @@ export default function BookingForm() {
   };
 
   return (
-    <section id="booking" className="py-20">
-      <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="text-center mb-16">
-          <h2 className="text-4xl font-bold text-gray-900 mb-4">Забронировать студию</h2>
-          <p className="text-xl text-gray-600">Выберите удобное время для съёмки</p>
+    <section id="booking" className="py-10 sm:py-16 md:py-20">
+      <div className="max-w-6xl mx-auto px-2 sm:px-4 md:px-6 lg:px-8">
+        <div className="text-center mb-10 md:mb-16">
+          <h2 className="text-3xl sm:text-4xl font-bold text-gray-900 mb-2 md:mb-4">Забронировать студию</h2>
+          <p className="text-base sm:text-xl text-gray-600">Выберите удобное время для съёмки</p>
         </div>
-        
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-12">
-          <div className="space-y-6">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 md:gap-12 items-start">
+          <div className="space-y-6 sticky top-4 z-10">
             <Calendar
               selectedDate={selectedDate}
               onChange={(date) => {
@@ -260,17 +264,17 @@ export default function BookingForm() {
                 setSelectedTimes([]);
               }}
             />
-
             {selectedDate && (
-              <TimeSlots
-                date={selectedDate}
-                selectedTimes={selectedTimes}
-                onSelectTime={handleTimeSelect}
-              />
+              <div className="overflow-x-auto">
+                <TimeSlots
+                  date={selectedDate}
+                  selectedTimes={selectedTimes}
+                  onSelectTime={handleTimeSelect}
+                />
+              </div>
             )}
           </div>
-
-          <form onSubmit={handleSubmit} className="space-y-6 bg-white p-8 rounded-xl shadow-lg">
+          <form onSubmit={handleSubmit} className="space-y-6 bg-white p-4 sm:p-6 md:p-8 rounded-xl shadow-lg w-full max-w-lg mx-auto lg:mx-0 overflow-auto" role="form" aria-label="Форма бронирования">
             <InputField
               label="Ваше имя"
               value={name}
@@ -292,7 +296,6 @@ export default function BookingForm() {
               required
               error={peopleError}
             />
-
             <div className="bg-gray-50 p-4 rounded-lg">
               <h4 className="font-medium text-gray-900 mb-2">Детали бронирования</h4>
               <div className="space-y-2 text-sm text-gray-600">
@@ -307,7 +310,6 @@ export default function BookingForm() {
                 </p>
               </div>
             </div>
-
             <div className="space-y-4">
               <CheckboxField
                 checked={termsAccepted}
@@ -331,7 +333,6 @@ export default function BookingForm() {
                 onLinkClick={() => setShowStudioRulesModal(true)}
               />
             </div>
-
             <button
               type="submit"
               disabled={
@@ -345,8 +346,16 @@ export default function BookingForm() {
                 !!peopleError ||
                 isSubmitting
               }
-              className="w-full bg-indigo-600 text-white py-3 rounded-lg hover:bg-indigo-700 transition-colors disabled:bg-gray-300 disabled:cursor-not-allowed"
+              className="w-full bg-indigo-600 text-white py-3 rounded-lg hover:bg-indigo-700 transition-colors disabled:bg-gray-300 disabled:cursor-not-allowed flex items-center justify-center gap-2 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+              aria-busy={isSubmitting}
+              aria-label="Забронировать студию"
             >
+              {isSubmitting && (
+                <svg className="animate-spin h-5 w-5 text-white mr-2" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" aria-hidden="true">
+                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                  <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z"></path>
+                </svg>
+              )}
               {isSubmitting ? 'Отправка...' : 'Забронировать'}
             </button>
           </form>
@@ -390,7 +399,6 @@ export default function BookingForm() {
             title="Правила студии"
           >
             <div className="prose prose-sm max-w-none">
-              {/* Здесь будут правила студии */}
               <ul className="list-disc pl-5 space-y-2">
                 <li>Максимум 5 человек бесплатно, за каждого дополнительного — 200 руб/час.</li>
                 <li>В студии запрещено курить, распивать алкоголь, использовать открытый огонь.</li>

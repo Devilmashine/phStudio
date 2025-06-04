@@ -11,7 +11,9 @@ def get_current_user(request: Request):
     if role == "admin":
         return SimpleNamespace(id=user_id or 1, username=username or "admin", role=UserRole.admin)
     elif role == "manager":
-        return SimpleNamespace(id=user_id or 2, username=username or "manager", role=UserRole.user)
+        return SimpleNamespace(id=user_id or 2, username=username or "manager", role=UserRole.manager)
+    elif role == "user":
+        return SimpleNamespace(id=user_id or 3, username=username or "user", role=UserRole.user)
     else:
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Not authenticated")
 
