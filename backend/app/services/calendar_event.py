@@ -10,8 +10,11 @@ class CalendarEventService:
     def get_event(self, event_id: int) -> Optional[CalendarEvent]:
         return self.db.query(CalendarEvent).filter(CalendarEvent.id == event_id).first()
 
-    def get_events(self, skip: int = 0, limit: int = 100) -> List[CalendarEvent]:
-        return self.db.query(CalendarEvent).offset(skip).limit(limit).all()
+    def get_events(self, skip: int = 0, limit: int = 100, status: str = None) -> List[CalendarEvent]:
+        query = self.db.query(CalendarEvent)
+        if status:
+            query = query.filter(CalendarEvent.status == status)
+        return query.offset(skip).limit(limit).all()
 
     def create_event(self, event_data: CalendarEventCreate) -> CalendarEvent:
         event = CalendarEvent(**event_data.dict())

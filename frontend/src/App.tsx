@@ -12,6 +12,7 @@ import { Gallery } from './components/Gallery';
 import NewsAdmin from './pages/NewsAdmin';
 import BookingTable from './components/BookingTable';
 import { ToastProvider } from './components/Toast';
+import AdminCalendarPage from './pages/AdminCalendarPage';
 
 const Dashboard = () => (
   <div>
@@ -60,6 +61,7 @@ function App() {
                 <Route path="gallery" element={<Gallery />} />
                 <Route path="news" element={<NewsAdmin />} />
                 <Route path="schedule" element={<div>Расписание (заглушка)</div>} />
+                <Route path="calendar" element={<AdminCalendarPage />} />
                 <Route path="*" element={<Dashboard />} />
               </Route>
               <Route path="/login" element={<Login />} />

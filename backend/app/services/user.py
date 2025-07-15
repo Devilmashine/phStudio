@@ -4,6 +4,7 @@ from sqlalchemy.exc import IntegrityError
 from fastapi import HTTPException
 from passlib.context import CryptContext
 from typing import Optional, List
+from secrets import token_urlsafe
 
 from backend.app.models.user import User, UserRole
 from backend.app.schemas.user import UserCreate, UserUpdate
@@ -33,11 +34,13 @@ class UserService:
             raise HTTPException(status_code=400, detail="Пользователь с таким email уже существует")
 
         hashed_password = pwd_context.hash(user_data.password)
+        ical_token = token_urlsafe(32)
         db_user = User(
             username=user_data.username,
             email=user_data.email,
             hashed_password=hashed_password,
             role=user_data.role,
+            ical_token=ical_token,
             full_name=user_data.full_name
         )
 

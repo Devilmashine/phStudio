@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, status, Response
 from sqlalchemy.orm import Session
 from typing import List
 from backend.app.schemas.news import News, NewsCreate, NewsUpdate
@@ -18,7 +18,7 @@ def is_admin_or_manager(user: User):
 def read_news(skip: int = 0, limit: int = 20, db: Session = Depends(get_db)):
     return get_news(db, skip=skip, limit=limit)
 
-@router.get("/{news_id}", response_model=News)
+@router.get("/{news_id}", response_model=News, responses={404: {"description": "Новость не найдена"}})
 def read_news_by_id(news_id: int, db: Session = Depends(get_db)):
     db_news = get_news_by_id(db, news_id)
     if not db_news:
@@ -44,12 +44,11 @@ def update_news_view(news_id: int, news_update: NewsUpdate, db: Session = Depend
         raise HTTPException(status_code=404, detail="Новость не найдена")
     return update_news(db, db_news, news_update)
 
-@router.delete("/{news_id}", status_code=204)
+@router.delete("/{news_id}", status_code=204, response_class=None, responses={404: {"description": "Новость не найдена"}})
 def delete_news_view(news_id: int, db: Session = Depends(get_db), current_user: User = Depends(get_current_active_user)):
     is_admin_or_manager(current_user)
     db_news = get_news_by_id(db, news_id)
     if not db_news:
         raise HTTPException(status_code=404, detail="Новость не найдена")
     delete_news(db, db_news)
-    # Возвращаем None, чтобы FastAPI корректно обработал 204 No Content
-    return None
+    return Response(status_code=204)

@@ -6,13 +6,24 @@ from backend.app.services.calendar_event import CalendarEventService
 from backend.app.schemas.calendar_event import CalendarEventCreate, CalendarEventUpdate, CalendarEventResponse
 from backend.app.models.user import User, UserRole
 from backend.app.api.routes.auth import get_current_admin, get_current_manager
+from fastapi.responses import Response, StreamingResponse
+import secrets
+from ics import Calendar, Event as IcsEvent
+from secrets import token_urlsafe
+from backend.app.models.calendar_event import CalendarEvent
 
 router = APIRouter(prefix="/calendar-events", tags=["calendar-events"])
 
 @router.get("/", response_model=List[CalendarEventResponse])
-async def get_events(skip: int = 0, limit: int = 100, db: Session = Depends(get_db), current_user: User = Depends(get_current_manager)):
+async def get_events(
+    skip: int = 0,
+    limit: int = 100,
+    status: str = None,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_manager)
+):
     service = CalendarEventService(db)
-    return service.get_events(skip=skip, limit=limit)
+    return service.get_events(skip=skip, limit=limit, status=status)
 
 @router.get("/{event_id}", response_model=CalendarEventResponse)
 async def get_event(event_id: int, db: Session = Depends(get_db), current_user: User = Depends(get_current_manager)):
@@ -42,3 +53,44 @@ async def delete_event(event_id: int, db: Session = Depends(get_db), current_use
     if not ok:
         raise HTTPException(status_code=404, detail="Событие не найдено")
     return {"message": "Событие удалено"}
+
+@router.get("/ical/{user_id}/{token}")
+async def get_ical_for_user(user_id: int, token: str, db: Session = Depends(get_db)):
+    # Проверка токена пользователя (реализовать хранение токена в User)
+    user = db.query(User).filter(User.id == user_id).first()
+    if not user or getattr(user, "ical_token", None) != token:
+        raise HTTPException(status_code=403, detail="Недействительный токен")
+    events = db.query(CalendarEvent).all()
+    cal = Calendar()
+    for e in events:
+        ics_event = IcsEvent()
+        ics_event.name = e.title
+        ics_event.begin = e.start_time
+        ics_event.end = e.end_time
+        ics_event.description = e.description or ""
+        cal.events.add(ics_event)
+    return Response(content=str(cal), media_type="text/calendar")
+
+@router.get("/{event_id}/ical")
+async def get_ical_for_event(event_id: int, db: Session = Depends(get_db)):
+    event = db.query(CalendarEvent).filter(CalendarEvent.id == event_id).first()
+    if not event:
+        raise HTTPException(status_code=404, detail="Событие не найдено")
+    cal = Calendar()
+    ics_event = IcsEvent()
+    ics_event.name = event.title
+    ics_event.begin = event.start_time
+    ics_event.end = event.end_time
+    ics_event.description = event.description or ""
+    cal.events.add(ics_event)
+    return Response(content=str(cal), media_type="text/calendar")
+
+@router.post("/ical-token/reset/{user_id}", response_model=dict)
+async def reset_ical_token(user_id: int, db: Session = Depends(get_db), current_user: User = Depends(get_current_admin)):
+    user = db.query(User).filter(User.id == user_id).first()
+    if not user:
+        raise HTTPException(status_code=404, detail="Пользователь не найден")
+    user.ical_token = token_urlsafe(32)
+    db.commit()
+    db.refresh(user)
+    return {"ical_token": user.ical_token}

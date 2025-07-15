@@ -25,3 +25,4 @@ class User(Base):
     full_name = Column(String)
     created_at = Column(String, default=lambda: datetime.now(timezone.utc).isoformat())
     last_login = Column(String, nullable=True)
+    ical_token = Column(String(64), unique=True, nullable=True)
