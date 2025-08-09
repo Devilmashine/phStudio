@@ -1,10 +1,10 @@
 from fastapi import APIRouter, Depends, HTTPException, status, Response
 from sqlalchemy.orm import Session
 from typing import List
-from backend.app.schemas.news import News, NewsCreate, NewsUpdate
-from backend.app.services.news import get_news, get_news_by_id, create_news, update_news, delete_news
-from backend.app.deps import get_db, get_current_active_user
-from backend.app.models.user import User, UserRole
+from ...schemas.news import News, NewsCreate, NewsUpdate
+from ...services.news import get_news, get_news_by_id, create_news, update_news, delete_news
+from ...deps import get_db, get_current_active_user
+from ...models.user import User, UserRole
 
 router = APIRouter(tags=["news"])  # убран prefix
 

@@ -1,11 +1,5 @@
-import sys
-import os
-
-# Добавляем путь к корню проекта для корректного импорта модулей
-sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '../../')))
-
 import pytest
-from backend.app.services.telegram_templates import booking_message_with_buttons
+from ..app.services.telegram_templates import booking_message_with_buttons
 
 def test_booking_message_template():
     service = "Фотосессия"

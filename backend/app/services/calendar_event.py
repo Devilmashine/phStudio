@@ -1,6 +1,6 @@
 from sqlalchemy.orm import Session
-from backend.app.models.calendar_event import CalendarEvent
-from backend.app.schemas.calendar_event import CalendarEventCreate, CalendarEventUpdate
+from ..models.calendar_event import CalendarEvent
+from ..schemas.calendar_event import CalendarEventCreate, CalendarEventUpdate
 from typing import List, Optional
 from datetime import datetime
 
@@ -44,7 +44,7 @@ class CalendarEventService:
         return query.offset(skip).limit(limit).all()
 
     def create_event(self, event_data: CalendarEventCreate) -> CalendarEvent:
-        event = CalendarEvent(**event_data.dict())
+        event = CalendarEvent(**event_data.model_dump())
         self.db.add(event)
         self.db.commit()
         self.db.refresh(event)
@@ -54,7 +54,7 @@ class CalendarEventService:
         event = self.get_event(event_id)
         if not event:
             return None
-        for field, value in event_data.dict(exclude_unset=True).items():
+        for field, value in event_data.model_dump(exclude_unset=True).items():
             setattr(event, field, value)
         self.db.commit()
         self.db.refresh(event)

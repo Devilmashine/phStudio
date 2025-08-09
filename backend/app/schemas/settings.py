@@ -5,9 +5,6 @@ from datetime import time
 class StudioSettingsBase(BaseModel):
     name: str = Field(..., description="Название студии")
     contacts: str = Field(..., description="Контактная информация")
-    prices: str = Field(..., description="Цены/описание цен")
-    name: str = Field(..., description="Название студии")
-    contacts: str = Field(..., description="Контактная информация")
     prices: str = Field(..., description="Цены")
     work_days: List[str] = Field(..., description="Список рабочих дней недели (например, ['mon', 'tue', ...])")
     work_start_time: str = Field(..., description="Время начала работы, формат HH:MM")
@@ -27,26 +24,36 @@ class StudioSettingsCreate(StudioSettingsBase):
 class StudioSettingsUpdate(StudioSettingsBase):
     pass
 
+from pydantic import model_validator
+
 class StudioSettings(StudioSettingsBase):
     id: int
 
-    @classmethod
-    def from_orm(cls, obj):
+    @model_validator(mode='before')
+    def deserialize_json_fields(cls, data):
         import json
-        data = dict(obj.__dict__)
-        # Десериализация work_days
-        if isinstance(data.get('work_days'), str):
-            try:
-                data['work_days'] = json.loads(data['work_days'])
-            except Exception:
-                data['work_days'] = []
-        # Десериализация holidays
-        if data.get('holidays') and isinstance(data['holidays'], str):
-            try:
-                data['holidays'] = json.loads(data['holidays'])
-            except Exception:
-                data['holidays'] = []
-        return cls(**data)
+        if hasattr(data, '_asdict'): # Проверка, если это объект ORM
+            obj_data = data._asdict()
+        elif isinstance(data, dict):
+            obj_data = data
+        else:
+            return data
 
-    class Config:
+        work_days = obj_data.get('work_days')
+        if isinstance(work_days, str):
+            try:
+                obj_data['work_days'] = json.loads(work_days)
+            except json.JSONDecodeError:
+                obj_data['work_days'] = []
+
+        holidays = obj_data.get('holidays')
+        if isinstance(holidays, str):
+            try:
+                obj_data['holidays'] = json.loads(holidays)
+            except json.JSONDecodeError:
+                obj_data['holidays'] = []
+
+        return obj_data
+
+    class ConfigDict:
         from_attributes = True

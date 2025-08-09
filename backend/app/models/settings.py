@@ -1,5 +1,5 @@
 from sqlalchemy import Column, Integer, String
-from backend.app.models.base import Base
+from .base import Base
 
 class StudioSettings(Base):
     __tablename__ = "studio_settings"

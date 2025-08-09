@@ -1,6 +1,6 @@
 from sqlalchemy.orm import Session
-from backend.app.models.news import News
-from backend.app.schemas.news import NewsCreate, NewsUpdate
+from ..models.news import News
+from ..schemas.news import NewsCreate, NewsUpdate
 from datetime import datetime
 from typing import List, Optional
 

@@ -1,6 +1,6 @@
 from sqlalchemy.orm import Session
-from backend.app.models.client import Client
-from backend.app.schemas.client import ClientCreate, ClientUpdate
+from ..models.client import Client
+from ..schemas.client import ClientCreate, ClientUpdate
 from typing import List, Optional
 
 class ClientService:
@@ -14,7 +14,7 @@ class ClientService:
         return self.db.query(Client).offset(skip).limit(limit).all()
 
     def create_client(self, client_data: ClientCreate) -> Client:
-        client = Client(**client_data.dict())
+        client = Client(**client_data.model_dump())
         self.db.add(client)
         self.db.commit()
         self.db.refresh(client)
@@ -24,7 +24,7 @@ class ClientService:
         client = self.get_client(client_id)
         if not client:
             return None
-        for field, value in client_data.dict(exclude_unset=True).items():
+        for field, value in client_data.model_dump(exclude_unset=True).items():
             setattr(client, field, value)
         self.db.commit()
         self.db.refresh(client)

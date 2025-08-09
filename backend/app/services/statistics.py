@@ -3,8 +3,8 @@ from sqlalchemy.orm import Session
 from sqlalchemy import func, and_
 from typing import List, Dict, Any
 
-from backend.app.models.booking import Booking
-from backend.app.schemas.booking import Booking as BookingSchema
+from ..models.booking import Booking
+from ..schemas.booking import Booking as BookingSchema
 
 class StatisticsService:
     def __init__(self, db: Session):

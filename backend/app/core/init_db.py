@@ -1,6 +1,6 @@
-from backend.app.core.database import engine, Base
-from backend.app.models.booking import Booking
-from backend.app.models.user import User
+from .database import engine, Base
+from ..models.booking import Booking
+from ..models.user import User
 
 def init_db():
     """Инициализация базы данных"""
