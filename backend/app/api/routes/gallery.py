@@ -1,10 +1,10 @@
 from fastapi import APIRouter, Depends, HTTPException, UploadFile, File, Form
 from sqlalchemy.orm import Session
-from backend.app.schemas.gallery import GalleryImage, GalleryImageCreate
-from backend.app.services.gallery import GalleryService
-from backend.app.core.database import get_db
-from backend.app.api.routes.auth import get_current_admin
-from backend.app.models.user import User
+from ...schemas.gallery import GalleryImage, GalleryImageCreate
+from ...services.gallery import GalleryService
+from ...core.database import get_db
+from .auth import get_current_admin
+from ...models.user import User
 from typing import List
 import os
 

@@ -1,9 +1,9 @@
 from datetime import datetime, timedelta
 from sqlalchemy.orm import Session
 from sqlalchemy import and_, or_
-from backend.app.models.calendar_event import CalendarEvent
-from backend.app.models.booking import Booking
-from backend.app.schemas.calendar_event import CalendarEventCreate, CalendarEventResponse
+from ..models.calendar_event import CalendarEvent
+from ..models.booking import Booking
+from ..schemas.calendar_event import CalendarEventCreate, CalendarEventResponse
 from typing import List, Optional
 import pytz
 

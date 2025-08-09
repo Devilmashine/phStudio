@@ -1,12 +1,12 @@
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 from typing import List
-from backend.app.core.database import get_db
-from backend.app.services.booking import BookingService
-from backend.app.schemas.booking import Booking, BookingCreate
-from backend.app.models.user import User, UserRole
-from backend.app.api.routes.auth import get_current_admin, get_current_manager
-from backend.app.services.telegram import telegram_service
+from ...core.database import get_db
+from ...services.booking import BookingService
+from ...schemas.booking import Booking, BookingCreate
+from ...models.user import User, UserRole
+from .auth import get_current_admin, get_current_manager
+from ...services.telegram import telegram_service
 
 router = APIRouter(prefix="/bookings", tags=["bookings"])
 
@@ -23,8 +23,30 @@ async def get_booking(booking_id: int, db: Session = Depends(get_db), current_us
         raise HTTPException(status_code=404, detail="Бронирование не найдено")
     return booking
 
-@router.post("/", response_model=Booking)
-async def create_booking(booking_data: BookingCreate, db: Session = Depends(get_db), current_user: User = Depends(get_current_admin)):
+@router.post("/public/", response_model=Booking, status_code=status.HTTP_201_CREATED)
+async def create_public_booking(booking_data: BookingCreate, db: Session = Depends(get_db)):
+    """
+    Публичный эндпоинт для создания бронирования клиентом.
+    Не требует аутентификации.
+    """
+    service = BookingService(db)
+    try:
+        db_booking = service.create_booking(booking_data)
+        # Отправляем уведомление в Telegram
+        await telegram_service.send_booking_notification(booking_data.model_dump())
+        return db_booking
+    except HTTPException as e:
+        raise e
+    except Exception as e:
+        # Логируем непредвиденную ошибку
+        # logger.error(f"Unexpected error creating public booking: {e}")
+        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="Произошла внутренняя ошибка при создании бронирования.")
+
+@router.post("/", response_model=Booking, dependencies=[Depends(get_current_admin)])
+async def create_booking_admin(booking_data: BookingCreate, db: Session = Depends(get_db)):
+    """
+    Эндпоинт для создания бронирования администратором.
+    """
     service = BookingService(db)
     db_booking = service.create_booking(booking_data)
     

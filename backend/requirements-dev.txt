@@ -1,0 +1,7 @@
+pytest
+pytest-asyncio
+pytest-cov
+black
+flake8
+mypy
+time-machine

@@ -1,14 +1,15 @@
 from typing import Optional
 import logging
-from backend.app.core.config import settings
+from ..core.config import get_settings
 import aiohttp
 import ssl
-from backend.app.services.telegram_templates import booking_message_with_buttons
+from .telegram_templates import booking_message_with_buttons
 
 logger = logging.getLogger(__name__)
 
 class TelegramBotService:
     def __init__(self):
+        settings = get_settings()
         self.bot_token = settings.TELEGRAM_BOT_TOKEN
         self.chat_id = settings.TELEGRAM_CHAT_ID
         self.api_url = f"https://api.telegram.org/bot{self.bot_token}/sendMessage"

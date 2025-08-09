@@ -2,7 +2,7 @@ from pydantic import BaseModel
 from datetime import datetime
 from typing import Optional
 
-from backend.app.models.calendar_event_status import CalendarEventStatus
+from ..models.calendar_event_status import CalendarEventStatus
 
 class CalendarEventBase(BaseModel):
     title: str
@@ -15,7 +15,7 @@ class CalendarEventBase(BaseModel):
 class CalendarEventCreate(CalendarEventBase):
     pass
 
-from typing import Any
+
 class CalendarEventUpdate(BaseModel):
     title: Optional[str] = None
     description: Optional[str] = None

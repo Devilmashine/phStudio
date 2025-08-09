@@ -6,13 +6,13 @@ from jose import JWTError, jwt
 from typing import List, Optional
 import logging
 
-from backend.app.core.database import get_db
-from backend.app.services.user import UserService
-from backend.app.schemas.user import UserCreate, UserResponse, UserUpdate, UserLogin
-from backend.app.models.user import User, UserRole
-from backend.app.core.config import settings
+from ...core.database import get_db
+from ...services.user import UserService
+from ...schemas.user import UserCreate, UserResponse, UserUpdate, UserLogin
+from ...models.user import User, UserRole
+from ...core.config import get_settings, Settings
 from fastapi.responses import JSONResponse
-from fastapi import Response, Cookie
+from fastapi import Response, Cookie, Depends
 
 logger = logging.getLogger(__name__)
 
@@ -20,14 +20,14 @@ router = APIRouter()
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="token")
 
 # Функции для работы с JWT токенами
-def create_access_token(data: dict):
+def create_access_token(data: dict, settings: Settings = Depends(get_settings)):
     to_encode = data.copy()
     expire = datetime.now(timezone.utc) + timedelta(minutes=settings.ACCESS_TOKEN_EXPIRE_MINUTES)
     to_encode.update({"exp": expire})
     encoded_jwt = jwt.encode(to_encode, settings.SECRET_KEY, algorithm=settings.ALGORITHM)
     return encoded_jwt
 
-def create_refresh_token(data: dict):
+def create_refresh_token(data: dict, settings: Settings = Depends(get_settings)):
     to_encode = data.copy()
     expire = datetime.now(timezone.utc) + timedelta(minutes=settings.REFRESH_TOKEN_EXPIRE_MINUTES)
     to_encode.update({"exp": expire, "type": "refresh"})
@@ -47,7 +47,7 @@ def set_refresh_cookie(response: Response, refresh_token: str):
 def clear_refresh_cookie(response: Response):
     response.delete_cookie("refresh_token")
 
-async def get_current_user(token: str = Depends(oauth2_scheme), db: Session = Depends(get_db)):
+async def get_current_user(token: str = Depends(oauth2_scheme), db: Session = Depends(get_db), settings: Settings = Depends(get_settings)):
     credentials_exception = HTTPException(
         status_code=status.HTTP_401_UNAUTHORIZED,
         detail="Неверные учетные данные",
@@ -90,7 +90,8 @@ async def get_current_manager(current_user = Depends(get_current_user)):
 @router.post("/token")
 async def login(
     form_data: OAuth2PasswordRequestForm = Depends(),
-    db: Session = Depends(get_db)
+    db: Session = Depends(get_db),
+    settings: Settings = Depends(get_settings)
 ):
     user_service = UserService(db)
     user = user_service.authenticate_user(form_data.username, form_data.password)
@@ -100,8 +101,8 @@ async def login(
             detail="Неверное имя пользователя или пароль",
             headers={"WWW-Authenticate": "Bearer"},
         )
-    access_token = create_access_token(data={"sub": user.username, "role": user.role.name})
-    refresh_token = create_refresh_token(data={"sub": user.username, "role": user.role.name})
+    access_token = create_access_token(data={"sub": user.username, "role": user.role.name}, settings=settings)
+    refresh_token = create_refresh_token(data={"sub": user.username, "role": user.role.name}, settings=settings)
     response = JSONResponse({"access_token": access_token, "token_type": "bearer"})
     set_refresh_cookie(response, refresh_token)
     # Аудит входа
@@ -109,7 +110,7 @@ async def login(
     return response
 
 @router.post("/refresh")
-async def refresh_token(response: Response, refresh_token: Optional[str] = Cookie(None), db: Session = Depends(get_db)):
+async def refresh_token(response: Response, refresh_token: Optional[str] = Cookie(None), db: Session = Depends(get_db), settings: Settings = Depends(get_settings)):
     if not refresh_token:
         raise HTTPException(status_code=401, detail="Refresh token отсутствует")
     try:
@@ -126,7 +127,7 @@ async def refresh_token(response: Response, refresh_token: Optional[str] = Cooki
     user = user_service.get_user_by_username(username)
     if user is None or user.role.name != role:
         raise HTTPException(status_code=401, detail="Пользователь не найден или роль изменилась")
-    access_token = create_access_token(data={"sub": user.username, "role": user.role.name})
+    access_token = create_access_token(data={"sub": user.username, "role": user.role.name}, settings=settings)
     set_refresh_cookie(response, refresh_token)  # продлеваем cookie
     # Аудит refresh
     logger.info(f"REFRESH: user={user.username}, ip=TODO, time={datetime.now(timezone.utc)}")

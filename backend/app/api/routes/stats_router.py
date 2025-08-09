@@ -1,3 +1,3 @@
-from backend.app.services.statistics import StatisticsService
-from backend.app.core.database import get_db
+from ...services.statistics import StatisticsService
+from ...core.database import get_db
 # ... остальной код ... 
