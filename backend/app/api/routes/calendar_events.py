@@ -1,6 +1,7 @@
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, status, Query
 from sqlalchemy.orm import Session
 from typing import List
+from datetime import datetime
 from backend.app.core.database import get_db
 from backend.app.services.calendar_event import CalendarEventService
 from backend.app.schemas.calendar_event import CalendarEventCreate, CalendarEventUpdate, CalendarEventResponse
@@ -12,18 +13,46 @@ from ics import Calendar, Event as IcsEvent
 from secrets import token_urlsafe
 from backend.app.models.calendar_event import CalendarEvent
 
-router = APIRouter(prefix="/calendar-events", tags=["calendar-events"])
+router = APIRouter(
+    prefix="/api/calendar-events",
+    tags=["calendar-events"],
+    # Отключаем автоматический редирект при отсутствии завершающего слеша
+    redirect_slashes=False
+)
 
 @router.get("/", response_model=List[CalendarEventResponse])
 async def get_events(
     skip: int = 0,
     limit: int = 100,
+    start_date: str = Query(None, description="Start date in YYYY-MM-DD format"),
+    end_date: str = Query(None, description="End date in YYYY-MM-DD format"),
     status: str = None,
-    db: Session = Depends(get_db),
-    current_user: User = Depends(get_current_manager)
+    db: Session = Depends(get_db)
 ):
-    service = CalendarEventService(db)
-    return service.get_events(skip=skip, limit=limit, status=status)
+    try:
+        # Convert string dates to datetime objects
+        start_dt = datetime.strptime(start_date, "%Y-%m-%d") if start_date else None
+        end_dt = datetime.strptime(end_date, "%Y-%m-%d") if end_date else None
+        
+        service = CalendarEventService(db)
+        events = service.get_events(
+            skip=skip,
+            limit=limit,
+            start_date=start_dt,
+            end_date=end_dt,
+            status=status
+        )
+        return events
+    except ValueError as e:
+        raise HTTPException(
+            status_code=400,
+            detail=f"Неверный формат даты: {str(e)}"
+        )
+    except Exception as e:
+        raise HTTPException(
+            status_code=500,
+            detail=f"Внутренняя ошибка сервера: {str(e)}"
+        )
 
 @router.get("/{event_id}", response_model=CalendarEventResponse)
 async def get_event(event_id: int, db: Session = Depends(get_db), current_user: User = Depends(get_current_manager)):

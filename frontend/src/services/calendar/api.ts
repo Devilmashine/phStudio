@@ -18,7 +18,7 @@ function toDateString(iso: string) {
  * Получить события календаря через собственный API
  */
 export async function fetchCalendarEvents(timeMin: string, timeMax: string): Promise<CalendarEvent[]> {
-  const response = await axios.get('/api/calendar/events', {
+  const response = await axios.get('/api/calendar-events', {
     params: {
       start_date: toDateString(timeMin),
       end_date: toDateString(timeMax)

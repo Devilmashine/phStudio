@@ -3,6 +3,12 @@ from typing import List, Optional
 from datetime import time
 
 class StudioSettingsBase(BaseModel):
+    name: str = Field(..., description="Название студии")
+    contacts: str = Field(..., description="Контактная информация")
+    prices: str = Field(..., description="Цены/описание цен")
+    name: str = Field(..., description="Название студии")
+    contacts: str = Field(..., description="Контактная информация")
+    prices: str = Field(..., description="Цены")
     work_days: List[str] = Field(..., description="Список рабочих дней недели (например, ['mon', 'tue', ...])")
     work_start_time: str = Field(..., description="Время начала работы, формат HH:MM")
     work_end_time: str = Field(..., description="Время окончания работы, формат HH:MM")
@@ -23,6 +29,24 @@ class StudioSettingsUpdate(StudioSettingsBase):
 
 class StudioSettings(StudioSettingsBase):
     id: int
+
+    @classmethod
+    def from_orm(cls, obj):
+        import json
+        data = dict(obj.__dict__)
+        # Десериализация work_days
+        if isinstance(data.get('work_days'), str):
+            try:
+                data['work_days'] = json.loads(data['work_days'])
+            except Exception:
+                data['work_days'] = []
+        # Десериализация holidays
+        if data.get('holidays') and isinstance(data['holidays'], str):
+            try:
+                data['holidays'] = json.loads(data['holidays'])
+            except Exception:
+                data['holidays'] = []
+        return cls(**data)
 
     class Config:
         from_attributes = True

@@ -7,7 +7,7 @@ export const CALENDAR_CONFIG = {
   workingHours: {
     start: 9,  // 9:00 AM
     end: 20,   // 8:00 PM
-  },
+  }
 } as const;
 
 export type CalendarConfig = typeof CALENDAR_CONFIG;

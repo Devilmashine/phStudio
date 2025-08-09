@@ -10,7 +10,10 @@ export default {
     '^import.meta.env$': '<rootDir>/tests/__mocks__/importMetaEnv.js'
   },
   setupFilesAfterEnv: ['<rootDir>/jest.setup.js'],
-  testMatch: ['<rootDir>/tests/**/*.test.{ts,tsx}'],
+  testMatch: [
+    '<rootDir>/tests/**/*.test.{ts,tsx}',
+    '<rootDir>/frontend/src/components/**/__tests__/**/*.test.{ts,tsx}'
+  ],
   testPathIgnorePatterns: ['/node_modules/', '/dist/'],
   globals: {
     'ts-jest': {

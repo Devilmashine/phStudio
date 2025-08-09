@@ -3,19 +3,21 @@ from pydantic import field_validator
 from typing import List
 import os
 from pathlib import Path
+from dotenv import load_dotenv
+
+# Загружаем .env файл
+env_path = Path(__file__).parent.parent.parent.parent / '.env'
+load_dotenv(dotenv_path=env_path)
 
 class Settings(BaseSettings):
+    model_config = {"env_file": str(env_path)}
     ENV: str = "development"
     CORS_ORIGINS: List[str] = []
     DATABASE_URL: str = "sqlite:///" + str(Path(__file__).parent.parent / "app.db")
     SECRET_KEY: str
     TELEGRAM_BOT_TOKEN: str
     TELEGRAM_CHAT_ID: str
-    GOOGLE_CALENDAR_ID: str
-    GOOGLE_CALENDAR_API_KEY: str
-    GOOGLE_CLIENT_EMAIL: str
-    GOOGLE_PRIVATE_KEY: str
-    SERVICE_ACCOUNT_FILE: str = "backend/app/config/service_account.json"
+    # Удалены настройки Google Calendar - используем собственную реализацию календаря
     ACCESS_TOKEN_EXPIRE_MINUTES: int = 60
     REFRESH_TOKEN_EXPIRE_MINUTES: int = 43200
     ALGORITHM: str = "HS256"
@@ -27,12 +29,7 @@ class Settings(BaseSettings):
             return [i.strip() for i in v.split(",") if i.strip()]
         return v
 
-    @field_validator("GOOGLE_PRIVATE_KEY", mode="before")
-    @classmethod
-    def fix_private_key(cls, v):
-        if isinstance(v, str):
-            return v.replace("\\n", "\n")
-        return v
+
 
     @field_validator("*", mode="before")
     @classmethod

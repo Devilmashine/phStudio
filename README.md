@@ -8,41 +8,67 @@
 ## Архитектура
 - **Frontend**: React + TypeScript (src/)
 - **Backend**: FastAPI (backend/)
-- **Интеграции**: Google Calendar, Telegram Bot
+- **Интеграции**: Telegram Bot
 - **CI/CD**: GitHub Actions (юнит-тесты, линтинг)
 
 ## Быстрый старт
 1. Клонируйте репозиторий:
    ```bash
-   git clone https://github.com/your-username/photo-studio-booking.git
-   cd photo-studio-booking
+   git clone https://github.com/Devilmashine/phStudio.git
+   cd phStudio
    ```
+
 2. Установите зависимости:
-   - Фронтенд (в корне):
-     ```bash
-     npm install
-     ```
-   - Бэкенд:
-     ```bash
-     cd backend
-     pip install -r requirements.txt
-     ```
-3. Настройте переменные окружения (см. ниже).
-4. Запустите backend:
    ```bash
-   uvicorn backend.app.main:app --reload
+   # Frontend (из корня проекта)
+   npm install
+   
+   # Backend
+   cd backend
+   pip install -r requirements.txt
    ```
-5. Запустите frontend:
+
+3. Настройте базу данных:
    ```bash
+   # Создайте БД в PostgreSQL
+   createdb phstudio
+   
+   # Примените миграции
+   cd backend
+   alembic upgrade head
+   ```
+
+4. Настройте .env файл (см. пример ниже)
+
+5. Запустите серверы:
+   ```bash
+   # Backend (из папки backend)
+   uvicorn app.main:app --reload
+
+   # Frontend (из корня проекта, в новом терминале)
    npm run dev
    ```
 
+6. Откройте http://localhost:5173 в браузере
+
 ## Пример .env
 ```
-GOOGLE_CALENDAR_ID=your_calendar_id@group.calendar.google.com
-GOOGLE_CLIENT_EMAIL=your_service_account@project.iam.gserviceaccount.com
-GOOGLE_PRIVATE_KEY="-----BEGIN PRIVATE KEY-----\n...\n-----END PRIVATE KEY-----\n"
+# База данных
+DATABASE_URL=postgresql://user:password@localhost:5432/phstudio
+
+# Безопасность
+SECRET_KEY=your-secret-key
+JWT_ALGORITHM=HS256
+ACCESS_TOKEN_EXPIRE_MINUTES=30
+
+# Telegram уведомления
 TELEGRAM_BOT_TOKEN=your_telegram_bot_token
+TELEGRAM_CHAT_ID=your_chat_id
+
+# Настройки приложения
+MAX_BOOKING_DAYS_AHEAD=30
+MIN_BOOKING_HOURS=1
+DEFAULT_CURRENCY=RUB
 ```
 
 ## Пример запроса бронирования (API)
@@ -62,13 +88,22 @@ TELEGRAM_BOT_TOKEN=your_telegram_bot_token
 - Frontend: `npm run test`
 - Интеграционные тесты: curl/Postman (см. docs/API.md)
 
-## Безопасность
-- Все секреты — только в .env или переменных окружения.
-- JWT-токен содержит роль пользователя, сверяется при каждом запросе.
+## Безопасность и производительность
+- Все секреты — только в .env или переменных окружения
+- JWT-токен содержит роль пользователя, сверяется при каждом запросе
+- Rate limiting для защиты от DDoS
+- Оптимизированные индексы в БД для быстрого поиска
+- Кэширование состояний календаря (TTL 5 минут)
+- Нормализация данных для эффективного поиска
+- Все временные метки в UTC с поддержкой часовых поясов
+- Подготовленные запросы через ORM
 
-## CI/CD
-- Все тесты и линт обязательны для успешного деплоя.
-- Ошибки тестов блокируют деплой.
+## CI/CD и мониторинг
+- Все тесты и линт обязательны для успешного деплоя
+- Ошибки тестов блокируют деплой
+- Автоматическое обновление зависимостей через Dependabot
+- Мониторинг производительности и ошибок
+- Автоматическое резервное копирование БД
 
 ## Структура проекта
 - `src/` — фронтенд (React, TypeScript)

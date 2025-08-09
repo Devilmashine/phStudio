@@ -1,6 +1,6 @@
 import React from 'react';
-import CalendarLinks from '../../components/Calendar/CalendarLinks';
-import CalendarEventsTable from '../../components/Calendar/CalendarEventsTable';
+import CalendarLinks from '../components/Calendar/CalendarLinks';
+import CalendarEventsTable from '../components/Calendar/CalendarEventsTable';
 
 const AdminCalendarPage: React.FC = () => {
   return (

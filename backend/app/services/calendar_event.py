@@ -2,6 +2,11 @@ from sqlalchemy.orm import Session
 from backend.app.models.calendar_event import CalendarEvent
 from backend.app.schemas.calendar_event import CalendarEventCreate, CalendarEventUpdate
 from typing import List, Optional
+from datetime import datetime
+
+import logging
+
+logger = logging.getLogger(__name__)
 
 class CalendarEventService:
     def __init__(self, db: Session):
@@ -10,10 +15,32 @@ class CalendarEventService:
     def get_event(self, event_id: int) -> Optional[CalendarEvent]:
         return self.db.query(CalendarEvent).filter(CalendarEvent.id == event_id).first()
 
-    def get_events(self, skip: int = 0, limit: int = 100, status: str = None) -> List[CalendarEvent]:
-        query = self.db.query(CalendarEvent)
-        if status:
-            query = query.filter(CalendarEvent.status == status)
+    def get_events(
+        self,
+        skip: int = 0,
+        limit: int = 100,
+        start_date: datetime = None,
+        end_date: datetime = None,
+        status: str = None
+    ) -> List[CalendarEvent]:
+        try:
+            logger.info(f"Fetching events with params: start_date={start_date}, end_date={end_date}, status={status}")
+            query = self.db.query(CalendarEvent)
+            
+            if start_date:
+                query = query.filter(CalendarEvent.start_time >= start_date)
+            if end_date:
+                query = query.filter(CalendarEvent.end_time <= end_date)
+            if status:
+                query = query.filter(CalendarEvent.status == status)
+                
+            events = query.offset(skip).limit(limit).all()
+            logger.info(f"Found {len(events)} events")
+            return events
+        except Exception as e:
+            logger.error(f"Error fetching events: {str(e)}")
+            raise
+            
         return query.offset(skip).limit(limit).all()
 
     def create_event(self, event_data: CalendarEventCreate) -> CalendarEvent:

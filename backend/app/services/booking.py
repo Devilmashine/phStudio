@@ -1,4 +1,3 @@
-from backend.app.services.google_calendar import GoogleCalendarService
 from backend.app.services.telegram_bot import TelegramBotService
 from datetime import datetime
 import logging
@@ -47,13 +46,7 @@ class BookingService:
     @staticmethod
     def legacy_create_booking(data):
         try:
-            calendar_service = GoogleCalendarService()
             telegram_service = TelegramBotService()
-
-            booking_result = calendar_service.create_event(
-                start_time=datetime.fromisoformat(f"{data['date']}T{data['time']}"),
-                description=data.get('description', '')
-            )
             
             # Формируем текст уведомления
             message = f"🎥 Новое бронирование:\n\n" \

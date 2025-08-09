@@ -1,0 +1,63 @@
+name: Backup and Monitoring
+
+on:
+  schedule:
+    - cron: '0 */6 * * *'  # Каждые 6 часов
+  workflow_dispatch:  # Ручной запуск
+
+jobs:
+  backup:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v2
+
+      - name: Set up Python
+        uses: actions/setup-python@v2
+        with:
+          python-version: '3.12'
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r backend/requirements.txt
+          pip install pg_dump-splitter python-dotenv
+
+      - name: Backup database
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+        run: |
+          python scripts/backup_db.py
+
+      - name: Upload backup
+        uses: actions/upload-artifact@v2
+        with:
+          name: db-backup-${{ github.sha }}
+          path: backups/
+
+  monitoring:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check API health
+        run: |
+          curl -f https://api.phstudio.com/health || exit 1
+
+      - name: Check database connections
+        run: |
+          python scripts/check_db_connections.py
+
+      - name: Check memory usage
+        run: |
+          python scripts/check_memory_usage.py
+
+      - name: Notify on failure
+        if: failure()
+        uses: actions/github-script@v6
+        with:
+          script: |
+            const issue = await github.rest.issues.create({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              title: 'Monitoring Alert: Service Health Check Failed',
+              body: 'Automated monitoring detected issues with the service.'
+            });

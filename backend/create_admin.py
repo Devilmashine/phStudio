@@ -2,10 +2,10 @@ import sys
 import getpass
 import re
 import secrets
-from backend.app.core.database import SessionLocal
-from backend.app.services.user import UserService
-from backend.app.schemas.user import UserCreate
-from backend.app.models.user import UserRole
+from app.core.database import SessionLocal
+from app.services.user import UserService
+from app.schemas.user import UserCreate
+from app.models.user import UserRole
 
 def validate_email(email: str) -> bool:
     return re.match(r"^[^@\s]+@[^@\s]+\.[^@\s]+$", email) is not None
