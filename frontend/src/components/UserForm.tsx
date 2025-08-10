@@ -24,6 +24,7 @@ const UserForm: React.FC<UserFormProps> = ({ user, onSave, onCancel }) => {
     role: UserRole.User,
     password: '',
   });
+  const [consentGiven, setConsentGiven] = useState(false);
 
   useEffect(() => {
     if (user) {
@@ -102,6 +103,21 @@ const UserForm: React.FC<UserFormProps> = ({ user, onSave, onCancel }) => {
               placeholder={user ? 'Leave blank to keep unchanged' : ''}
             />
           </div>
+          {!user && (
+            <div className="mb-4">
+              <label className="flex items-center">
+                <input
+                  type="checkbox"
+                  checked={consentGiven}
+                  onChange={(e) => setConsentGiven(e.target.checked)}
+                  className="mr-2"
+                />
+                <span className="text-sm text-gray-600">
+                  Администратор подтверждает, что получено согласие сотрудника на обработку персональных данных.
+                </span>
+              </label>
+            </div>
+          )}
           <div className="flex justify-end gap-4">
             <button
               type="button"
@@ -112,7 +128,8 @@ const UserForm: React.FC<UserFormProps> = ({ user, onSave, onCancel }) => {
             </button>
             <button
               type="submit"
-              className="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600"
+              disabled={!user && !consentGiven}
+              className="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600 disabled:bg-gray-300"
             >
               Save
             </button>

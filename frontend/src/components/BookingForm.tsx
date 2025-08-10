@@ -1,10 +1,11 @@
 import React, { useState, useCallback, useEffect } from 'react';
 import { format } from 'date-fns';
+import { Link } from 'react-router-dom';
 import { studio } from '../data/studio';
 import Calendar from './Calendar';
 import TimeSlots from './TimeSlots';
 import Modal from './Modal';
-import { termsContent, privacyContent } from '../data/terms';
+import { termsContent } from '../data/terms';
 import { mockAvailability } from '../services/calendar/mock';
 
 // Валидация телефона с помощью регулярного выражения
@@ -122,7 +123,6 @@ export default function BookingForm() {
   const [termsAccepted, setTermsAccepted] = useState(false);
   const [privacyAccepted, setPrivacyAccepted] = useState(false);
   const [showTermsModal, setShowTermsModal] = useState(false);
-  const [showPrivacyModal, setShowPrivacyModal] = useState(false);
   const [peopleCount, setPeopleCount] = useState(1);
   const [peopleError, setPeopleError] = useState('');
   const [studioRulesAccepted, setStudioRulesAccepted] = useState(false);
@@ -318,13 +318,21 @@ export default function BookingForm() {
                 linkText="публичной оферты"
                 onLinkClick={() => setShowTermsModal(true)}
               />
-              <CheckboxField
-                checked={privacyAccepted}
-                onChange={(e) => setPrivacyAccepted(e.target.checked)}
-                label="Я согласен на"
-                linkText="обработку персональных данных"
-                onLinkClick={() => setShowPrivacyModal(true)}
-              />
+              <label className="flex items-start space-x-3 cursor-pointer select-none">
+                <input
+                  type="checkbox"
+                  checked={privacyAccepted}
+                  onChange={(e) => setPrivacyAccepted(e.target.checked)}
+                  className="mt-1 accent-indigo-600 focus:ring-2 focus:ring-indigo-500 focus:outline-none transition-colors"
+                  required
+                />
+                <span className="text-sm text-gray-600">
+                  Я даю согласие на обработку персональных данных и принимаю условия{' '}
+                  <Link to="/privacy" target="_blank" className="text-indigo-600 hover:underline">
+                    Политики конфиденциальности
+                  </Link>
+                </span>
+              </label>
               <CheckboxField
                 checked={studioRulesAccepted}
                 onChange={e => setStudioRulesAccepted(e.target.checked)}
@@ -370,21 +378,6 @@ export default function BookingForm() {
           >
             <div className="prose prose-sm max-w-none">
               {termsContent.split('\n\n').map((paragraph, index) => (
-                <p key={index} className="mb-4">
-                  {paragraph}
-                </p>
-              ))}
-            </div>
-          </Modal>
-        )}
-        {showPrivacyModal && (
-          <Modal 
-            isOpen={true}
-            onClose={() => setShowPrivacyModal(false)}
-            title="Политика обработки персональных данных"
-          >
-            <div className="prose prose-sm max-w-none">
-              {privacyContent.split('\n\n').map((paragraph, index) => (
                 <p key={index} className="mb-4">
                   {paragraph}
                 </p>

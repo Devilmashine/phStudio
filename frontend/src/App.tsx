@@ -7,6 +7,7 @@ import Footer from './components/Footer';
 import AdminPanel from './pages/AdminPanel';
 import ManagerPanel from './pages/ManagerPanel';
 import Login from './pages/Login';
+import PrivacyPolicy from './pages/PrivacyPolicy';
 import ProtectedRoute from './components/ProtectedRoute';
 import { StudioSettingsForm } from './components/StudioSettingsForm';
 import { Gallery } from './components/Gallery';
@@ -76,6 +77,7 @@ function App() {
                 }
               />
               <Route path="/login" element={<Login />} />
+              <Route path="/privacy" element={<PrivacyPolicy />} />
             </Routes>
           </main>
           <Footer />
