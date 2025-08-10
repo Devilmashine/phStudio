@@ -76,6 +76,15 @@ class BookingService:
         self.db.refresh(booking)
         return booking
 
+    def update_booking_status(self, booking_id: int, status: BookingStatus) -> Optional[BookingModel]:
+        booking = self.get_booking(booking_id)
+        if not booking:
+            return None
+        booking.status = status
+        self.db.commit()
+        self.db.refresh(booking)
+        return booking
+
     def delete_booking(self, booking_id: int) -> bool:
         booking = self.get_booking(booking_id)
         if not booking:

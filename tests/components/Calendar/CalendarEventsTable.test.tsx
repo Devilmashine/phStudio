@@ -1,7 +1,7 @@
 import React from 'react';
 import { render, screen, waitFor, fireEvent } from '@testing-library/react';
 import '@testing-library/jest-dom';
-import CalendarEventsTable from '../../../../frontend/src/components/Calendar/CalendarEventsTable';
+import CalendarEventsTable from '@/components/Calendar/CalendarEventsTable';
 import axios from 'axios';
 
 jest.mock('axios');

@@ -1,5 +1,5 @@
 import { render, screen, fireEvent } from '@testing-library/react';
-import BookingPage from '../frontend/src/pages/BookingPage';
+import BookingPage from '@/pages/BookingPage';
 import { MemoryRouter } from 'react-router-dom';
 
 describe('BookingPage User Flow', () => {

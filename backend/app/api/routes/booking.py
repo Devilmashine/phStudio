@@ -3,7 +3,7 @@ from sqlalchemy.orm import Session
 from typing import List
 from ...core.database import get_db
 from ...services.booking import BookingService
-from ...schemas.booking import Booking, BookingCreate
+from ...schemas.booking import Booking, BookingCreate, BookingStatusUpdate
 from ...models.user import User, UserRole
 from .auth import get_current_admin, get_current_manager
 from ...services.telegram import telegram_service
@@ -19,6 +19,23 @@ async def get_bookings(skip: int = 0, limit: int = 100, db: Session = Depends(ge
 async def get_booking(booking_id: int, db: Session = Depends(get_db), current_user: User = Depends(get_current_manager)):
     service = BookingService(db)
     booking = service.get_booking(booking_id)
+    if not booking:
+        raise HTTPException(status_code=404, detail="Бронирование не найдено")
+    return booking
+
+@router.patch("/{booking_id}/status", response_model=Booking)
+async def update_booking_status(
+    booking_id: int,
+    status_update: BookingStatusUpdate,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_manager)
+):
+    """
+    Эндпоинт для обновления статуса бронирования.
+    Доступен для менеджеров и администраторов.
+    """
+    service = BookingService(db)
+    booking = service.update_booking_status(booking_id, status_update.status)
     if not booking:
         raise HTTPException(status_code=404, detail="Бронирование не найдено")
     return booking

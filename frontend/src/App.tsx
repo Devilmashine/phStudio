@@ -5,6 +5,7 @@ import Studios from './components/Studios';
 import BookingForm from './components/BookingForm';
 import Footer from './components/Footer';
 import AdminPanel from './pages/AdminPanel';
+import ManagerPanel from './pages/ManagerPanel';
 import Login from './pages/Login';
 import ProtectedRoute from './components/ProtectedRoute';
 import { StudioSettingsForm } from './components/StudioSettingsForm';
@@ -13,6 +14,7 @@ import NewsAdmin from './pages/NewsAdmin';
 import BookingTable from './components/BookingTable';
 import { ToastProvider } from './components/Toast';
 import AdminCalendarPage from './pages/AdminCalendarPage';
+import UserManagement from './components/UserManagement';
 
 const Dashboard = () => (
   <div>
@@ -62,8 +64,17 @@ function App() {
                 <Route path="news" element={<NewsAdmin />} />
                 <Route path="schedule" element={<div>Расписание (заглушка)</div>} />
                 <Route path="calendar" element={<AdminCalendarPage />} />
+                <Route path="users" element={<UserManagement />} />
                 <Route path="*" element={<Dashboard />} />
               </Route>
+              <Route
+                path="/manager"
+                element={
+                  <ProtectedRoute allowedRoles={['admin', 'manager']}>
+                    <ManagerPanel />
+                  </ProtectedRoute>
+                }
+              />
               <Route path="/login" element={<Login />} />
             </Routes>
           </main>

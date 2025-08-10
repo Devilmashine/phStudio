@@ -1,16 +1,15 @@
 import pytest
-from fastapi import FastAPI
 from fastapi.testclient import TestClient
-from ..app.api.routes.gallery import router as gallery_router
 
-# Минимальное приложение для теста
-app = FastAPI()
-app.include_router(gallery_router, prefix="/api/gallery")
-
-client = TestClient(app)
-
-def test_get_gallery_images_empty():
-    # Этот тест не требует авторизации или базы данных
+def test_get_gallery_images_empty(client: TestClient):
+    """
+    Тест на получение пустого списка изображений из галереи.
+    Использует фикстуру client, которая обеспечивает чистую БД.
+    """
     response = client.get("/api/gallery/")
     assert response.status_code == 200
     assert response.json() == []
+
+# Можно добавить тесты для добавления/удаления изображений,
+# но для этого потребуется реализовать загрузку файлов в тестах
+# и, возможно, мокать систему хранения файлов.
