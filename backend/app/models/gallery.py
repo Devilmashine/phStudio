@@ -2,6 +2,7 @@ from .base import Base
 from sqlalchemy import Column, Integer, String, DateTime
 from datetime import datetime
 
+
 class GalleryImage(Base):
     __tablename__ = "gallery_images"
 

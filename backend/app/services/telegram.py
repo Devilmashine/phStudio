@@ -2,6 +2,7 @@ import requests
 from typing import Optional
 from ..core.config import get_settings
 
+
 class TelegramService:
     def __init__(self):
         settings = get_settings()
@@ -56,4 +57,5 @@ class TelegramService:
         )
         return await self.send_message(message)
 
-telegram_service = TelegramService() 
+
+telegram_service = TelegramService()

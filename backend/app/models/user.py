@@ -4,18 +4,21 @@ from .base import Base
 from enum import Enum
 from pydantic import BaseModel
 
+
 class UserRole(str, Enum):
     user = "user"
     admin = "admin"
     manager = "manager"
 
+
 class UserSchema(BaseModel):
     username: str
     role: UserRole
 
+
 class User(Base):
     __tablename__ = "users"
-    __table_args__ = {'extend_existing': True}
+    __table_args__ = {"extend_existing": True}
 
     id = Column(Integer, primary_key=True, index=True)
     username = Column(String, unique=True, nullable=False)

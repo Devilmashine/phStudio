@@ -46,7 +46,13 @@ export default [
         'self': 'readonly',
         'TextEncoder': 'readonly',
         'requestAnimationFrame': 'readonly',
-        'JSX': 'readonly'
+        'JSX': 'readonly',
+        'File': 'readonly',
+        'FormData': 'readonly',
+        'atob': 'readonly',
+        'HTMLTextAreaElement': 'readonly',
+        'RequestInfo': 'readonly',
+        'Response': 'readonly'
       },
       parser: tsParser,
       parserOptions: {
@@ -85,4 +91,45 @@ export default [
       'react/no-unescaped-entities': 'warn',
     },
   },
+  {
+    files: ['**/*.test.{ts,tsx}', '**/*.spec.ts', '**/*.test.js'],
+    languageOptions: {
+      globals: {
+        'jest': 'readonly',
+        'describe': 'readonly',
+        'it': 'readonly',
+        'expect': 'readonly',
+        'beforeEach': 'readonly',
+        'afterEach': 'readonly',
+        'beforeAll': 'readonly',
+        'afterAll': 'readonly',
+      }
+    }
+  },
+  {
+    files: ['**/*.js', '**/*.cjs', '**/*.mjs'],
+    languageOptions: {
+      globals: {
+        'module': 'readonly',
+        'require': 'readonly',
+        '__dirname': 'readonly',
+        'global': 'readonly'
+      }
+    }
+  },
+  {
+    files: ['frontend/src/tests/**/*.tsx', 'tests/**/*.tsx'],
+    languageOptions: {
+      globals: {
+        'jest': 'readonly',
+        'describe': 'readonly',
+        'it': 'readonly',
+        'expect': 'readonly',
+        'beforeEach': 'readonly',
+        'afterEach': 'readonly',
+        'beforeAll': 'readonly',
+        'afterAll': 'readonly',
+      }
+    }
+  }
 ];

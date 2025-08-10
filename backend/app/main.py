@@ -1,37 +1,32 @@
 import asyncio
 import logging
 import os
-from datetime import datetime, timedelta
 from logging.handlers import RotatingFileHandler
-from typing import List, Dict, Any, Optional
 
-from fastapi import FastAPI, HTTPException, Query, Request, Depends
+from fastapi import FastAPI, Depends
 from fastapi.middleware.cors import CORSMiddleware
-from pydantic import BaseModel, Field
 from dotenv import load_dotenv
 
 # Загрузка переменных окружения
 load_dotenv()
 
+
 # Настройка логирования
 def setup_logging():
-    log_dir = os.path.join(os.path.dirname(__file__), 'logs')
+    log_dir = os.path.join(os.path.dirname(__file__), "logs")
     os.makedirs(log_dir, exist_ok=True)
-    
-    log_file = os.path.join(log_dir, 'app.log')
-    
+
+    log_file = os.path.join(log_dir, "app.log")
+
     logging.basicConfig(
         level=logging.INFO,
-        format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
+        format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
         handlers=[
             logging.StreamHandler(),
-            RotatingFileHandler(
-                log_file, 
-                maxBytes=10*1024*1024,
-                backupCount=5
-            )
-        ]
+            RotatingFileHandler(log_file, maxBytes=10 * 1024 * 1024, backupCount=5),
+        ],
     )
+
 
 # Инициализация логирования
 setup_logging()
@@ -49,6 +44,7 @@ from .api.routes.news import router as news_router
 from .api.routes.auth import router as auth_router
 from .api.routes.booking import router as booking_router
 
+
 def create_app() -> FastAPI:
     # Создаем экземпляр FastAPI
     app = FastAPI(
@@ -56,7 +52,9 @@ def create_app() -> FastAPI:
         description="API для фотостудии",
         version="1.0.0",
         redirect_slashes=False,
-        dependencies=[Depends(default_rate_limit)] # Применяем rate-limit ко всем эндпоинтам
+        dependencies=[
+            Depends(default_rate_limit)
+        ],  # Применяем rate-limit ко всем эндпоинтам
     )
 
     # Настраиваем CORS из настроек
@@ -90,12 +88,12 @@ def create_app() -> FastAPI:
 
     # Инициализация Telegram бота
     try:
-        telegram_service = TelegramBotService()
+        TelegramBotService()
         logger.info("Telegram Bot Service successfully initialized")
     except Exception as e:
         logger.error(f"Error initializing Telegram Bot Service: {str(e)}")
-        telegram_service = None
 
     return app
+
 
 app = create_app()

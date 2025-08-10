@@ -1,3 +1,1 @@
-from ...services.statistics import StatisticsService
-from ...core.database import get_db
-# ... остальной код ... 
+# This file is reserved for statistics-related API endpoints.

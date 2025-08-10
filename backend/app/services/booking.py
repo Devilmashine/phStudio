@@ -10,6 +10,7 @@ from typing import List, Optional
 
 logger = logging.getLogger(__name__)
 
+
 class BookingService:
     def __init__(self, db: Session):
         self.db = db
@@ -19,47 +20,79 @@ class BookingService:
         """Проверяет, возможно ли создание бронирования."""
         # 1. Проверка на бронирование в прошлом
         if booking_data.start_time < datetime.now(timezone.utc):
-            raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Нельзя бронировать на прошедшее время.")
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Нельзя бронировать на прошедшее время.",
+            )
 
         # 2. Проверка на пересечение с существующими бронированиями
-        overlapping_booking = self.db.query(BookingModel).filter(
-            and_(
-                booking_data.start_time < BookingModel.end_time,
-                booking_data.end_time > BookingModel.start_time
+        overlapping_booking = (
+            self.db.query(BookingModel)
+            .filter(
+                and_(
+                    booking_data.start_time < BookingModel.end_time,
+                    booking_data.end_time > BookingModel.start_time,
+                )
             )
-        ).filter(
-            BookingModel.status.in_([BookingStatus.CONFIRMED, BookingStatus.PENDING])
-        ).first()
+            .filter(
+                BookingModel.status.in_(
+                    [BookingStatus.CONFIRMED, BookingStatus.PENDING]
+                )
+            )
+            .first()
+        )
 
         if overlapping_booking:
-            raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail="Выбранное время уже занято.")
+            raise HTTPException(
+                status_code=status.HTTP_409_CONFLICT,
+                detail="Выбранное время уже занято.",
+            )
 
         # 3. Проверка на соответствие рабочим часам и дням
         import json
+
         settings = self.settings_service.get_settings()
         if not settings:
-            raise HTTPException(status_code=status.HTTP_503_SERVICE_UNAVAILABLE, detail="Настройки студии не найдены.")
+            raise HTTPException(
+                status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+                detail="Настройки студии не найдены.",
+            )
 
         # Десериализация JSON полей из настроек
         try:
             work_days = json.loads(settings.work_days)
             holidays = json.loads(settings.holidays) if settings.holidays else []
         except (json.JSONDecodeError, TypeError):
-            raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="Ошибка конфигурации рабочих дней студии.")
+            raise HTTPException(
+                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                detail="Ошибка конфигурации рабочих дней студии.",
+            )
 
-        booking_date_str = booking_data.start_time.strftime('%Y-%m-%d')
+        booking_date_str = booking_data.start_time.strftime("%Y-%m-%d")
         if booking_date_str in holidays:
-            raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Студия не работает в праздничные дни.")
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Студия не работает в праздничные дни.",
+            )
 
-        booking_day_of_week = booking_data.start_time.strftime('%a').lower()
+        booking_day_of_week = booking_data.start_time.strftime("%a").lower()
         if booking_day_of_week not in work_days:
-            raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Студия не работает в этот день недели.")
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Студия не работает в этот день недели.",
+            )
 
-        work_start_time = datetime.strptime(settings.work_start_time, '%H:%M').time()
-        work_end_time = datetime.strptime(settings.work_end_time, '%H:%M').time()
+        work_start_time = datetime.strptime(settings.work_start_time, "%H:%M").time()
+        work_end_time = datetime.strptime(settings.work_end_time, "%H:%M").time()
 
-        if not (work_start_time <= booking_data.start_time.time() and booking_data.end_time.time() <= work_end_time):
-            raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Бронирование выходит за рамки рабочего времени студии.")
+        if not (
+            work_start_time <= booking_data.start_time.time()
+            and booking_data.end_time.time() <= work_end_time
+        ):
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Бронирование выходит за рамки рабочего времени студии.",
+            )
 
     def get_booking(self, booking_id: int) -> Optional[BookingModel]:
         return self.db.query(BookingModel).filter(BookingModel.id == booking_id).first()
@@ -84,7 +117,9 @@ class BookingService:
         self.db.commit()
         return True
 
-    def update_booking(self, booking_id: int, booking_data: BookingCreate) -> Optional[BookingModel]:
+    def update_booking(
+        self, booking_id: int, booking_data: BookingCreate
+    ) -> Optional[BookingModel]:
         booking = self.get_booking(booking_id)
         if not booking:
             return None

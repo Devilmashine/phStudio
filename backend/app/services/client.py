@@ -3,6 +3,7 @@ from ..models.client import Client
 from ..schemas.client import ClientCreate, ClientUpdate
 from typing import List, Optional
 
+
 class ClientService:
     def __init__(self, db: Session):
         self.db = db
@@ -20,7 +21,9 @@ class ClientService:
         self.db.refresh(client)
         return client
 
-    def update_client(self, client_id: int, client_data: ClientUpdate) -> Optional[Client]:
+    def update_client(
+        self, client_id: int, client_data: ClientUpdate
+    ) -> Optional[Client]:
         client = self.get_client(client_id)
         if not client:
             return None

@@ -15,7 +15,6 @@ export function useBookingForm() {
   const [privacyAccepted, setPrivacyAccepted] = useState(false);
   const [showTermsModal, setShowTermsModal] = useState(false);
   const [showPrivacyModal, setShowPrivacyModal] = useState(false);
-  const [showSuccessModal, setShowSuccessModal] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const { formErrors, validateForm } = useBookingValidation({
@@ -64,7 +63,7 @@ export function useBookingForm() {
     try {
       await createBooking(bookingData);
       toast.show('Заявка успешно отправлена! Мы свяжемся с вами.');
-      handleCloseSuccess(); // Сбрасываем форму
+      resetForm(); // Сбрасываем форму
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : 'Произошла неизвестная ошибка.';
       toast.show(`Ошибка: ${errorMessage}`);
@@ -74,8 +73,7 @@ export function useBookingForm() {
     }
   };
 
-  const handleCloseSuccess = () => {
-    setShowSuccessModal(false);
+  const resetForm = () => {
     setSelectedDate(null);
     setSelectedTimes([]);
     setName('');
@@ -93,7 +91,6 @@ export function useBookingForm() {
     privacyAccepted,
     showTermsModal,
     showPrivacyModal,
-    showSuccessModal,
     isSubmitting,
     formErrors,
     setName,
@@ -105,7 +102,7 @@ export function useBookingForm() {
     handleTimeSelect,
     handleDateChange,
     handleSubmit,
-    handleCloseSuccess,
+    resetForm,
     totalPrice
   };
 }

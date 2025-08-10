@@ -6,10 +6,10 @@ from .auth import router as auth_router
 from .booking import router as booking_router
 
 __all__ = [
-    'calendar_events_router',
-    'settings_router',
-    'gallery_router',
-    'news_router',
-    'auth_router',
-    'booking_router'
+    "calendar_events_router",
+    "settings_router",
+    "gallery_router",
+    "news_router",
+    "auth_router",
+    "booking_router",
 ]

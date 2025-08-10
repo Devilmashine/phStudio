@@ -8,6 +8,7 @@ import logging
 
 logger = logging.getLogger(__name__)
 
+
 class CalendarEventService:
     def __init__(self, db: Session):
         self.db = db
@@ -21,26 +22,28 @@ class CalendarEventService:
         limit: int = 100,
         start_date: datetime = None,
         end_date: datetime = None,
-        status: str = None
+        status: str = None,
     ) -> List[CalendarEvent]:
         try:
-            logger.info(f"Fetching events with params: start_date={start_date}, end_date={end_date}, status={status}")
+            logger.info(
+                f"Fetching events with params: start_date={start_date}, end_date={end_date}, status={status}"
+            )
             query = self.db.query(CalendarEvent)
-            
+
             if start_date:
                 query = query.filter(CalendarEvent.start_time >= start_date)
             if end_date:
                 query = query.filter(CalendarEvent.end_time <= end_date)
             if status:
                 query = query.filter(CalendarEvent.status == status)
-                
+
             events = query.offset(skip).limit(limit).all()
             logger.info(f"Found {len(events)} events")
             return events
         except Exception as e:
             logger.error(f"Error fetching events: {str(e)}")
             raise
-            
+
         return query.offset(skip).limit(limit).all()
 
     def create_event(self, event_data: CalendarEventCreate) -> CalendarEvent:
@@ -50,7 +53,9 @@ class CalendarEventService:
         self.db.refresh(event)
         return event
 
-    def update_event(self, event_id: int, event_data: CalendarEventUpdate) -> Optional[CalendarEvent]:
+    def update_event(
+        self, event_id: int, event_data: CalendarEventUpdate
+    ) -> Optional[CalendarEvent]:
         event = self.get_event(event_id)
         if not event:
             return None
