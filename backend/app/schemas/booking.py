@@ -2,6 +2,7 @@ from pydantic import BaseModel
 from datetime import datetime
 from typing import Optional
 
+
 class BookingBase(BaseModel):
     date: datetime
     start_time: datetime
@@ -12,8 +13,10 @@ class BookingBase(BaseModel):
     client_email: Optional[str] = None
     notes: Optional[str] = None
 
+
 class BookingCreate(BookingBase):
     pass
+
 
 class Booking(BookingBase):
     id: int

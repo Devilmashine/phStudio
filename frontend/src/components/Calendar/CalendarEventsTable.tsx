@@ -33,7 +33,7 @@ const CalendarEventsTable: React.FC = () => {
       }
       const res = await axios.get(url);
       setEvents(res.data);
-    } catch (e: any) {
+    } catch {
       setError('Ошибка загрузки событий');
     } finally {
       setLoading(false);
@@ -56,7 +56,7 @@ const CalendarEventsTable: React.FC = () => {
         await axios.patch(`/api/calendar-events/${id}`, { status: action === 'confirm' ? 'confirmed' : 'cancelled' });
       }
       fetchEvents();
-    } catch (e: any) {
+    } catch {
       setError('Ошибка при выполнении действия');
     } finally {
       setLoading(false);

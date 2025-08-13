@@ -8,26 +8,38 @@ from app.models.user import User, UserRole
 
 router = APIRouter(tags=["news"])  # убран prefix
 
+
 # Получить список новостей
 def is_admin_or_manager(user: User):
     if user.role not in [UserRole.admin, UserRole.manager]:
         raise HTTPException(status_code=403, detail="Недостаточно прав")
     return user
 
+
 @router.get("/", response_model=List[News])
 def read_news(skip: int = 0, limit: int = 20, db: Session = Depends(get_db)):
     return get_news(db, skip=skip, limit=limit)
 
-@router.get("/{news_id}", response_model=News, responses={404: {"description": "Новость не найдена"}})
+
+@router.get(
+    "/{news_id}",
+    response_model=News,
+    responses={404: {"description": "Новость не найдена"}},
+)
 def read_news_by_id(news_id: int, db: Session = Depends(get_db)):
     db_news = get_news_by_id(db, news_id)
     if not db_news:
         raise HTTPException(status_code=404, detail="Новость не найдена")
     return db_news
 
+
 # Только admin может создавать новости
 @router.post("/", response_model=News, status_code=status.HTTP_201_CREATED)
-def create_news_view(news: NewsCreate, db: Session = Depends(get_db), current_user = Depends(get_current_active_user)):
+def create_news_view(
+    news: NewsCreate,
+    db: Session = Depends(get_db),
+    current_user=Depends(get_current_active_user),
+):
     # current_user — это SimpleNamespace, а не ORM-модель
     if getattr(current_user, "role", None) != UserRole.admin:
         raise HTTPException(status_code=403, detail="Недостаточно прав")
@@ -36,16 +48,32 @@ def create_news_view(news: NewsCreate, db: Session = Depends(get_db), current_us
         raise HTTPException(status_code=400, detail="Некорректный пользователь")
     return create_news(db, news, author_id=author_id)
 
+
 @router.put("/{news_id}", response_model=News)
-def update_news_view(news_id: int, news_update: NewsUpdate, db: Session = Depends(get_db), current_user: User = Depends(get_current_active_user)):
+def update_news_view(
+    news_id: int,
+    news_update: NewsUpdate,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_active_user),
+):
     is_admin_or_manager(current_user)
     db_news = get_news_by_id(db, news_id)
     if not db_news:
         raise HTTPException(status_code=404, detail="Новость не найдена")
     return update_news(db, db_news, news_update)
 
-@router.delete("/{news_id}", status_code=204, response_class=None, responses={404: {"description": "Новость не найдена"}})
-def delete_news_view(news_id: int, db: Session = Depends(get_db), current_user: User = Depends(get_current_active_user)):
+
+@router.delete(
+    "/{news_id}",
+    status_code=204,
+    response_class=None,
+    responses={404: {"description": "Новость не найдена"}},
+)
+def delete_news_view(
+    news_id: int,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_active_user),
+):
     is_admin_or_manager(current_user)
     db_news = get_news_by_id(db, news_id)
     if not db_news:

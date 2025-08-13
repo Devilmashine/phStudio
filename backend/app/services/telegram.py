@@ -2,6 +2,7 @@ import requests
 from typing import Optional
 from app.core.config import settings
 
+
 class TelegramService:
     def __init__(self):
         self.bot_token = settings.TELEGRAM_BOT_TOKEN
@@ -55,4 +56,5 @@ class TelegramService:
         )
         return await self.send_message(message)
 
-telegram_service = TelegramService() 
+
+telegram_service = TelegramService()

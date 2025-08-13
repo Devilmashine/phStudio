@@ -1,35 +1,27 @@
-import { bookingApi } from '../utils/api';
+import { bookingApi } from '../utils/api'; // Предполагаем, что этот импорт корректен
 import { BookingData } from '../utils/validation';
+import axios from 'axios';
 
 interface BookingResponse {
-  message?: string;
-  booking_id?: string;
-  calendar_link?: string;
-  telegram_notification?: boolean;
-  details?: Record<string, any>;
+  id: number;
+  // ... другие поля ответа
 }
 
-export const createBooking = async (bookingData: Omit<BookingData, 'description' | 'id'>) => {
+export const createBooking = async (bookingData: Omit<BookingData, 'description' | 'id'>): Promise<BookingResponse> => {
   try {
-    console.error('📤 ОТЛАДКА createBooking', {
-      bookingData: JSON.stringify(bookingData, null, 2)
-    });
-
-    const response = await bookingApi.post<BookingResponse>('/api/bookings', bookingData);
-    
-    if (response.message) {
-      console.log('Бронирование успешно:', response);
-      return {
-        booking_id: response.booking_id || 'unknown',
-        calendar_link: response.calendar_link || '',
-        telegram_notification: response.telegram_notification || false,
-        details: response.details || {}
-      };
-    }
-    
-    throw new Error('Неверный формат ответа');
+    // Используем новый публичный эндпоинт
+    const response = await bookingApi.post<BookingResponse>('/bookings/public/', bookingData);
+    return response.data;
   } catch (error) {
-    console.error('Ошибка бронирования:', error);
-    throw error;
+    if (axios.isAxiosError(error) && error.response) {
+      // Если есть специфичное сообщение об ошибке от бэкенда, используем его
+      if (error.response.data && error.response.data.detail) {
+        throw new Error(error.response.data.detail);
+      }
+      // Иначе, возвращаем общую ошибку HTTP
+      throw new Error(`Ошибка сервера: ${error.response.status} ${error.response.statusText}`);
+    }
+    // Для непредвиденных ошибок
+    throw new Error('Произошла непредвиденная ошибка при создании бронирования.');
   }
 };

@@ -19,7 +19,7 @@ const NewsAdmin: React.FC = () => {
     try {
       const data = await fetchNews();
       setNews(data);
-    } catch (e) {
+    } catch {
       setError('Ошибка загрузки новостей');
     } finally {
       setLoading(false);
@@ -41,7 +41,7 @@ const NewsAdmin: React.FC = () => {
       setForm({ title: '', content: '' });
       setEditId(null);
       await loadNews();
-    } catch (e) {
+    } catch {
       setError('Ошибка сохранения');
     }
   };
@@ -55,7 +55,7 @@ const NewsAdmin: React.FC = () => {
     try {
       await deleteNews(id, getAdminHeaders());
       await loadNews();
-    } catch (e) {
+    } catch {
       setError('Ошибка удаления');
     }
   };

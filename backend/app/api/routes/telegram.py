@@ -1,2 +1,1 @@
-from ...core.database import get_db
-# ... остальной код ... 
+# This file is reserved for Telegram-related API endpoints, such as webhooks.

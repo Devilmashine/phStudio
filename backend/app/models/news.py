@@ -2,6 +2,7 @@ from .base import Base
 from sqlalchemy import Column, Integer, String, Text, DateTime, ForeignKey
 from datetime import datetime
 
+
 class News(Base):
     __tablename__ = "news"
 
@@ -11,4 +12,4 @@ class News(Base):
     created_at = Column(DateTime, default=datetime.utcnow)
     updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
     published = Column(Integer, default=1)  # 1 - опубликовано, 0 - скрыто
-    author_id = Column(Integer, ForeignKey('users.id'), nullable=False)
+    author_id = Column(Integer, ForeignKey("users.id"), nullable=False)

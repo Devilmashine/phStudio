@@ -1,37 +1,32 @@
 import asyncio
 import logging
 import os
-from datetime import datetime, timedelta
 from logging.handlers import RotatingFileHandler
-from typing import List, Dict, Any, Optional
 
-from fastapi import FastAPI, HTTPException, Query, Request, Depends
+from fastapi import FastAPI, Depends
 from fastapi.middleware.cors import CORSMiddleware
-from pydantic import BaseModel, Field
 from dotenv import load_dotenv
 
 # Загрузка переменных окружения
 load_dotenv()
 
+
 # Настройка логирования
 def setup_logging():
-    log_dir = os.path.join(os.path.dirname(__file__), 'logs')
+    log_dir = os.path.join(os.path.dirname(__file__), "logs")
     os.makedirs(log_dir, exist_ok=True)
-    
-    log_file = os.path.join(log_dir, 'app.log')
-    
+
+    log_file = os.path.join(log_dir, "app.log")
+
     logging.basicConfig(
         level=logging.INFO,
-        format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
+        format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
         handlers=[
             logging.StreamHandler(),
-            RotatingFileHandler(
-                log_file, 
-                maxBytes=10*1024*1024,
-                backupCount=5
-            )
-        ]
+            RotatingFileHandler(log_file, maxBytes=10 * 1024 * 1024, backupCount=5),
+        ],
     )
+
 
 # Инициализация логирования
 setup_logging()
@@ -46,6 +41,7 @@ app = FastAPI(
     redirect_slashes=False
 )
 
+
 # Настройка CORS
 app.add_middleware(
     CORSMiddleware,
@@ -55,7 +51,7 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# Импорты после настройки логирования
+
 from app.core.rate_limiter import setup_rate_limiter, default_rate_limit
 from app.core.cache import setup_cache, cache_calendar_state, cache_settings, cache_gallery
 from app.services.telegram_bot import TelegramBotService
@@ -65,9 +61,6 @@ from app.api.routes.gallery import router as gallery_router
 from app.api.routes.news import router as news_router
 from app.api.routes.auth import router as auth_router
 from app.api.routes.booking import router as booking_router
-
-# Создаем экземпляр FastAPI
-app = FastAPI(title="Photo Studio API")
 
 @app.on_event("startup")
 async def startup_event():
@@ -80,6 +73,7 @@ async def startup_event():
         logger.info("Rate limiter and cache services initialized successfully")
     except Exception as e:
         logger.error(f"Error initializing services: {str(e)}")
+
 
 # Настраиваем CORS
 app.add_middleware(
@@ -94,6 +88,7 @@ app.add_middleware(
     allow_headers=["*"]
 )
 
+
 # Применяем rate limiting к роутерам
 for router in [
     calendar_events_router,
@@ -105,6 +100,7 @@ for router in [
     for route in router.routes:
         route.dependencies.append(Depends(default_rate_limit))
 
+
 # Регистрируем роутеры
 app.include_router(calendar_events_router)
 app.include_router(settings_router)
@@ -112,6 +108,7 @@ app.include_router(gallery_router)
 app.include_router(news_router)
 app.include_router(auth_router)
 app.include_router(booking_router)
+
 
 # Инициализация Telegram бота
 try:

@@ -2,6 +2,7 @@ from pydantic_settings import BaseSettings
 from typing import List
 from pydantic import computed_field
 
+
 class Settings(BaseSettings):
     # --- Основные настройки ---
     ENV: str = "development"
@@ -32,6 +33,10 @@ class Settings(BaseSettings):
         env_file = ".env"
         env_file_encoding = "utf-8"
         extra = "allow"
+
+
+from functools import lru_cache
+
 
 @lru_cache()
 def get_settings():

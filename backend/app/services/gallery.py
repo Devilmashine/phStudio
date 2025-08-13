@@ -4,14 +4,19 @@ from app.schemas.gallery import GalleryImageCreate
 from typing import List
 import os
 
+
 class GalleryService:
     def __init__(self, db: Session):
         self.db = db
 
     def get_images(self) -> List[GalleryImage]:
-        return self.db.query(GalleryImage).order_by(GalleryImage.uploaded_at.desc()).all()
+        return (
+            self.db.query(GalleryImage).order_by(GalleryImage.uploaded_at.desc()).all()
+        )
 
-    def add_image(self, filename: str, url: str, description: str = None) -> GalleryImage:
+    def add_image(
+        self, filename: str, url: str, description: str = None
+    ) -> GalleryImage:
         image = GalleryImage(filename=filename, url=url, description=description or "")
         self.db.add(image)
         self.db.commit()

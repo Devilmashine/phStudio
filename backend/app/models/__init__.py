@@ -6,4 +6,14 @@ from .calendar_event import CalendarEvent
 from .gallery import GalleryImage
 from .news import News
 
-__all__ = ["Base", "Booking", "BookingStatus", "User", "UserRole", "Client", "CalendarEvent", "GalleryImage", "News"]
+__all__ = [
+    "Base",
+    "Booking",
+    "BookingStatus",
+    "User",
+    "UserRole",
+    "Client",
+    "CalendarEvent",
+    "GalleryImage",
+    "News",
+]

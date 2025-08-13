@@ -1,9 +1,12 @@
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import { format } from 'date-fns';
 import { useBookingValidation } from './useBookingValidation';
 import { createBooking } from '../services/booking'; 
+import { studio } from '../data/studio';
+import { useToast } from '../components/Toast';
 
 export function useBookingForm() {
+  const toast = useToast();
   const [selectedDate, setSelectedDate] = useState<Date | null>(null);
   const [selectedTimes, setSelectedTimes] = useState<string[]>([]);
   const [name, setName] = useState('');
@@ -12,7 +15,6 @@ export function useBookingForm() {
   const [privacyAccepted, setPrivacyAccepted] = useState(false);
   const [showTermsModal, setShowTermsModal] = useState(false);
   const [showPrivacyModal, setShowPrivacyModal] = useState(false);
-  const [showSuccessModal, setShowSuccessModal] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const { formErrors, validateForm } = useBookingValidation({
@@ -23,6 +25,10 @@ export function useBookingForm() {
     termsAccepted,
     privacyAccepted
   });
+
+  const totalPrice = useMemo(() => {
+    return selectedTimes.length * studio.pricePerHour;
+  }, [selectedTimes]);
 
   const handleTimeSelect = (time: string) => {
     setSelectedTimes(prev => {
@@ -55,20 +61,19 @@ export function useBookingForm() {
 
     setIsSubmitting(true);
     try {
-      console.log('Booking submitted:', bookingData);
-      
       await createBooking(bookingData);
-      
-      setShowSuccessModal(true);
+      toast.show('Заявка успешно отправлена! Мы свяжемся с вами.');
+      resetForm(); // Сбрасываем форму
     } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : 'Произошла неизвестная ошибка.';
+      toast.show(`Ошибка: ${errorMessage}`);
       console.error('Booking submission error:', error);
     } finally {
       setIsSubmitting(false);
     }
   };
 
-  const handleCloseSuccess = () => {
-    setShowSuccessModal(false);
+  const resetForm = () => {
     setSelectedDate(null);
     setSelectedTimes([]);
     setName('');
@@ -86,7 +91,6 @@ export function useBookingForm() {
     privacyAccepted,
     showTermsModal,
     showPrivacyModal,
-    showSuccessModal,
     isSubmitting,
     formErrors,
     setName,
@@ -98,6 +102,7 @@ export function useBookingForm() {
     handleTimeSelect,
     handleDateChange,
     handleSubmit,
-    handleCloseSuccess
+    resetForm,
+    totalPrice
   };
 }

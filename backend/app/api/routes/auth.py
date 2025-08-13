@@ -5,7 +5,6 @@ from datetime import datetime, timedelta, timezone
 from jose import JWTError, jwt
 from typing import List, Optional
 import logging
-
 from app.core.database import get_db
 from app.services.user import UserService
 from app.schemas.user import UserCreate, UserResponse, UserUpdate, UserLogin
@@ -19,20 +18,31 @@ logger = logging.getLogger(__name__)
 router = APIRouter()
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="token")
 
+
 # Функции для работы с JWT токенами
 def create_access_token(data: dict):
     to_encode = data.copy()
-    expire = datetime.now(timezone.utc) + timedelta(minutes=settings.ACCESS_TOKEN_EXPIRE_MINUTES)
+    expire = datetime.now(timezone.utc) + timedelta(
+        minutes=settings.ACCESS_TOKEN_EXPIRE_MINUTES
+    )
     to_encode.update({"exp": expire})
-    encoded_jwt = jwt.encode(to_encode, settings.SECRET_KEY, algorithm=settings.ALGORITHM)
+    encoded_jwt = jwt.encode(
+        to_encode, settings.SECRET_KEY, algorithm=settings.ALGORITHM
+    )
     return encoded_jwt
+
 
 def create_refresh_token(data: dict):
     to_encode = data.copy()
-    expire = datetime.now(timezone.utc) + timedelta(minutes=settings.REFRESH_TOKEN_EXPIRE_MINUTES)
+    expire = datetime.now(timezone.utc) + timedelta(
+        minutes=settings.REFRESH_TOKEN_EXPIRE_MINUTES
+    )
     to_encode.update({"exp": expire, "type": "refresh"})
-    encoded_jwt = jwt.encode(to_encode, settings.SECRET_KEY, algorithm=settings.ALGORITHM)
+    encoded_jwt = jwt.encode(
+        to_encode, settings.SECRET_KEY, algorithm=settings.ALGORITHM
+    )
     return encoded_jwt
+
 
 def set_refresh_cookie(response: Response, refresh_token: str):
     response.set_cookie(
@@ -41,11 +51,13 @@ def set_refresh_cookie(response: Response, refresh_token: str):
         httponly=True,
         secure=True,  # Только через HTTPS в production
         samesite="lax",
-        max_age=60*60*24*30  # 30 дней
+        max_age=60 * 60 * 24 * 30,  # 30 дней
     )
+
 
 def clear_refresh_cookie(response: Response):
     response.delete_cookie("refresh_token")
+
 
 async def get_current_user(token: str = Depends(oauth2_scheme), db: Session = Depends(get_db)):
     credentials_exception = HTTPException(
@@ -54,7 +66,9 @@ async def get_current_user(token: str = Depends(oauth2_scheme), db: Session = De
         headers={"WWW-Authenticate": "Bearer"},
     )
     try:
-        payload = jwt.decode(token, settings.SECRET_KEY, algorithms=[settings.ALGORITHM])
+        payload = jwt.decode(
+            token, settings.SECRET_KEY, algorithms=[settings.ALGORITHM]
+        )
         username: Optional[str] = payload.get("sub")
         role: Optional[str] = payload.get("role")
         if username is None or role is None:
@@ -71,21 +85,22 @@ async def get_current_user(token: str = Depends(oauth2_scheme), db: Session = De
         raise credentials_exception
     return user
 
-async def get_current_admin(current_user = Depends(get_current_user)):
+
+async def get_current_admin(current_user=Depends(get_current_user)):
     if current_user.role != UserRole.admin:
         raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN,
-            detail="Недостаточно прав"
+            status_code=status.HTTP_403_FORBIDDEN, detail="Недостаточно прав"
         )
     return current_user
 
-async def get_current_manager(current_user = Depends(get_current_user)):
+
+async def get_current_manager(current_user=Depends(get_current_user)):
     if current_user.role not in [UserRole.admin, UserRole.manager]:
         raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN,
-            detail="Недостаточно прав"
+            status_code=status.HTTP_403_FORBIDDEN, detail="Недостаточно прав"
         )
     return current_user
+
 
 @router.post("/token")
 async def login(
@@ -107,6 +122,7 @@ async def login(
     # Аудит входа
     logger.info(f"LOGIN: user={user.username}, ip=TODO, time={datetime.now(timezone.utc)}")
     return response
+
 
 @router.post("/refresh")
 async def refresh_token(response: Response, refresh_token: Optional[str] = Cookie(None), db: Session = Depends(get_db)):
@@ -132,6 +148,7 @@ async def refresh_token(response: Response, refresh_token: Optional[str] = Cooki
     logger.info(f"REFRESH: user={user.username}, ip=TODO, time={datetime.now(timezone.utc)}")
     return {"access_token": access_token, "token_type": "bearer"}
 
+
 @router.post("/logout")
 async def logout(response: Response):
     clear_refresh_cookie(response)
@@ -139,44 +156,49 @@ async def logout(response: Response):
     logger.info(f"LOGOUT: ip=TODO, time={datetime.now(timezone.utc)}")
     return {"detail": "Выход выполнен"}
 
+
 @router.post("/users", response_model=UserResponse)
 async def create_user(
     user_data: UserCreate,
     db: Session = Depends(get_db),
-    current_user: User = Depends(get_current_admin)
+    current_user: User = Depends(get_current_admin),
 ):
     user_service = UserService(db)
     return user_service.create_user(user_data)
+
 
 @router.get("/users", response_model=List[UserResponse])
 async def get_users(
     skip: int = 0,
     limit: int = 100,
     db: Session = Depends(get_db),
-    current_user: User = Depends(get_current_manager)
+    current_user: User = Depends(get_current_manager),
 ):
     user_service = UserService(db)
     return user_service.get_users(skip=skip, limit=limit)
 
+
 @router.get("/users/me", response_model=UserResponse)
 async def get_current_user_info(current_user: User = Depends(get_current_user)):
     return current_user
+
 
 @router.put("/users/{user_id}", response_model=UserResponse)
 async def update_user(
     user_id: int,
     user_data: UserUpdate,
     db: Session = Depends(get_db),
-    current_user: User = Depends(get_current_admin)
+    current_user: User = Depends(get_current_admin),
 ):
     user_service = UserService(db)
     return user_service.update_user(user_id, user_data)
+
 
 @router.delete("/users/{user_id}")
 async def delete_user(
     user_id: int,
     db: Session = Depends(get_db),
-    current_user: User = Depends(get_current_admin)
+    current_user: User = Depends(get_current_admin),
 ):
     user_service = UserService(db)
     return user_service.delete_user(user_id)

@@ -21,7 +21,7 @@ const ClientEventsTable: React.FC = () => {
       try {
         const res = await axios.get('/api/calendar-events');
         setEvents(res.data);
-      } catch (e: any) {
+      } catch {
         setError('Ошибка загрузки событий');
       } finally {
         setLoading(false);

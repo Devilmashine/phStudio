@@ -1,6 +1,7 @@
+/* eslint-env jest */
 import '@testing-library/jest-dom';
 import { render, screen, fireEvent } from '@testing-library/react';
-import BookingPage from '../frontend/src/pages/BookingPage';
+import BookingPage from '../pages/BookingPage';
 import { MemoryRouter } from 'react-router-dom';
 import { rest } from 'msw';
 import { setupServer } from 'msw/node';

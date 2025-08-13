@@ -22,7 +22,7 @@ const Gallery: React.FC = () => {
     try {
       const data = await fetchGallery();
       setImages(data);
-    } catch (e) {
+    } catch {
       setError('Ошибка загрузки галереи');
     } finally {
       setLoading(false);
@@ -43,7 +43,7 @@ const Gallery: React.FC = () => {
       if (fileInputRef.current) fileInputRef.current.value = '';
       toast?.show('Изображение загружено');
       await loadGallery();
-    } catch (e) {
+    } catch {
       setError('Ошибка загрузки изображения');
       toast?.show('Ошибка загрузки изображения');
     }
@@ -54,7 +54,7 @@ const Gallery: React.FC = () => {
       await deleteImage(id, getAdminHeaders());
       toast?.show('Изображение удалено');
       await loadGallery();
-    } catch (e) {
+    } catch {
       setError('Ошибка удаления');
       toast?.show('Ошибка удаления');
     }

@@ -4,6 +4,7 @@ from typing import Optional
 
 from app.models.calendar_event_status import CalendarEventStatus
 
+
 class CalendarEventBase(BaseModel):
     title: str
     description: Optional[str] = None
@@ -11,6 +12,7 @@ class CalendarEventBase(BaseModel):
     end_time: datetime
     people_count: int
     status: Optional[CalendarEventStatus] = CalendarEventStatus.pending
+
 
 class CalendarEventCreate(CalendarEventBase):
     pass

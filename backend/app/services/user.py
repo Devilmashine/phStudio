@@ -11,6 +11,7 @@ from app.schemas.user import UserCreate, UserUpdate
 
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 
+
 class UserService:
     def __init__(self, db: Session):
         self.db = db
@@ -29,9 +30,13 @@ class UserService:
 
     def create_user(self, user_data: UserCreate) -> User:
         if self.get_user_by_username(user_data.username):
-            raise HTTPException(status_code=400, detail="Пользователь с таким именем уже существует")
+            raise HTTPException(
+                status_code=400, detail="Пользователь с таким именем уже существует"
+            )
         if self.get_user_by_email(user_data.email):
-            raise HTTPException(status_code=400, detail="Пользователь с таким email уже существует")
+            raise HTTPException(
+                status_code=400, detail="Пользователь с таким email уже существует"
+            )
 
         hashed_password = pwd_context.hash(user_data.password)
         ical_token = token_urlsafe(32)
@@ -41,7 +46,7 @@ class UserService:
             hashed_password=hashed_password,
             role=user_data.role,
             ical_token=ical_token,
-            full_name=user_data.full_name
+            full_name=user_data.full_name,
         )
 
         try:
@@ -51,7 +56,9 @@ class UserService:
             return db_user
         except IntegrityError:
             self.db.rollback()
-            raise HTTPException(status_code=400, detail="Ошибка при создании пользователя")
+            raise HTTPException(
+                status_code=400, detail="Ошибка при создании пользователя"
+            )
 
     def update_user(self, user_id: int, user_data: UserUpdate) -> User:
         user = self.get_user_by_id(user_id)
@@ -60,7 +67,9 @@ class UserService:
 
         update_data = user_data.dict(exclude_unset=True)
         if "password" in update_data:
-            update_data["hashed_password"] = pwd_context.hash(update_data.pop("password"))
+            update_data["hashed_password"] = pwd_context.hash(
+                update_data.pop("password")
+            )
 
         for field, value in update_data.items():
             setattr(user, field, value)
@@ -71,7 +80,9 @@ class UserService:
             return user
         except IntegrityError:
             self.db.rollback()
-            raise HTTPException(status_code=400, detail="Ошибка при обновлении пользователя")
+            raise HTTPException(
+                status_code=400, detail="Ошибка при обновлении пользователя"
+            )
 
     def delete_user(self, user_id: int) -> bool:
         user = self.get_user_by_id(user_id)
@@ -84,7 +95,9 @@ class UserService:
             return True
         except Exception:
             self.db.rollback()
-            raise HTTPException(status_code=400, detail="Ошибка при удалении пользователя")
+            raise HTTPException(
+                status_code=400, detail="Ошибка при удалении пользователя"
+            )
 
     def verify_password(self, plain_password: str, hashed_password: str) -> bool:
         return pwd_context.verify(plain_password, hashed_password)
