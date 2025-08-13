@@ -61,6 +61,7 @@ from app.api.routes.gallery import router as gallery_router
 from app.api.routes.news import router as news_router
 from app.api.routes.auth import router as auth_router
 from app.api.routes.booking import router as booking_router
+from app.api.routes.employees import router as employees_router
 
 @app.on_event("startup")
 async def startup_event():
@@ -95,7 +96,8 @@ for router in [
     settings_router,
     gallery_router,
     news_router,
-    booking_router
+    booking_router,
+    employees_router
 ]:
     for route in router.routes:
         route.dependencies.append(Depends(default_rate_limit))
@@ -108,6 +110,7 @@ app.include_router(gallery_router)
 app.include_router(news_router)
 app.include_router(auth_router)
 app.include_router(booking_router)
+app.include_router(employees_router)
 
 
 # Инициализация Telegram бота
