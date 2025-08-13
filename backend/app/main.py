@@ -98,4 +98,5 @@ def create_app() -> FastAPI:
 
     return app
 
+# The FastAPI app is instantiated only once with full configuration
 app = create_app()
