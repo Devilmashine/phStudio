@@ -1,10 +1,9 @@
 import requests
 from typing import Optional
-from ..core.config import get_settings
+from app.core.config import settings
 
 class TelegramService:
     def __init__(self):
-        settings = get_settings()
         self.bot_token = settings.TELEGRAM_BOT_TOKEN
         self.chat_id = settings.TELEGRAM_CHAT_ID
         self.base_url = f"https://api.telegram.org/bot{self.bot_token}"

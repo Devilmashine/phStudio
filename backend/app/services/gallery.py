@@ -1,6 +1,6 @@
 from sqlalchemy.orm import Session
-from ..models.gallery import GalleryImage
-from ..schemas.gallery import GalleryImageCreate
+from app.models.gallery import GalleryImage
+from app.schemas.gallery import GalleryImageCreate
 from typing import List
 import os
 

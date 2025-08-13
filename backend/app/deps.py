@@ -1,5 +1,5 @@
-from .models.user import UserSchema, UserRole
-from .core.database import get_db
+from app.models.user import UserSchema, UserRole
+from app.core.database import get_db
 from fastapi import Request, HTTPException, status
 from types import SimpleNamespace
 

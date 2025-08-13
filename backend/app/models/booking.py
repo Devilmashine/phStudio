@@ -3,7 +3,7 @@ from sqlalchemy.orm import relationship
 import enum
 from datetime import datetime, timezone
 
-from .base import Base
+from app.models.base import Base
 
 class BookingStatus(enum.Enum):
     PENDING = "pending"

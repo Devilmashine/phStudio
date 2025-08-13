@@ -2,16 +2,16 @@ from fastapi import APIRouter, Depends, HTTPException, status, Query
 from sqlalchemy.orm import Session
 from typing import List
 from datetime import datetime
-from ...core.database import get_db
-from ...services.calendar_event import CalendarEventService
-from ...schemas.calendar_event import CalendarEventCreate, CalendarEventUpdate, CalendarEventResponse
-from ...models.user import User, UserRole
-from .auth import get_current_admin, get_current_manager
+from app.core.database import get_db
+from app.services.calendar_event import CalendarEventService
+from app.schemas.calendar_event import CalendarEventCreate, CalendarEventUpdate, CalendarEventResponse
+from app.models.user import User, UserRole
+from app.api.routes.auth import get_current_admin, get_current_manager
 from fastapi.responses import Response, StreamingResponse
 import secrets
 from ics import Calendar, Event as IcsEvent
 from secrets import token_urlsafe
-from ...models.calendar_event import CalendarEvent
+from app.models.calendar_event import CalendarEvent
 
 router = APIRouter(
     prefix="/api/calendar-events",

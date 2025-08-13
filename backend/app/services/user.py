@@ -6,8 +6,8 @@ from passlib.context import CryptContext
 from typing import Optional, List
 from secrets import token_urlsafe
 
-from ..models.user import User, UserRole
-from ..schemas.user import UserCreate, UserUpdate
+from app.models.user import User, UserRole
+from app.schemas.user import UserCreate, UserUpdate
 
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 
@@ -58,7 +58,7 @@ class UserService:
         if not user:
             raise HTTPException(status_code=404, detail="Пользователь не найден")
 
-        update_data = user_data.model_dump(exclude_unset=True)
+        update_data = user_data.dict(exclude_unset=True)
         if "password" in update_data:
             update_data["hashed_password"] = pwd_context.hash(update_data.pop("password"))
 

@@ -37,66 +37,86 @@ def setup_logging():
 setup_logging()
 logger = logging.getLogger(__name__)
 
-# Импорты вынесены в начало файла для лучшей читаемости
-from .core.config import get_settings
-from .core.rate_limiter import setup_rate_limiter, default_rate_limit
-from .core.cache import setup_cache
-from .services.telegram_bot import TelegramBotService
-from .api.routes.calendar_events import router as calendar_events_router
-from .api.routes.settings import router as settings_router
-from .api.routes.gallery import router as gallery_router
-from .api.routes.news import router as news_router
-from .api.routes.auth import router as auth_router
-from .api.routes.booking import router as booking_router
+# Создание приложения FastAPI с отключенными автоматическими редиректами
+app = FastAPI(
+    title="phStudio API",
+    description="API для фотостудии",
+    version="1.0.0",
+    # Отключаем редиректы глобально для всего приложения
+    redirect_slashes=False
+)
 
-def create_app() -> FastAPI:
-    # Создаем экземпляр FastAPI
-    app = FastAPI(
-        title="phStudio API",
-        description="API для фотостудии",
-        version="1.0.0",
-        redirect_slashes=False,
-        dependencies=[Depends(default_rate_limit)] # Применяем rate-limit ко всем эндпоинтам
-    )
+# Настройка CORS
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],  # В продакшене заменить на конкретные домены
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 
-    # Настраиваем CORS из настроек
-    app.add_middleware(
-        CORSMiddleware,
-        allow_origins=get_settings().CORS_ORIGINS,
-        allow_credentials=True,
-        allow_methods=["*"],
-        allow_headers=["*"],
-    )
+# Импорты после настройки логирования
+from app.core.rate_limiter import setup_rate_limiter, default_rate_limit
+from app.core.cache import setup_cache, cache_calendar_state, cache_settings, cache_gallery
+from app.services.telegram_bot import TelegramBotService
+from app.api.routes.calendar_events import router as calendar_events_router
+from app.api.routes.settings import router as settings_router
+from app.api.routes.gallery import router as gallery_router
+from app.api.routes.news import router as news_router
+from app.api.routes.auth import router as auth_router
+from app.api.routes.booking import router as booking_router
 
-    @app.on_event("startup")
-    async def startup_event():
-        """Инициализация сервисов при запуске"""
-        try:
-            # Инициализация rate limiter
-            await setup_rate_limiter()
-            # Инициализация кэширования
-            await setup_cache()
-            logger.info("Rate limiter and cache services initialized successfully")
-        except Exception as e:
-            logger.error(f"Error initializing services: {str(e)}")
+# Создаем экземпляр FastAPI
+app = FastAPI(title="Photo Studio API")
 
-    # Регистрируем роутеры
-    app.include_router(calendar_events_router)
-    app.include_router(settings_router)
-    app.include_router(gallery_router)
-    app.include_router(news_router)
-    app.include_router(auth_router)
-    app.include_router(booking_router)
-
-    # Инициализация Telegram бота
+@app.on_event("startup")
+async def startup_event():
+    """Инициализация сервисов при запуске"""
     try:
-        telegram_service = TelegramBotService()
-        logger.info("Telegram Bot Service successfully initialized")
+        # Инициализация rate limiter
+        await setup_rate_limiter()
+        # Инициализация кэширования
+        await setup_cache()
+        logger.info("Rate limiter and cache services initialized successfully")
     except Exception as e:
-        logger.error(f"Error initializing Telegram Bot Service: {str(e)}")
-        telegram_service = None
+        logger.error(f"Error initializing services: {str(e)}")
 
-    return app
+# Настраиваем CORS
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=[
+        "http://localhost:5173",
+        "http://localhost:3000",
+        "https://laughing-waffle-g7xxww4jqwwcg7q-5173.app.github.dev"
+    ],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"]
+)
 
-# The FastAPI app is instantiated only once with full configuration
-app = create_app()
+# Применяем rate limiting к роутерам
+for router in [
+    calendar_events_router,
+    settings_router,
+    gallery_router,
+    news_router,
+    booking_router
+]:
+    for route in router.routes:
+        route.dependencies.append(Depends(default_rate_limit))
+
+# Регистрируем роутеры
+app.include_router(calendar_events_router)
+app.include_router(settings_router)
+app.include_router(gallery_router)
+app.include_router(news_router)
+app.include_router(auth_router)
+app.include_router(booking_router)
+
+# Инициализация Telegram бота
+try:
+    telegram_service = TelegramBotService()
+    logger.info("Telegram Bot Service successfully initialized")
+except Exception as e:
+    logger.error(f"Error initializing Telegram Bot Service: {str(e)}")
+    telegram_service = None
