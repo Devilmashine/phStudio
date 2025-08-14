@@ -1,25 +1,28 @@
-import React, { useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { useAuth } from '../hooks/useAuth';
+import React from 'react';
+import { Navigate, useLocation } from 'react-router-dom';
+import authService from '../services/authService';
 
 interface ProtectedRouteProps {
-  allowedRoles?: string[];
+  allowedRoles: Array<'admin' | 'manager' | 'user'>;
   children: React.ReactNode;
 }
 
-const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ allowedRoles = ['admin'], children }) => {
-  const navigate = useNavigate();
-  const { tryRefresh } = useAuth();
-  useEffect(() => {
-    const token = localStorage.getItem('token');
-    const exp = localStorage.getItem('token_exp');
-    const role = localStorage.getItem('role');
-    if (!token || !exp || !role || (allowedRoles && !allowedRoles.includes(role)) || Date.now() > parseInt(exp, 10)) {
-      tryRefresh().then(success => {
-        if (!success) navigate('/login', { replace: true });
-      });
-    }
-  }, [navigate, tryRefresh, allowedRoles]);
+const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ allowedRoles, children }) => {
+  const currentUser = authService.getCurrentUser();
+  const location = useLocation();
+
+  if (!currentUser) {
+    // Not logged in
+    return <Navigate to="/login" state={{ from: location }} replace />;
+  }
+
+  if (!allowedRoles.includes(currentUser.role)) {
+    // Logged in, but does not have the required role
+    // Redirect them to a page they have access to, or an unauthorized page
+    // For simplicity, we'll send them to the home page.
+    return <Navigate to="/" replace />;
+  }
+
   return <>{children}</>;
 };
 

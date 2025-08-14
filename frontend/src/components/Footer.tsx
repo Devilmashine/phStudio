@@ -1,4 +1,5 @@
 import React from 'react';
+import { Link } from 'react-router-dom';
 import { Camera, Mail, Phone, MapPin } from 'lucide-react';
 
 const Footer = React.memo(() => {
@@ -28,6 +29,7 @@ const Footer = React.memo(() => {
               <li><a href="#portfolio" className="text-gray-400 hover:text-white">Portfolio</a></li>
               <li><a href="#pricing" className="text-gray-400 hover:text-white">Pricing</a></li>
               <li><a href="#booking" className="text-gray-400 hover:text-white">Book Now</a></li>
+              <li><Link to="/privacy" className="text-gray-400 hover:text-white">Политика конфиденциальности</Link></li>
             </ul>
           </div>
           <div>

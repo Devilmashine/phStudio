@@ -1,9 +1,11 @@
 import pytest
+<<<<<<< HEAD
 from fastapi import FastAPI
+=======
+>>>>>>> feature/employee-section
 from fastapi.testclient import TestClient
-from ..app.api.routes.news import router as news_router
-from ..app.deps import get_current_active_user, get_db
 
+<<<<<<< HEAD
 @pytest.fixture
 def client():
     app = FastAPI()
@@ -21,6 +23,17 @@ def client():
         yield c
 
 def test_get_news_list(client):
+=======
+def test_get_news_list(client: TestClient):
+    """
+    Тест на получение пустого списка новостей.
+    Использует фикстуру client, которая обеспечивает чистую БД.
+    """
+>>>>>>> feature/employee-section
     response = client.get("/api/news/")
     assert response.status_code == 200
-    assert isinstance(response.json(), list)
+    assert response.json() == []
+
+# Тесты для создания/обновления/удаления новостей потребуют
+# фикстуры для аутентифицированного пользователя (админа)
+# и передачи токена в заголовках.

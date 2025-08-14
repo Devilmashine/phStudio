@@ -1,6 +1,7 @@
 from pydantic import BaseModel
 from datetime import datetime
 from typing import Optional
+from ..models.booking import BookingStatus
 
 
 class BookingBase(BaseModel):
@@ -27,3 +28,10 @@ class Booking(BookingBase):
 
     class ConfigDict:
         from_attributes = True
+<<<<<<< HEAD
+=======
+
+
+class BookingStatusUpdate(BaseModel):
+    status: BookingStatus
+>>>>>>> feature/employee-section

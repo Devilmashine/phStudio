@@ -1,6 +1,7 @@
 from pydantic_settings import BaseSettings
 from typing import List
 from pydantic import computed_field
+from functools import lru_cache
 
 
 class Settings(BaseSettings):

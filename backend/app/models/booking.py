@@ -26,7 +26,7 @@ class Booking(Base):
     date = Column(DateTime(timezone=True), nullable=False)
     start_time = Column(DateTime(timezone=True), nullable=False)
     end_time = Column(DateTime(timezone=True), nullable=False)
-    status = Column(Enum(BookingStatus), default=BookingStatus.PENDING)
+    status = Column(String, default=BookingStatus.PENDING.value, nullable=False)
     total_price = Column(Float, nullable=False)
 
     # Клиент

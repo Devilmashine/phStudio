@@ -22,6 +22,7 @@ const Sidebar = ({ open, onClose }: { open: boolean; onClose: () => void }) => (
       <NavLink to="news" className={({ isActive }) => isActive ? 'font-bold text-blue-600' : ''}>Новости</NavLink>
       <NavLink to="schedule" className={({ isActive }) => isActive ? 'font-bold text-blue-600' : ''}>Расписание</NavLink>
       <NavLink to="calendar" className={({ isActive }) => isActive ? 'font-bold text-blue-600' : ''}>Календарь</NavLink>
+      <NavLink to="users" className={({ isActive }) => isActive ? 'font-bold text-blue-600' : ''}>Пользователи</NavLink>
     </nav>
   </aside>
 );

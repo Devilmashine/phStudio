@@ -51,6 +51,7 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+<<<<<<< HEAD
 
 from app.core.rate_limiter import setup_rate_limiter, default_rate_limit
 from app.core.cache import setup_cache, cache_calendar_state, cache_settings, cache_gallery
@@ -62,14 +63,39 @@ from app.api.routes.news import router as news_router
 from app.api.routes.auth import router as auth_router
 from app.api.routes.booking import router as booking_router
 from app.api.routes.employees import router as employees_router
+=======
+    @app.on_event("startup")
+    async def startup_event():
+        """Инициализация сервисов при запуске"""
+        # Не инициализируем Redis в тестовом окружении
+        if get_settings().ENV != "testing":
+            try:
+                # Инициализация rate limiter
+                await setup_rate_limiter()
+                # Инициализация кэширования
+                await setup_cache()
+                logger.info("Rate limiter and cache services initialized successfully")
+            except Exception as e:
+                logger.error(f"Error initializing services: {str(e)}")
+
+    # Регистрируем роутеры
+    app.include_router(calendar_events_router, prefix="/api", tags=["calendar"])
+    app.include_router(settings_router, prefix="/api/settings", tags=["settings"])
+    app.include_router(gallery_router, prefix="/api/gallery", tags=["gallery"])
+    app.include_router(news_router, prefix="/api/news", tags=["news"])
+    app.include_router(auth_router, prefix="/api/auth", tags=["auth"])
+    app.include_router(booking_router, prefix="/api/bookings", tags=["bookings"])
+>>>>>>> feature/employee-section
 
 @app.on_event("startup")
 async def startup_event():
     """Инициализация сервисов при запуске"""
+    # Не инициализируем Redis в тестовом окружении
+    from app.core.config import get_settings
+    if hasattr(get_settings, "ENV") and get_settings().ENV == "testing":
+        return
     try:
-        # Инициализация rate limiter
         await setup_rate_limiter()
-        # Инициализация кэширования
         await setup_cache()
         logger.info("Rate limiter and cache services initialized successfully")
     except Exception as e:
@@ -90,7 +116,6 @@ app.add_middleware(
 )
 
 
-# Применяем rate limiting к роутерам
 for router in [
     calendar_events_router,
     settings_router,
@@ -99,18 +124,18 @@ for router in [
     booking_router,
     employees_router
 ]:
-    for route in router.routes:
-        route.dependencies.append(Depends(default_rate_limit))
+    for route in getattr(router, "routes", []):
+        if hasattr(route, "dependencies"):
+            route.dependencies.append(Depends(default_rate_limit))
 
 
-# Регистрируем роутеры
-app.include_router(calendar_events_router)
-app.include_router(settings_router)
-app.include_router(gallery_router)
-app.include_router(news_router)
-app.include_router(auth_router)
-app.include_router(booking_router)
-app.include_router(employees_router)
+app.include_router(calendar_events_router, prefix="/api", tags=["calendar"])
+app.include_router(settings_router, prefix="/api/settings", tags=["settings"])
+app.include_router(gallery_router, prefix="/api/gallery", tags=["gallery"])
+app.include_router(news_router, prefix="/api/news", tags=["news"])
+app.include_router(auth_router, prefix="/api/auth", tags=["auth"])
+app.include_router(booking_router, prefix="/api/bookings", tags=["bookings"])
+app.include_router(employees_router, prefix="/api/employees", tags=["employees"])
 
 
 # Инициализация Telegram бота

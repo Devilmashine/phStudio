@@ -1,10 +1,16 @@
 import React from 'react';
+import BookingList from '../components/BookingList';
 
-const ManagerPanel: React.FC = () => (
-  <div className="p-8">
-    <h1 className="text-2xl font-bold mb-4">Панель менеджера (заглушка)</h1>
-    <div className="text-gray-500">Здесь будет функционал для менеджера.</div>
-  </div>
-);
+const ManagerPanel: React.FC = () => {
+  return (
+    <div className="p-4 sm:p-6 md:p-8">
+      <h1 className="text-2xl font-bold mb-4">Manager Panel</h1>
+      <p className="text-gray-600 mb-6">
+        Here you can view and manage all client bookings.
+      </p>
+      <BookingList />
+    </div>
+  );
+};
 
 export default ManagerPanel;

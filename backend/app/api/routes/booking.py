@@ -3,10 +3,10 @@ from sqlalchemy.orm import Session
 from typing import List
 from app.core.database import get_db
 from app.services.booking import BookingService
-from app.schemas.booking import Booking, BookingCreate
+from app.schemas.booking import Booking, BookingCreate, BookingStatusUpdate
 from app.models.user import User, UserRole
 from app.api.routes.auth import get_current_admin, get_current_manager
-from app.services.telegram import telegram_service
+from app.services.telegram_bot import TelegramBotService
 
 router = APIRouter(prefix="/bookings", tags=["bookings"])
 
@@ -33,7 +33,48 @@ async def get_booking(
     if not booking:
         raise HTTPException(status_code=404, detail="Бронирование не найдено")
     return booking
+@router.patch("/{booking_id}/status", response_model=Booking)
+async def update_booking_status(
+    booking_id: int,
+    status_update: BookingStatusUpdate,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_manager)
+):
+    """
+    Эндпоинт для обновления статуса бронирования.
+    Доступен для менеджеров и администраторов.
+    """
+    service = BookingService(db)
+    booking = service.update_booking_status(booking_id, status_update.status)
+    if not booking:
+        raise HTTPException(status_code=404, detail="Бронирование не найдено")
+    return booking
 
+@router.post("/public/", response_model=Booking, status_code=status.HTTP_201_CREATED)
+async def create_public_booking(booking_data: BookingCreate, db: Session = Depends(get_db)):
+    """
+    Публичный эндпоинт для создания бронирования клиентом.
+    Не требует аутентификации.
+    """
+    service = BookingService(db)
+    try:
+        db_booking = service.create_booking(booking_data)
+        telegram_service = TelegramBotService()
+        await telegram_service.send_booking_notification(
+            message="Новое бронирование",
+            service="Студийная фотосессия",
+            date=booking_data.date.strftime('%Y-%m-%d'),
+            times=[booking_data.start_time.strftime('%H:%M'), booking_data.end_time.strftime('%H:%M')],
+            name=booking_data.client_name,
+            phone=booking_data.client_phone,
+            total_price=int(booking_data.total_price),
+            people_count=1
+        )
+        return db_booking
+    except HTTPException as e:
+        raise e
+    except Exception as e:
+        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="Произошла внутренняя ошибка при создании бронирования.")
 
 @router.post("/", response_model=Booking)
 async def create_booking(
@@ -41,10 +82,17 @@ async def create_booking(
 ):
     service = BookingService(db)
     db_booking = service.create_booking(booking_data)
-
-    # Отправляем уведомление в Telegram
-    await telegram_service.send_booking_notification(booking_data.model_dump())
-
+    telegram_service = TelegramBotService()
+    await telegram_service.send_booking_notification(
+        message="Новое бронирование (админ)",
+        service="Студийная фотосессия",
+        date=booking_data.date.strftime('%Y-%m-%d'),
+        times=[booking_data.start_time.strftime('%H:%M'), booking_data.end_time.strftime('%H:%M')],
+        name=booking_data.client_name,
+        phone=booking_data.client_phone,
+        total_price=int(booking_data.total_price),
+        people_count=1
+    )
     return db_booking
 
 
@@ -72,5 +120,4 @@ async def delete_booking(
     ok = service.delete_booking(booking_id)
     if not ok:
         raise HTTPException(status_code=404, detail="Бронирование не найдено")
-
     return {"message": "Бронирование удалено"}
