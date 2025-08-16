@@ -1,7 +1,8 @@
 import { useState, useCallback } from 'react';
 import { format } from 'date-fns';
 import { getAvailableSlots } from '../data/availability';
-import { AvailabilityState, DayAvailability } from '../types';
+import { AvailabilityState, DayAvailability } from '../types/index';
+
 
 export function useCalendar() {
   const [loading, setLoading] = useState(false);

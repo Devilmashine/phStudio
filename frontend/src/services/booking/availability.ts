@@ -1,5 +1,6 @@
 import { getAvailableSlots } from '../../data/availability';
-import { AvailabilityState } from '../../types';
+import { AvailabilityState } from '../../types/index';
+
 
 interface AvailableSlot {
   time: string;

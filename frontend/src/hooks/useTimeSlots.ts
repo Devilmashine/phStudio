@@ -1,7 +1,8 @@
 import { useState, useCallback } from 'react';
 import { format } from 'date-fns';
 import { getAvailableSlots } from '../data/availability';
-import { BookingSlot } from '../types';
+import { BookingSlot } from '../types/index';
+
 
 export function useTimeSlots() {
   const [loading, setLoading] = useState(false);
