@@ -69,12 +69,12 @@ async def startup_event():
     from app.core.config import get_settings
     if hasattr(get_settings, "ENV") and get_settings().ENV == "testing":
         return
-    try:
-        await setup_rate_limiter()
-        await setup_cache()
-        logger.info("Rate limiter and cache services initialized successfully")
-    except Exception as e:
-        logger.error(f"Error initializing services: {str(e)}")
+    # try:
+    #     await setup_rate_limiter()
+    #     await setup_cache()
+    #     logger.info("Rate limiter and cache services initialized successfully")
+    # except Exception as e:
+    #     logger.error(f"Error initializing services: {str(e)}")
 
 
 # Настраиваем CORS
@@ -91,17 +91,17 @@ app.add_middleware(
 )
 
 
-for router in [
-    calendar_events_router,
-    settings_router,
-    gallery_router,
-    news_router,
-    booking_router,
-    employees_router
-]:
-    for route in getattr(router, "routes", []):
-        if hasattr(route, "dependencies"):
-            route.dependencies.append(Depends(default_rate_limit))
+# for router in [
+#     calendar_events_router,
+#     settings_router,
+#     gallery_router,
+#     news_router,
+#     booking_router,
+#     employees_router
+# ]:
+#     for route in getattr(router, "routes", []):
+#         if hasattr(route, "dependencies"):
+#             route.dependencies.append(Depends(default_rate_limit))
 
 
 app.include_router(calendar_events_router, prefix="/api/calendar-events", tags=["calendar"])
