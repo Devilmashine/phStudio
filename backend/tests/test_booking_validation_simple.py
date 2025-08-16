@@ -1,6 +1,6 @@
 import pytest
 from datetime import datetime, timezone, timedelta
-from ..app.schemas.booking import BookingCreate
+from app.schemas.booking import BookingCreate
 
 def test_booking_validation_past_date():
     """Тест валидации даты в прошлом без базы данных."""
@@ -39,7 +39,7 @@ def test_booking_validation_time_range():
 
 def test_booking_schema_structure():
     """Тест структуры схемы бронирования."""
-    from ..app.schemas.booking import BookingCreate, Booking, BookingStatusUpdate
+    from app.schemas.booking import BookingCreate, Booking, BookingStatusUpdate
     
     # Проверяем, что схемы существуют
     assert BookingCreate is not None

@@ -5,7 +5,7 @@ from app.services.employee import EmployeeService
 from app.deps import get_db
 from typing import List
 
-router = APIRouter(prefix="/employees", tags=["employees"])
+router = APIRouter(tags=["employees"])
 
 @router.get("/", response_model=List[EmployeeInDB])
 def read_employees(skip: int = 0, limit: int = 100, db: Session = Depends(get_db)):
