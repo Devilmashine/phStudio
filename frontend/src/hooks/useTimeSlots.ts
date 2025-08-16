@@ -1,7 +1,7 @@
 import { useState, useCallback } from 'react';
-import { format, addHours } from 'date-fns';
-import { getAvailableSlots } from '../services/google/calendar';
-import { BookingSlot } from '../types';
+import { format } from 'date-fns';
+import { getAvailableSlots } from '../data/availability';
+import { BookingSlot } from '../types/index';
 
 export function useTimeSlots() {
   const [loading, setLoading] = useState(false);
@@ -16,23 +16,8 @@ export function useTimeSlots() {
 
     setLoading(true);
     try {
-      const events = await getAvailableSlots(dateStr);
-      const timeSlots: BookingSlot[] = events.map(event => {
-        const startTime = event.time;
-        const endTime = format(
-          addHours(new Date(`${dateStr}T${startTime}`), 1), 
-          'HH:mm'
-        );
-
-        return {
-          date: dateStr,
-          startTime,
-          endTime,
-          available: event.isBookable,
-          bookedPercentage: event.bookedPercentage,
-          state: event.state
-        };
-      });
+      const dayAvailability = await getAvailableSlots(dateStr);
+      const timeSlots = dayAvailability.slots;
       
       setSlots(prev => ({
         ...prev,

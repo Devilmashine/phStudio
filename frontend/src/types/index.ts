@@ -1,4 +1,9 @@
-import { AvailabilityState } from '../services/google/calendar';
+export enum AvailabilityState {
+  AVAILABLE = 'available',
+  PARTIALLY_BOOKED = 'partially-booked',
+  FULLY_BOOKED = 'fully-booked',
+  UNKNOWN = 'unknown'
+}
 
 export interface Studio {
   id: number;
@@ -25,13 +30,6 @@ export interface TimeSlot {
   state?: AvailabilityState;
 }
 
-export enum DateAvailabilityStatusType {
-  AVAILABLE = 'available',
-  PARTIALLY_BOOKED = 'partially-booked',
-  FULLY_BOOKED = 'fully-booked',
-  UNKNOWN = 'unknown'
-}
-
 export interface BookingSlot {
   date: string;
   startTime: string;
@@ -56,6 +54,6 @@ export interface BookingData {
 export interface DayAvailability {
   date: string;
   isAvailable: boolean;
-  status: DateAvailabilityStatusType;
+  status: AvailabilityState;
   slots: BookingSlot[];
 }
