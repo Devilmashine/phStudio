@@ -7,7 +7,7 @@ from ...schemas.client import ClientCreate, ClientUpdate, ClientResponse
 from ...models.user import User
 from .auth import get_current_admin, get_current_manager
 
-router = APIRouter(tags=["clients"])
+router = APIRouter(prefix="/clients", tags=["clients"])
 
 
 @router.get("/", response_model=List[ClientResponse])

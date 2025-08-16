@@ -12,7 +12,7 @@ def test_news_model_structure():
     """
     Тест структуры модели News.
     """
-    from app.models.news import News
+    from ..app.models.news import News
     
     # Проверяем, что модель имеет необходимые поля
     assert hasattr(News, 'id')
@@ -27,7 +27,7 @@ def test_news_schema_structure():
     """
     Тест структуры схемы новостей.
     """
-    from app.schemas.news import NewsCreate, NewsUpdate, News
+    from ..app.schemas.news import NewsCreate, NewsUpdate, News
     
     # Проверяем, что схемы существуют
     assert NewsCreate is not None

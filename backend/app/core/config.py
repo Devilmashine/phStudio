@@ -7,7 +7,7 @@ from functools import lru_cache
 class Settings(BaseSettings):
     # --- Основные настройки ---
     ENV: str = "development"
-    DATABASE_URL: str = "sqlite:///./backend/app/app.db"
+    DATABASE_URL: str
 
     # --- Безопасность ---
     SECRET_KEY: str

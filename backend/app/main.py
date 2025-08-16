@@ -61,13 +61,13 @@ from app.api.routes.news import router as news_router
 from app.api.routes.auth import router as auth_router
 from app.api.routes.booking import router as booking_router
 from app.api.routes.employees import router as employees_router
-from app.api.routes.clients import router as clients_router
 
 @app.on_event("startup")
 async def startup_event():
     """Инициализация сервисов при запуске"""
     # Не инициализируем Redis в тестовом окружении
-    if os.environ.get("ENV") == "testing":
+    from app.core.config import get_settings
+    if hasattr(get_settings, "ENV") and get_settings().ENV == "testing":
         return
     try:
         await setup_rate_limiter()
@@ -91,30 +91,26 @@ app.add_middleware(
 )
 
 
-# for router in [
-#     calendar_events_router,
-#     settings_router,
-#     gallery_router,
-#     news_router,
-#     booking_router,
-#     employees_router
-# ]:
-#     for route in getattr(router, "routes", []):
-#         if hasattr(route, "dependencies"):
-#             route.dependencies.append(Depends(default_rate_limit))
+for router in [
+    calendar_events_router,
+    settings_router,
+    gallery_router,
+    news_router,
+    booking_router,
+    employees_router
+]:
+    for route in getattr(router, "routes", []):
+        if hasattr(route, "dependencies"):
+            route.dependencies.append(Depends(default_rate_limit))
 
 
-def include_routers(app: FastAPI):
-    app.include_router(calendar_events_router, prefix="/api", tags=["calendar"])
-    app.include_router(settings_router, prefix="/api/settings", tags=["settings"])
-    app.include_router(gallery_router, prefix="/api/gallery", tags=["gallery"])
-    app.include_router(news_router, prefix="/api/news", tags=["news"])
-    app.include_router(auth_router, prefix="/api/auth", tags=["auth"])
-    app.include_router(booking_router, prefix="/api/bookings", tags=["bookings"])
-    app.include_router(employees_router, prefix="/api/employees", tags=["employees"])
-    app.include_router(clients_router, prefix="/api/clients", tags=["clients"])
-
-include_routers(app)
+app.include_router(calendar_events_router, prefix="/api", tags=["calendar"])
+app.include_router(settings_router, prefix="/api/settings", tags=["settings"])
+app.include_router(gallery_router, prefix="/api/gallery", tags=["gallery"])
+app.include_router(news_router, prefix="/api/news", tags=["news"])
+app.include_router(auth_router, prefix="/api/auth", tags=["auth"])
+app.include_router(booking_router, prefix="/api/bookings", tags=["bookings"])
+app.include_router(employees_router, prefix="/api/employees", tags=["employees"])
 
 
 # Инициализация Telegram бота

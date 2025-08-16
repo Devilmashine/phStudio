@@ -1,4 +1,4 @@
-import { DateAvailabilityStatusType } from './index';
+import { AvailabilityState } from './index';
 
 export interface TimeSlot {
   time: string;
@@ -8,7 +8,7 @@ export interface TimeSlot {
 export interface DayAvailability {
   date: string;
   isAvailable: boolean;
-  status: DateAvailabilityStatusType;
+  status: AvailabilityState;
   slots?: TimeSlot[];
 }
 

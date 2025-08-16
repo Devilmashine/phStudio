@@ -5,7 +5,7 @@ import pytest
 def test_api_routes_import():
     """Тест импорта API роутов."""
     # Проверяем, что все роуты могут быть импортированы
-    from app.api.routes import auth, booking, calendar_events, clients, gallery, news, settings
+    from ..app.api.routes import auth, booking, calendar_events, clients, gallery, news, settings
     
     assert auth is not None
     assert booking is not None
@@ -19,13 +19,13 @@ def test_api_routes_import():
 @pytest.mark.api
 def test_api_router_structure():
     """Тест структуры роутеров."""
-    from app.api.routes.auth import router as auth_router
-    from app.api.routes.booking import router as booking_router
-    from app.api.routes.calendar_events import router as calendar_router
-    from app.api.routes.clients import router as clients_router
-    from app.api.routes.gallery import router as gallery_router
-    from app.api.routes.news import router as news_router
-    from app.api.routes.settings import router as settings_router
+    from ..app.api.routes.auth import router as auth_router
+    from ..app.api.routes.booking import router as booking_router
+    from ..app.api.routes.calendar_events import router as calendar_router
+    from ..app.api.routes.clients import router as clients_router
+    from ..app.api.routes.gallery import router as gallery_router
+    from ..app.api.routes.news import router as news_router
+    from ..app.api.routes.settings import router as settings_router
     
     # Проверяем, что роутеры существуют и имеют атрибут routes
     assert hasattr(auth_router, 'routes')
@@ -40,7 +40,7 @@ def test_api_router_structure():
 @pytest.mark.api
 def test_main_app_structure():
     """Тест структуры главного приложения."""
-    from app.main import app
+    from ..app.main import app
     
     # Проверяем, что приложение существует
     assert app is not None
@@ -50,9 +50,9 @@ def test_main_app_structure():
 @pytest.mark.api
 def test_dependencies_import():
     """Тест импорта зависимостей."""
-    from app.core.config import get_settings
-    from app.core.database import get_db
-    from app.core.rate_limiter import default_rate_limit
+    from ..app.core.config import get_settings
+    from ..app.core.database import get_db
+    from ..app.core.rate_limiter import default_rate_limit
     
     # Проверяем, что зависимости существуют
     assert callable(get_settings)
