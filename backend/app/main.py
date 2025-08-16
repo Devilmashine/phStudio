@@ -104,7 +104,7 @@ for router in [
             route.dependencies.append(Depends(default_rate_limit))
 
 
-app.include_router(calendar_events_router, prefix="/api", tags=["calendar"])
+app.include_router(calendar_events_router, prefix="/api/calendar-events", tags=["calendar"])
 app.include_router(settings_router, prefix="/api/settings", tags=["settings"])
 app.include_router(gallery_router, prefix="/api/gallery", tags=["gallery"])
 app.include_router(news_router, prefix="/api/news", tags=["news"])
