@@ -1,9 +1,10 @@
 from sqlalchemy import Column, Integer, String
-from app.models.base import Base
+from .base import Base
 
 
 class StudioSettings(Base):
     __tablename__ = "studio_settings"
+    __table_args__ = {"extend_existing": True}
 
     id = Column(Integer, primary_key=True, index=True)
     name = Column(String(255), nullable=False)

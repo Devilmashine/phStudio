@@ -1,8 +1,8 @@
 from sqlalchemy import Column, Integer, String, DateTime, Text, Enum as SAEnum, Index
 from sqlalchemy.orm import relationship
 from datetime import datetime, timezone
-from app.models.base import Base
-from app.models.calendar_event_status import CalendarEventStatus
+from .base import Base
+from .calendar_event_status import CalendarEventStatus
 
 
 class CalendarEvent(Base):
@@ -10,6 +10,7 @@ class CalendarEvent(Base):
     __table_args__ = (
         Index("idx_calendar_events_date_range", "start_time", "end_time"),
         Index("idx_calendar_events_status", "status"),
+        {"extend_existing": True},
     )
 
     id = Column(Integer, primary_key=True, index=True)

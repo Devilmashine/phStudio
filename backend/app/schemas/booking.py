@@ -28,10 +28,7 @@ class Booking(BookingBase):
 
     class ConfigDict:
         from_attributes = True
-<<<<<<< HEAD
-=======
 
 
 class BookingStatusUpdate(BaseModel):
     status: BookingStatus
->>>>>>> feature/employee-section

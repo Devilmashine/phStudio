@@ -25,7 +25,8 @@ def db_session():
     Фикстура для создания чистой базы данных для каждого теста.
     """
     # Import all models here to ensure they are registered with the Base
-    from ..app import models
+    # Импортируем через __init__.py для правильного порядка
+    from ..app.models import Base, User, UserRole, Booking, BookingStatus, Client, CalendarEvent, GalleryImage, News, StudioSettings
     engine = create_engine(os.environ["DATABASE_URL"], connect_args={"check_same_thread": False})
     Base.metadata.create_all(bind=engine)
     TestingSessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
@@ -66,6 +67,28 @@ def client(db_session):
         yield c
 
 
+@pytest.fixture(scope="function")
+def auth_client(client, test_user):
+    """
+    Фикстура для создания авторизованного TestClient.
+    """
+    from ..app.api.routes.auth import create_access_token
+    
+    # Создаем токен для тестового пользователя
+    access_token = create_access_token(
+        data={"sub": test_user.username, "role": test_user.role.name}
+    )
+    
+    # Добавляем заголовок авторизации
+    client.headers.update({"Authorization": f"Bearer {access_token}"})
+    
+    # Создаем новый клиент с заголовками
+    test_client = client
+    test_client.headers.update({"Authorization": f"Bearer {access_token}"})
+    
+    return test_client
+
+
 @pytest.fixture
 def studio_settings(db_session):
     """Фикстура для создания настроек студии по умолчанию в тестовой БД."""
@@ -82,3 +105,43 @@ def studio_settings(db_session):
     db_session.add(settings)
     db_session.commit()
     return settings
+
+
+@pytest.fixture
+def test_user(db_session):
+    """Фикстура для создания тестового пользователя."""
+    from ..app.models.user import User, UserRole
+    from ..app.api.routes.auth import create_access_token
+    from passlib.context import CryptContext
+    
+    # Создаем контекст для хеширования паролей
+    pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
+    
+    user_data = {
+        "username": "testuser",
+        "email": "test@example.com",
+        "hashed_password": pwd_context.hash("testpassword"),
+        "role": UserRole.admin,
+        "full_name": "Test User"
+    }
+    user = User(**user_data)
+    db_session.add(user)
+    db_session.commit()
+    db_session.refresh(user)
+    return user
+
+
+@pytest.fixture
+def test_news(db_session, test_user):
+    """Фикстура для создания тестовой новости."""
+    news_data = {
+        "title": "Test News",
+        "content": "Test content",
+        "author_id": test_user.id,
+        "published": 1
+    }
+    news = News(**news_data)
+    db_session.add(news)
+    db_session.commit()
+    db_session.refresh(news)
+    return news

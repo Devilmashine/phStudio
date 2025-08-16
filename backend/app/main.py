@@ -51,8 +51,6 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-<<<<<<< HEAD
-
 from app.core.rate_limiter import setup_rate_limiter, default_rate_limit
 from app.core.cache import setup_cache, cache_calendar_state, cache_settings, cache_gallery
 from app.services.telegram_bot import TelegramBotService
@@ -63,29 +61,6 @@ from app.api.routes.news import router as news_router
 from app.api.routes.auth import router as auth_router
 from app.api.routes.booking import router as booking_router
 from app.api.routes.employees import router as employees_router
-=======
-    @app.on_event("startup")
-    async def startup_event():
-        """Инициализация сервисов при запуске"""
-        # Не инициализируем Redis в тестовом окружении
-        if get_settings().ENV != "testing":
-            try:
-                # Инициализация rate limiter
-                await setup_rate_limiter()
-                # Инициализация кэширования
-                await setup_cache()
-                logger.info("Rate limiter and cache services initialized successfully")
-            except Exception as e:
-                logger.error(f"Error initializing services: {str(e)}")
-
-    # Регистрируем роутеры
-    app.include_router(calendar_events_router, prefix="/api", tags=["calendar"])
-    app.include_router(settings_router, prefix="/api/settings", tags=["settings"])
-    app.include_router(gallery_router, prefix="/api/gallery", tags=["gallery"])
-    app.include_router(news_router, prefix="/api/news", tags=["news"])
-    app.include_router(auth_router, prefix="/api/auth", tags=["auth"])
-    app.include_router(booking_router, prefix="/api/bookings", tags=["bookings"])
->>>>>>> feature/employee-section
 
 @app.on_event("startup")
 async def startup_event():

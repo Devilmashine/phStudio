@@ -9,7 +9,7 @@ from app.core.database import get_db
 from app.services.user import UserService
 from app.schemas.user import UserCreate, UserResponse, UserUpdate, UserLogin
 from app.models.user import User, UserRole
-from app.core.config import settings
+from app.core.config import get_settings
 from fastapi.responses import JSONResponse
 from fastapi import Response, Cookie
 
@@ -21,6 +21,7 @@ oauth2_scheme = OAuth2PasswordBearer(tokenUrl="token")
 
 # Функции для работы с JWT токенами
 def create_access_token(data: dict):
+    settings = get_settings()
     to_encode = data.copy()
     expire = datetime.now(timezone.utc) + timedelta(
         minutes=settings.ACCESS_TOKEN_EXPIRE_MINUTES
@@ -33,6 +34,7 @@ def create_access_token(data: dict):
 
 
 def create_refresh_token(data: dict):
+    settings = get_settings()
     to_encode = data.copy()
     expire = datetime.now(timezone.utc) + timedelta(
         minutes=settings.REFRESH_TOKEN_EXPIRE_MINUTES
@@ -66,6 +68,7 @@ async def get_current_user(token: str = Depends(oauth2_scheme), db: Session = De
         headers={"WWW-Authenticate": "Bearer"},
     )
     try:
+        settings = get_settings()
         payload = jwt.decode(
             token, settings.SECRET_KEY, algorithms=[settings.ALGORITHM]
         )
@@ -129,6 +132,7 @@ async def refresh_token(response: Response, refresh_token: Optional[str] = Cooki
     if not refresh_token:
         raise HTTPException(status_code=401, detail="Refresh token отсутствует")
     try:
+        settings = get_settings()
         payload = jwt.decode(refresh_token, settings.SECRET_KEY, algorithms=[settings.ALGORITHM])
         if payload.get("type") != "refresh":
             raise HTTPException(status_code=401, detail="Недействительный refresh token")
