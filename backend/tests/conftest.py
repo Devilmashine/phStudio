@@ -1,82 +1,53 @@
 import pytest
 import os
-import sys
-import json
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
-from sqlalchemy.pool import StaticPool
-from alembic.config import Config
-from alembic import command
-from fastapi.testclient import TestClient
-
-# Add the project root to the path to allow imports from the app
-sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
-
-from app.models.base import Base
-from app.core.config import get_settings
-from app.models.studio_settings import StudioSettings
-from app.models.news import News
-from app.core.database import get_db
-
-TEST_DATABASE_URL = "sqlite:///:memory:"
+from ..app.models.base import Base
+from ..app.core.config import get_settings
 
 @pytest.fixture(scope="session", autouse=True)
 def set_test_environment():
-    """Sets environment variables for the entire test session."""
-    os.environ["DATABASE_URL"] = TEST_DATABASE_URL
-    os.environ["ENV"] = "testing"
+    # Clear the cache to ensure test environment variables are loaded
     get_settings.cache_clear()
-
-@pytest.fixture(scope="session")
-def engine():
-    """Creates a test database engine that persists for the entire session."""
-    return create_engine(
-        TEST_DATABASE_URL,
-        connect_args={"check_same_thread": False},
-        poolclass=StaticPool,
-    )
-
-@pytest.fixture(scope="session")
-def migrated_db_connection(engine):
     """
-    Creates a single connection for the entire test session and applies migrations.
+    Устанавливает переменные окружения для всех тестов.
+    Это гарантирует, что тесты не будут использовать продакшен базу данных.
     """
-    connection = engine.connect()
-    try:
-        alembic_cfg = Config("alembic.ini")
-        alembic_cfg.set_main_option("sqlalchemy.url", TEST_DATABASE_URL)
-        # Pass the connection to alembic
-        alembic_cfg.attributes["connection"] = connection
-        command.upgrade(alembic_cfg, "head")
-        yield connection
-    finally:
-        connection.close()
+    os.environ["DATABASE_URL"] = "sqlite:///:memory:"
+    os.environ["ENV"] = "testing"
+
+import json
+from ..app.models.settings import StudioSettings
 
 @pytest.fixture(scope="function")
-def db_session(migrated_db_connection):
+def db_session():
     """
-    Creates a new database session for each test function, using nested transactions.
-    This ensures that each test runs in isolation.
+    Фикстура для создания чистой базы данных для каждого теста.
     """
-    transaction = migrated_db_connection.begin_nested()
-    Session = sessionmaker(bind=migrated_db_connection)
-    session = Session()
-
+    # Import all models here to ensure they are registered with the Base
+    # Импортируем через __init__.py для правильного порядка
+    from ..app.models import Base, User, UserRole, Booking, BookingStatus, Client, CalendarEvent, GalleryImage, News, StudioSettings
+    engine = create_engine(os.environ["DATABASE_URL"], connect_args={"check_same_thread": False})
+    Base.metadata.create_all(bind=engine)
+    TestingSessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
+    session = TestingSessionLocal()
     try:
         yield session
     finally:
         session.close()
-        transaction.rollback()
+        Base.metadata.drop_all(bind=engine)
+
+import pytest
+from fastapi.testclient import TestClient
+from ..app.core.database import get_db
 
 @pytest.fixture(scope="function")
 def client(db_session):
     """
-    Creates a TestClient with the database dependency overridden.
+    Фикстура для создания TestClient с переопределенной зависимостью БД.
     """
-    from app.main import app, include_routers
-
-    # Ensure all routers are included in the app for testing
-    include_routers(app)
+    from ..app.main import create_app
+    app = create_app()
 
     def override_get_db():
         try:
@@ -84,33 +55,43 @@ def client(db_session):
         finally:
             db_session.close()
 
-    app.dependency_overrides[get_db] = override_get_db
-
     # Disable rate limiter for tests
-    from app.core.rate_limiter import default_rate_limit
+    from ..app.core.rate_limiter import default_rate_limit
     async def override_rate_limit():
         pass
     app.dependency_overrides[default_rate_limit] = override_rate_limit
 
+    app.dependency_overrides[get_db] = override_get_db
+
     with TestClient(app) as c:
         yield c
+
 
 @pytest.fixture(scope="function")
 def auth_client(client, test_user):
     """
-    Creates an authenticated TestClient.
+    Фикстура для создания авторизованного TestClient.
     """
-    from app.api.routes.auth import create_access_token
+    from ..app.api.routes.auth import create_access_token
     
+    # Создаем токен для тестового пользователя
     access_token = create_access_token(
         data={"sub": test_user.username, "role": test_user.role.name}
     )
+
+    # Добавляем заголовок авторизации
     client.headers.update({"Authorization": f"Bearer {access_token}"})
-    return client
+
+    # Создаем новый клиент с заголовками
+    test_client = client
+    test_client.headers.update({"Authorization": f"Bearer {access_token}"})
+
+    return test_client
+
 
 @pytest.fixture
 def studio_settings(db_session):
-    """Fixture to create default studio settings in the test DB."""
+    """Фикстура для создания настроек студии по умолчанию в тестовой БД."""
     settings_data = {
         "name": "Test Studio", "contacts": "test", "prices": "100",
         "work_days": json.dumps(['mon', 'tue', 'wed', 'thu', 'fri']),
@@ -125,12 +106,15 @@ def studio_settings(db_session):
     db_session.commit()
     return settings
 
+
 @pytest.fixture
 def test_user(db_session):
-    """Fixture to create a test user."""
-    from app.models.user import User, UserRole
+    """Фикстура для создания тестового пользователя."""
+    from ..app.models.user import User, UserRole
+    from ..app.api.routes.auth import create_access_token
     from passlib.context import CryptContext
     
+    # Создаем контекст для хеширования паролей
     pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
     
     user_data = {
@@ -146,9 +130,10 @@ def test_user(db_session):
     db_session.refresh(user)
     return user
 
+
 @pytest.fixture
 def test_news(db_session, test_user):
-    """Fixture to create a test news item."""
+    """Фикстура для создания тестовой новости."""
     news_data = {
         "title": "Test News",
         "content": "Test content",

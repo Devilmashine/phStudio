@@ -1,5 +1,5 @@
 import pytest
-from app.services.telegram_templates import booking_message_with_buttons
+from ..app.services.telegram_templates import booking_message_with_buttons
 
 def test_booking_message_template():
     service = "Фотосессия"

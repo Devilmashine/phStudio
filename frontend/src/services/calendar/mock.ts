@@ -4,7 +4,7 @@ import {
 } from './api';
 import { 
   BookingSlot, 
-  DateAvailabilityStatusType 
+  AvailabilityState as DateAvailabilityStatusType
 } from '../../types/index';
 
 export const mockAvailability = {

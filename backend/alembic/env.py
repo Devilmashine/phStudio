@@ -4,8 +4,7 @@ from sqlalchemy import engine_from_config
 from sqlalchemy import pool
 
 from alembic import context
-from backend.app.core.config import get_settings
-settings = get_settings()
+from backend.app.core.config import settings
 from backend.app.models import *  # Импортируем все модели
 
 # this is the Alembic Config object, which provides
@@ -36,16 +35,13 @@ def run_migrations_offline() -> None:
 
 def run_migrations_online() -> None:
     """Run migrations in 'online' mode."""
-    connectable = config.attributes.get("connection", None)
-
-    if connectable is None:
-        configuration = config.get_section(config.config_ini_section)
-        configuration["sqlalchemy.url"] = settings.DATABASE_URL
-        connectable = engine_from_config(
-            configuration,
-            prefix="sqlalchemy.",
-            poolclass=pool.NullPool,
-        )
+    configuration = config.get_section(config.config_ini_section)
+    configuration["sqlalchemy.url"] = settings.DATABASE_URL
+    connectable = engine_from_config(
+        configuration,
+        prefix="sqlalchemy.",
+        poolclass=pool.NullPool,
+    )
 
     with connectable.connect() as connection:
         context.configure(

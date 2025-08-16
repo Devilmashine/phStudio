@@ -1,6 +1,6 @@
 import { 
   DayAvailability, 
-  DateAvailabilityStatusType 
+  AvailabilityState as DateAvailabilityStatusType
 } from '../../types/index';
 import { mockAvailability } from './mock';
 import { formatLocalDate } from '../../utils/dateUtils';

@@ -8,8 +8,7 @@ from app.models.user import User
 from typing import List
 import os
 
-from pathlib import Path
-UPLOAD_DIR = Path(__file__).parent.parent.parent / "static" / "gallery"
+UPLOAD_DIR = "backend/app/static/gallery/"
 os.makedirs(UPLOAD_DIR, exist_ok=True)
 
 router = APIRouter()
