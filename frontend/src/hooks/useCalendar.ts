@@ -1,7 +1,7 @@
 import { useState, useCallback } from 'react';
-import { format, addHours } from 'date-fns';
-import { getAvailableSlots, AvailabilityState } from '../services/google/calendar';
-import { DayAvailability, BookingSlot } from '../types';
+import { format } from 'date-fns';
+import { getAvailableSlots } from '@/data/availability';
+import { AvailabilityState, DayAvailability } from '@/types';
 
 export function useCalendar() {
   const [loading, setLoading] = useState(false);
@@ -16,31 +16,7 @@ export function useCalendar() {
 
     setLoading(true);
     try {
-      const events = await getAvailableSlots(dateStr);
-      const isAvailable = calculateDayAvailability(events);
-      
-      const slots: BookingSlot[] = events.map(event => {
-        const startTime = event.time;
-        const endTime = format(
-          addHours(new Date(`${dateStr}T${startTime}`), 1), 
-          'HH:mm'
-        );
-
-        return {
-          date: dateStr,
-          startTime,
-          endTime,
-          available: event.isBookable,
-          bookedPercentage: event.bookedPercentage,
-          state: event.state
-        };
-      });
-
-      const dayAvailability: DayAvailability = {
-        date: dateStr,
-        isAvailable,
-        slots
-      };
+      const dayAvailability = await getAvailableSlots(dateStr);
 
       setAvailability(prev => ({
         ...prev,
@@ -53,7 +29,8 @@ export function useCalendar() {
       const errorAvailability: DayAvailability = {
         date: dateStr,
         isAvailable: false,
-        slots: []
+        slots: [],
+        status: AvailabilityState.UNKNOWN
       };
       return errorAvailability;
     } finally {
@@ -66,15 +43,4 @@ export function useCalendar() {
     availability,
     fetchAvailability
   };
-}
-
-function calculateDayAvailability(events: any[]): boolean {
-  if (!events.length) return true;
-  
-  const totalSlotsBooked = events.filter(event => 
-    event.state === AvailabilityState.FULLY_BOOKED
-  ).length;
-
-  // Если больше половины слотов заняты, день считается недоступным
-  return totalSlotsBooked < events.length / 2;
 }

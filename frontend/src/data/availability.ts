@@ -1,6 +1,6 @@
 import { 
   BookingSlot, 
-  DateAvailabilityStatusType, 
+  AvailabilityState,
   DayAvailability 
 } from '../types/index';
 import { fetchCalendarEvents } from '../services/calendar/api';
@@ -14,7 +14,7 @@ import {
  * @param date - Дата в формате YYYY-MM-DD.
  * @returns Объект с датой и статусом доступности.
  */
-export async function getDayAvailability(date: string): Promise<DayAvailability> {
+export async function getAvailableSlots(date: string): Promise<DayAvailability> {
   // Ensure consistent date formatting
   const formattedDate = formatLocalDate(date);
 
@@ -50,38 +50,40 @@ export async function getDayAvailability(date: string): Promise<DayAvailability>
     for (let hour = 9; hour <= 20; hour++) {
       const time = `${hour.toString().padStart(2, '0')}:00`;
       const nextHour = `${(hour + 1).toString().padStart(2, '0')}:00`;
+      const isBooked = bookedSlots.has(time);
       
       slots.push({
         date: formattedDate,
         startTime: time,
         endTime: nextHour,
-        available: !bookedSlots.has(time),
-        bookedPercentage: bookedSlots.has(time) ? 100 : 0
+        available: !isBooked,
+        bookedPercentage: isBooked ? 100 : 0,
+        state: isBooked ? AvailabilityState.FULLY_BOOKED : AvailabilityState.AVAILABLE
       });
     }
 
     // Определение статуса дня
-    let status: DateAvailabilityStatusType = DateAvailabilityStatusType.UNKNOWN;
+    let status: AvailabilityState = AvailabilityState.UNKNOWN;
     if (slots.every(slot => !slot.available)) {
-      status = DateAvailabilityStatusType.FULLY_BOOKED;
+      status = AvailabilityState.FULLY_BOOKED;
     } else if (slots.some(slot => !slot.available)) {
-      status = DateAvailabilityStatusType.PARTIALLY_BOOKED;
+      status = AvailabilityState.PARTIALLY_BOOKED;
     } else {
-      status = DateAvailabilityStatusType.AVAILABLE;
+      status = AvailabilityState.AVAILABLE;
     }
 
     return { 
       date: formattedDate, 
-      isAvailable: status !== DateAvailabilityStatusType.FULLY_BOOKED,
+      isAvailable: status !== AvailabilityState.FULLY_BOOKED,
       status,
       slots 
     };
   } catch (error) {
-    console.error('Error fetching real calendar events in getDayAvailability:', error);
+    console.error('Error fetching real calendar events in getAvailableSlots:', error);
     return { 
       date: formattedDate, 
       isAvailable: false,
-      status: DateAvailabilityStatusType.UNKNOWN,
+      status: AvailabilityState.UNKNOWN,
       slots: [] as BookingSlot[] 
     };
   }

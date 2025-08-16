@@ -1,11 +1,22 @@
-import { getAvailableSlots, AvailabilityState } from '../google/calendar';
+import { getAvailableSlots } from '@/data/availability';
+import { AvailabilityState } from '@/types';
 
 interface AvailableSlot {
   time: string;
-  state: AvailabilityState;
-  bookedPercentage: number;
+  state?: AvailabilityState;
+  bookedPercentage?: number;
   isBookable: boolean;
   events?: { start: string, end: string }[];
+}
+
+async function getMappedAvailableSlots(date: string): Promise<AvailableSlot[]> {
+  const { slots } = await getAvailableSlots(date);
+  return slots.map(s => ({
+    time: s.startTime,
+    state: s.state,
+    bookedPercentage: s.bookedPercentage,
+    isBookable: s.available
+  }));
 }
 
 /**
@@ -13,10 +24,7 @@ interface AvailableSlot {
  */
 export async function getBookingSlots(date: string): Promise<AvailableSlot[]> {
   try {
-    // Fetch available slots for the specified date
-    const availableSlots = await getAvailableSlots(date);
-
-    return availableSlots;
+    return await getMappedAvailableSlots(date);
   } catch (error) {
     console.error('Error fetching booking slots:', error);
     throw new Error('Не удалось загрузить доступные слоты. Пожалуйста, попробуйте позже.');
@@ -26,7 +34,7 @@ export async function getBookingSlots(date: string): Promise<AvailableSlot[]> {
 export async function checkAvailability(date: string, slots: string[]): Promise<boolean> {
   try {
     // Fetch available slots for the date
-    const availableSlots = await getAvailableSlots(date);
+    const availableSlots = await getMappedAvailableSlots(date);
 
     // Check if all requested slots are available and bookable
     return slots.every(slot => {
@@ -47,11 +55,11 @@ export async function checkAvailability(date: string, slots: string[]): Promise<
 export async function getDetailedAvailability(date: string): Promise<{
   time: string, 
   isBookable: boolean, 
-  bookedPercentage: number,
+  bookedPercentage?: number,
   events?: { start: string, end: string }[]
 }[]> {
   try {
-    const availableSlots = await getAvailableSlots(date);
+    const availableSlots = await getMappedAvailableSlots(date);
 
     return availableSlots.map(slot => ({
       time: slot.time,
@@ -68,7 +76,7 @@ export async function getDetailedAvailability(date: string): Promise<{
 // Backward compatibility function for components expecting isBooked
 export async function getBookingAvailability(date: string): Promise<{time: string, isBooked: boolean}[]> {
   try {
-    const availableSlots = await getAvailableSlots(date);
+    const availableSlots = await getMappedAvailableSlots(date);
 
     return availableSlots.map(slot => ({
       time: slot.time,

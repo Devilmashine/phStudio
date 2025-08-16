@@ -1,5 +1,5 @@
 import { BookingData } from '../../types';
-import { getAvailableSlots } from '../google/calendar';
+import { getAvailableSlots } from '@/data/availability';
 import { calendarService } from '../calendar.service';
 import { telegramNotificationService } from '../telegram/sendBooking';
 
@@ -44,12 +44,12 @@ export function getBookingById(id: string): BookingData | undefined {
  */
 export async function checkAvailability(date: string): Promise<Set<string>> {
   try {
-    const slots = await getAvailableSlots(date);
+    const { slots } = await getAvailableSlots(date);
     const bookedSlots = new Set<string>();
 
     slots.forEach(slot => {
-      if (!slot.isBookable) {
-        bookedSlots.add(slot.time);
+      if (!slot.available) {
+        bookedSlots.add(slot.startTime);
       }
     });
 
