@@ -1,5 +1,5 @@
-import { getAvailableSlots } from '@/data/availability';
-import { AvailabilityState } from '@/types';
+import { getAvailableSlots } from '../../data/availability';
+import { AvailabilityState } from '../../types';
 
 interface AvailableSlot {
   time: string;

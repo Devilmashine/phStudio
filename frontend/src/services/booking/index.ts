@@ -1,5 +1,5 @@
 import { BookingData } from '../../types';
-import { getAvailableSlots } from '@/data/availability';
+import { getAvailableSlots } from '../../data/availability';
 import { calendarService } from '../calendar.service';
 import { telegramNotificationService } from '../telegram/sendBooking';
 
