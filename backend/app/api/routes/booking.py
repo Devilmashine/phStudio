@@ -8,7 +8,7 @@ from app.models.user import User, UserRole
 from app.api.routes.auth import get_current_admin, get_current_manager
 from app.services.telegram_bot import TelegramBotService
 
-router = APIRouter(prefix="/bookings", tags=["bookings"])
+router = APIRouter(tags=["bookings"])
 
 
 @router.get("/", response_model=List[Booking])
