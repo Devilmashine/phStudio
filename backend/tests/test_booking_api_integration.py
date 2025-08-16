@@ -4,7 +4,7 @@ from fastapi.testclient import TestClient
 
 def test_create_booking_success(auth_client, db_session):
     """Тест успешного создания бронирования через API."""
-    from ..app.schemas.booking import BookingCreate
+    from app.schemas.booking import BookingCreate
     
     # Создаем данные для бронирования
     future_date = datetime.now(timezone.utc) + timedelta(days=1)

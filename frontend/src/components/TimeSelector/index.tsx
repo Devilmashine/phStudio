@@ -4,6 +4,7 @@ import { Dayjs } from 'dayjs';
 import { getAvailableSlots } from '../../data/availability';
 import { BookingSlot } from '../../types/index';
 
+
 interface TimeSelectorProps {
   date: Dayjs;
   selectedTimes: string[];

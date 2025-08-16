@@ -1,7 +1,7 @@
 import pytest
 from fastapi import FastAPI
 from fastapi.testclient import TestClient
-from ..app.api.routes.settings import router as settings_router
+from app.api.routes.settings import router as settings_router
 
 @pytest.fixture
 def client():
