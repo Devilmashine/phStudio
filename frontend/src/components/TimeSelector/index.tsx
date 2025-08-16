@@ -1,8 +1,8 @@
 import React, { useEffect, useState } from 'react';
 import { Box, Typography, CircularProgress, Paper } from '@mui/material';
 import { Dayjs } from 'dayjs';
-import { getAvailableSlots } from '@/data/availability';
-import { BookingSlot } from '@/types';
+import { getAvailableSlots } from '../../data/availability';
+import { BookingSlot } from '../../types';
 
 interface TimeSelectorProps {
   date: Dayjs;
