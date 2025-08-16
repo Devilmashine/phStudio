@@ -1,9 +1,9 @@
 import React from 'react';
 import DatePicker from 'react-datepicker';
-import { getDayAvailability } from '../../data/availability';
+import { getAvailableSlots } from '../../data/availability';
 import { formatLocalDate } from '../../utils/dateUtils';
 import { 
-  DateAvailabilityStatusType, 
+  AvailabilityState,
   DayAvailability 
 } from '../../types/index';
 
@@ -17,19 +17,19 @@ const DateSelector = React.memo(({ selectedDate, onChange }: DateSelectorProps) 
 
   const getAvailabilityClass = async (date: Date) => {
     const dateStr = formatLocalDate(date);
-    const availability: DayAvailability = await getDayAvailability(dateStr);
+    const availability: DayAvailability = await getAvailableSlots(dateStr);
     
     if (!availability || !availability.status) return '';
     
     let className = '';
     switch (availability.status) {
-      case DateAvailabilityStatusType.AVAILABLE:
+      case AvailabilityState.AVAILABLE:
         className = 'bg-green-100 text-green-800 hover:bg-green-200';
         break;
-      case DateAvailabilityStatusType.PARTIALLY_BOOKED:
+      case AvailabilityState.PARTIALLY_BOOKED:
         className = 'bg-yellow-100 text-yellow-800 hover:bg-yellow-200';
         break;
-      case DateAvailabilityStatusType.FULLY_BOOKED:
+      case AvailabilityState.FULLY_BOOKED:
         className = 'bg-red-100 text-red-800 hover:bg-red-200';
         break;
     }

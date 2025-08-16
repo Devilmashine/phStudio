@@ -24,17 +24,3 @@ export interface BookingResponse {
   message: string;
   calendar_links: (string | null)[];
 }
-
-export enum DateAvailabilityStatusType {
-  AVAILABLE = 'AVAILABLE',
-  PARTIALLY_BOOKED = 'PARTIALLY_BOOKED',
-  FULLY_BOOKED = 'FULLY_BOOKED',
-  ERROR = 'ERROR'
-}
-
-export interface DayAvailability {
-  date: string;
-  isAvailable: boolean;
-  status: DateAvailabilityStatusType;
-  slots: BookingSlot[];
-} 
