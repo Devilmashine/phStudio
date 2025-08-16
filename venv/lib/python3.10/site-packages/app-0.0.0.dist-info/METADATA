@@ -1,8 +1,0 @@
-Metadata-Version: 2.2
-Name: app
-Version: 0.0.0
-Requires-Dist: fastapi
-Requires-Dist: sqlalchemy
-Requires-Dist: alembic
-Requires-Dist: aiosqlite
-Dynamic: requires-dist
