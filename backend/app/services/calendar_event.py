@@ -31,9 +31,9 @@ class CalendarEventService:
             query = self.db.query(CalendarEvent)
 
             if start_date:
-                query = query.filter(CalendarEvent.start_time >= start_date)
+                query = query.filter(CalendarEvent.end_time > start_date)
             if end_date:
-                query = query.filter(CalendarEvent.end_time <= end_date)
+                query = query.filter(CalendarEvent.start_time < end_date)
             if status:
                 query = query.filter(CalendarEvent.status == status)
 

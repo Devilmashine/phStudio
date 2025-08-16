@@ -13,7 +13,6 @@ from secrets import token_urlsafe
 from app.models.calendar_event import CalendarEvent
 
 router = APIRouter(
-    prefix="/api/calendar-events",
     tags=["calendar-events"],
     # Отключаем автоматический редирект при отсутствии завершающего слеша
     redirect_slashes=False,
@@ -30,9 +29,15 @@ async def get_events(
     db: Session = Depends(get_db),
 ):
     try:
+        from datetime import timedelta
+
         # Convert string dates to datetime objects
         start_dt = datetime.strptime(start_date, "%Y-%m-%d") if start_date else None
-        end_dt = datetime.strptime(end_date, "%Y-%m-%d") if end_date else None
+        end_dt = (
+            datetime.strptime(end_date, "%Y-%m-%d") + timedelta(days=1)
+            if end_date
+            else None
+        )
 
         service = CalendarEventService(db)
         events = service.get_events(
