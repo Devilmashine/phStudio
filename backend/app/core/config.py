@@ -2,6 +2,9 @@ from pydantic_settings import BaseSettings
 from typing import List
 from pydantic import computed_field
 from functools import lru_cache
+from dotenv import load_dotenv
+
+load_dotenv()
 
 
 class Settings(BaseSettings):

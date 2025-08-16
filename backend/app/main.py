@@ -5,10 +5,6 @@ from logging.handlers import RotatingFileHandler
 
 from fastapi import FastAPI, Depends
 from fastapi.middleware.cors import CORSMiddleware
-from dotenv import load_dotenv
-
-# Загрузка переменных окружения
-load_dotenv()
 
 
 # Настройка логирования
