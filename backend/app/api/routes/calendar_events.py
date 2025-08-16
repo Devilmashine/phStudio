@@ -13,7 +13,6 @@ from secrets import token_urlsafe
 from app.models.calendar_event import CalendarEvent
 
 router = APIRouter(
-    prefix="/api/calendar-events",
     tags=["calendar-events"],
     # Отключаем автоматический редирект при отсутствии завершающего слеша
     redirect_slashes=False,
