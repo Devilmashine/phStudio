@@ -20,7 +20,7 @@
     "lucide-react": "^0.471.1",
     "react": "^19.0.0",
     "react-datepicker": "^7.6.0",
-    "react-dom": "^19.0.0",
+    "react-dom": "^19.1.1",
     "react-router-dom": "^7.1.1",
     "telegraf": "^4.16.3",
     "uuid": "^11.0.5"
