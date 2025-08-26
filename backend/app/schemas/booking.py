@@ -1,7 +1,8 @@
-from pydantic import BaseModel
+from pydantic import BaseModel, field_validator
 from datetime import datetime
 from typing import Optional
 from ..models.booking import BookingStatus
+from ..utils.timezone import parse_moscow_datetime
 
 
 class BookingBase(BaseModel):
@@ -16,7 +17,13 @@ class BookingBase(BaseModel):
 
 
 class BookingCreate(BookingBase):
-    pass
+    @field_validator('date', 'start_time', 'end_time', mode='before')
+    @classmethod
+    def parse_moscow_times(cls, v):
+        """Parse datetime strings as Moscow time"""
+        if isinstance(v, str):
+            return parse_moscow_datetime(v)
+        return v
 
 
 class Booking(BookingBase):
@@ -32,3 +39,7 @@ class Booking(BookingBase):
 
 class BookingStatusUpdate(BaseModel):
     status: BookingStatus
+
+
+class MessageResponse(BaseModel):
+    message: str

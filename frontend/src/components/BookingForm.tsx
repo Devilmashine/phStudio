@@ -4,9 +4,11 @@ import { Link } from 'react-router-dom';
 import { studio } from '../data/studio';
 import Calendar from './Calendar';
 import TimeSlots from './TimeSlots';
+import Legend, { TimeSlotsLegendItems } from './common/Legend';
 import Modal from './Modal';
+import CheckboxField from './ui/CheckboxField';
 import { termsContent } from '../data/terms';
-import { mockAvailability } from '../services/calendar/mock';
+import { createBooking } from '../services/booking';
 
 // Валидация телефона с помощью регулярного выражения
 const validatePhone = (phone: string): boolean => {
@@ -78,41 +80,6 @@ const InputField = React.memo(({
     />
     {error && <p id={`${label}-error`} className="text-red-500 text-xs mt-1" role="alert">{error}</p>}
   </div>
-));
-
-// Компонент для чекбокса с ссылкой
-interface CheckboxFieldProps {
-  checked: boolean;
-  onChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
-  label: string;
-  linkText?: string;
-  onLinkClick?: () => void;
-}
-
-const CheckboxField = React.memo(({ checked, onChange, label, linkText, onLinkClick }: CheckboxFieldProps) => (
-  <label className="flex items-start space-x-3 cursor-pointer select-none">
-    <input
-      type="checkbox"
-      checked={checked}
-      onChange={onChange}
-      className="mt-1 accent-indigo-600 focus:ring-2 focus:ring-indigo-500 focus:outline-none transition-colors"
-      required
-      aria-checked={checked}
-    />
-    <span className="text-sm text-gray-600">
-      {label}{' '}
-      {linkText && (
-        <button
-          type="button"
-          onClick={onLinkClick}
-          className="text-indigo-600 hover:underline focus:outline-none focus:ring-2 focus:ring-indigo-500 rounded"
-          tabIndex={0}
-        >
-          {linkText}
-        </button>
-      )}
-    </span>
-  </label>
 ));
 
 export default function BookingForm() {
@@ -217,21 +184,51 @@ export default function BookingForm() {
     };
     
     try {
-      // Для mockAvailability используем camelCase, для API — snake_case
-      await mockAvailability.createBookingEvent({
+      // Use the real booking service instead of mock
+      const bookingResponse = await createBooking({
         date: bookingData.date,
-        startTime: selectedTimes[0],
+        times: bookingData.times,
         name: bookingData.name,
         phone: bookingData.phone,
-        times: bookingData.times,
-        totalPrice: bookingData.total_price, // camelCase для mock
-        peopleCount: bookingData.people_count // camelCase для mock
+        totalPrice: bookingData.total_price
       });
 
-      console.log('Booking submitted:', bookingData);
-      alert('Заявка отправлена! Мы свяжемся с вами в ближайшее время.');
+      console.log('Booking created successfully:', bookingResponse);
       
-      // Сброс формы после успешной отправки
+      // Verify booking was saved by checking availability for the booked slot
+      try {
+        const dateStr = format(selectedDate!, 'yyyy-MM-dd');
+        const response = await fetch(`/api/calendar/day-details?date=${dateStr}`);
+        if (response.ok) {
+          const dayDetails = await response.json();
+          const bookedSlot = dayDetails.slots.find((slot: any) => 
+            selectedTimes.includes(slot.time) && !slot.available
+          );
+          
+          if (bookedSlot) {
+            console.log('✅ Booking verification successful - slot is now unavailable');
+          } else {
+            console.warn('⚠️ Booking verification failed - slot still appears available');
+          }
+        }
+      } catch (verificationError) {
+        console.warn('Could not verify booking:', verificationError);
+      }
+      
+      // Show detailed success message with booking ID
+      const successMessage = `Бронирование успешно создано!\n\n` +
+        `🆔 Номер брони: ${bookingResponse.id}\n` +
+        `📅 Дата: ${format(selectedDate!, 'dd.MM.yyyy')}\n` +
+        `🕜 Время: ${selectedTimes.join(', ')}\n` +
+        `💰 Сумма: ${totalPrice} ₽\n\n` +
+        `Мы свяжемся с вами в ближайшее время!`;
+      
+      // Store booking ID for potential future reference
+      sessionStorage.setItem('lastBookingId', bookingResponse.id.toString());
+      
+      alert(successMessage);
+      
+      // Reset form after successful booking
       setSelectedDate(null);
       setSelectedTimes([]);
       setName('');
@@ -240,9 +237,20 @@ export default function BookingForm() {
       setPrivacyAccepted(false);
       setPeopleCount(1);
       setStudioRulesAccepted(false);
+      
+      // Force calendar refresh by dispatching a custom event
+      // This will tell calendar components to refresh their data
+      window.dispatchEvent(new CustomEvent('bookingCreated', {
+        detail: {
+          bookingId: bookingResponse.id,
+          date: bookingData.date,
+          times: bookingData.times
+        }
+      }));
     } catch (error) {
-      console.error('Failed to create booking events:', error);
-      alert('Не удалось создать бронирование. Пожалуйста, попробуйте еще раз.');
+      console.error('Failed to create booking:', error);
+      const errorMessage = error instanceof Error ? error.message : 'Не удалось создать бронирование. Пожалуйста, попробуйте еще раз.';
+      alert(errorMessage);
     } finally {
       setIsSubmitting(false);
     }
@@ -270,6 +278,13 @@ export default function BookingForm() {
                   date={selectedDate}
                   selectedTimes={selectedTimes}
                   onSelectTime={handleTimeSelect}
+                />
+                {/* Легенда для временных слотов */}
+                <Legend 
+                  items={TimeSlotsLegendItems} 
+                  className="mt-3" 
+                  compact={true}
+                  size="sm"
                 />
               </div>
             )}
