@@ -18,9 +18,14 @@ export default defineConfig({
       },
     }),
   ],
-  root: 'frontend', // Указываем, что корень проекта для Vite - это папка frontend
+  resolve: {
+    alias: {
+      '@': path.resolve(__dirname, './src'),
+    },
+  },
+  root: '.', // Указываем, что корень проекта для Vite - это текущая директория
   build: {
-    outDir: '../dist', // Выходная директория относительно корня (frontend)
+    outDir: 'dist', // Выходная директория
     rollupOptions: {
       input: {
         main: path.resolve(__dirname, 'index.html'), // Путь относительно корня

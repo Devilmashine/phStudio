@@ -19,7 +19,10 @@
     "noUnusedLocals": true,
     "noUnusedParameters": true,
     "noFallthroughCasesInSwitch": true,
-    "esModuleInterop": true
+    "esModuleInterop": true,
+
+    /* Type definitions */
+    "types": ["node", "react", "babel__traverse"]
   },
   "include": ["src", "tests"]
 }
