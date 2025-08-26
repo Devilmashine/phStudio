@@ -9,6 +9,23 @@ export interface CalendarEvent {
   location?: string;
 }
 
+// New interfaces for bulk month availability
+export interface MonthAvailabilityResponse {
+  [date: string]: {
+    available_slots: number;
+    total_slots: number;
+    booked_slots: number;
+  };
+}
+
+export interface DayDetailResponse {
+  date: string;
+  slots: {
+    time: string;
+    available: boolean;
+  }[];
+}
+
 function toDateString(iso: string) {
   // Оставляем только YYYY-MM-DD
   return iso.split('T')[0];
@@ -32,10 +49,7 @@ export async function fetchCalendarEvents(timeMin: string, timeMax: string): Pro
  * event: CalendarEvent (summary, description, start, end)
  */
 export async function createCalendarEvent(event: CalendarEvent & { phone: string; total_price: number }): Promise<CalendarEvent> {
-  // Преобразуем в формат, который ожидает бэкенд
-  const duration = event.end && event.start && event.end.dateTime && event.start.dateTime
-    ? Math.max(1, Math.round((new Date(event.end.dateTime).getTime() - new Date(event.start.dateTime).getTime()) / (1000 * 60 * 60)))
-    : 1;
+  // Validate required fields
   if (!event.summary || typeof event.summary !== 'string' || !event.summary.trim()) {
     throw new Error('summary (title) обязателен и должен быть непустой строкой');
   }
@@ -45,26 +59,43 @@ export async function createCalendarEvent(event: CalendarEvent & { phone: string
   if (!event.end?.dateTime || typeof event.end.dateTime !== 'string' || !event.end.dateTime.trim()) {
     throw new Error('end_time обязателен и должен быть непустой строкой');
   }
-  if (!event.phone || typeof event.phone !== 'string' || !event.phone.trim()) {
-    throw new Error('Телефон обязателен и должен быть непустой строкой');
-  }
-  if (!event.total_price || typeof event.total_price !== 'number' || event.total_price <= 0) {
-    throw new Error('total_price обязателен и должен быть положительным числом');
-  }
+  
+  // Create payload matching CalendarEventCreate schema
   const payload = {
-    title: event.summary || '',
-    description: event.description || '',
-    start_time: event.start?.dateTime || event.start?.date || '',
-    end_time: event.end?.dateTime || event.end?.date || '',
-    duration_hours: Number(duration),
-    phone: event.phone,
-    total_price: event.total_price,
+    title: event.summary,
+    description: event.description || `Booking for ${event.phone}`,
+    start_time: event.start.dateTime,
+    end_time: event.end.dateTime,
     people_count: (event as any).people_count || (event as any).peopleCount || 1,
-    times: [
-      event.start?.dateTime ? new Date(event.start.dateTime).toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit' }) : '',
-      event.end?.dateTime ? new Date(event.end.dateTime).toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit' }) : ''
-    ]
+    status: 'pending'
   };
-  const response = await axios.post('/api/calendar/events', payload);
+  
+  console.log('Creating calendar event with payload:', payload);
+  const response = await axios.post('/api/calendar-events/', payload);
+  return response.data;
+}
+
+// NEW: Bulk request for month availability data - single API call for entire month
+export async function fetchMonthAvailability(year: number, month: number): Promise<MonthAvailabilityResponse> {
+  console.log(`Fetching month availability for ${year}-${month.toString().padStart(2, '0')}`);
+  const response = await axios.get('/api/calendar/month-availability', {
+    params: {
+      year,
+      month
+    }
+  });
+  console.log(`Month availability received:`, response.data);
+  return response.data;
+}
+
+// NEW: Detailed request for specific day slots - only when day is selected
+export async function fetchDayDetails(date: string): Promise<DayDetailResponse> {
+  console.log(`Fetching day details for ${date}`);
+  const response = await axios.get('/api/calendar/day-details', {
+    params: {
+      date
+    }
+  });
+  console.log(`Day details received:`, response.data);
   return response.data;
 }

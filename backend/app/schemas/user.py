@@ -1,5 +1,5 @@
 from pydantic import BaseModel, EmailStr
-from typing import Optional
+from typing import Optional, Dict, Any
 from app.models.user import UserRole
 
 
@@ -34,3 +34,33 @@ class UserResponse(UserBase):
 
     class ConfigDict:
         from_attributes = True
+
+
+class TokenResponse(BaseModel):
+    access_token: str
+    token_type: str = "bearer"
+
+
+class MessageResponse(BaseModel):
+    detail: str
+
+
+class SecurityStats(BaseModel):
+    total_users: int
+    active_users: int
+    locked_accounts: int
+    failed_login_attempts_today: int
+
+
+class PasswordValidation(BaseModel):
+    is_valid: bool
+    errors: list[str]
+    strength: str
+    score: int
+
+
+class GeneratedPassword(BaseModel):
+    password: str
+    strength: str
+    score: int
+    is_valid: bool

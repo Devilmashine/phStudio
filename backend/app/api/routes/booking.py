@@ -3,7 +3,7 @@ from sqlalchemy.orm import Session
 from typing import List
 from app.core.database import get_db
 from app.services.booking import BookingService
-from app.schemas.booking import Booking, BookingCreate, BookingStatusUpdate
+from app.schemas.booking import Booking, BookingCreate, BookingStatusUpdate, MessageResponse
 from app.models.user import User, UserRole
 from app.api.routes.auth import get_current_admin, get_current_manager
 from app.services.telegram_bot import TelegramBotService
@@ -56,6 +56,8 @@ async def create_public_booking(booking_data: BookingCreate, db: Session = Depen
     Публичный эндпоинт для создания бронирования клиентом.
     Не требует аутентификации.
     """
+    from app.core.errors import BookingError
+    
     service = BookingService(db)
     try:
         db_booking = service.create_booking(booking_data)
@@ -71,6 +73,12 @@ async def create_public_booking(booking_data: BookingCreate, db: Session = Depen
             people_count=1
         )
         return db_booking
+    except BookingError as e:
+        # Return specific validation error messages
+        if e.code == "TIME_CONFLICT":
+            raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail=e.message)
+        else:
+            raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=e.message)
     except HTTPException as e:
         raise e
     except Exception as e:
@@ -110,7 +118,7 @@ async def update_booking(
     return booking
 
 
-@router.delete("/{booking_id}")
+@router.delete("/{booking_id}", response_model=MessageResponse)
 async def delete_booking(
     booking_id: int,
     db: Session = Depends(get_db),

@@ -1,6 +1,5 @@
 import axios from 'axios';
 import { BookingData } from '../../types';
-import { createCalendarEvent } from '../calendar/api';
 
 // Типы для Telegram
 interface TelegramUser {
@@ -234,21 +233,7 @@ ${formattedPhone}`;
         throw new Error('Booking ID is required');
       }
 
-      // Создаем событие в Google Calendar
-      const calendarEvent = await createCalendarEvent({
-        summary: `Бронирование: ${user.first_name} ${user.last_name || ''}`,
-        description: `Бронирование для ${user.first_name} ${user.last_name || ''}`,
-        start: {
-          dateTime: new Date(message.date + 'T' + message.times[0]).toISOString()
-        },
-        end: {
-          dateTime: new Date(message.date + 'T' + message.times[message.times.length - 1]).toISOString()
-        },
-        phone: message.phone || '', // обязательно передаём телефон
-        total_price: message.totalPrice // строгое значение, без any и дефолта 1
-      });
-
-      console.log(`📅 Calendar Event Created: ${calendarEvent.id}`);
+      console.log(`📅 Booking confirmed directly (calendar events are created via booking system)`);
 
       // Логируем действие
       const actionLog = this.logBookingAction({
@@ -262,7 +247,7 @@ ${formattedPhone}`;
           username: user.username
         },
         details: {
-          calendarEventId: calendarEvent.id
+          confirmedBy: `${user.first_name} ${user.last_name || ''}`
         }
       });
 

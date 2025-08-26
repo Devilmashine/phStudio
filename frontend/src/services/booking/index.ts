@@ -1,5 +1,5 @@
 import { BookingData } from '../../types';
-import { getAvailableSlots } from '../../data/availability';
+import { getDayAvailability } from '../calendar/availability';
 import { calendarService } from '../calendar.service';
 import { telegramNotificationService } from '../telegram/sendBooking';
 
@@ -11,7 +11,7 @@ console.log('📦 Booking Module Import Details:', {
   
   // Additional runtime checks
   nodeEnv: process.env.NODE_ENV,
-  viteMode: (import.meta.env as any)?.MODE,
+  viteMode: (import.meta as any).env?.MODE || 'unknown',
   
   // Detailed environment variable logging
   telegramEnvVars: Object.keys(process.env)
@@ -44,7 +44,8 @@ export function getBookingById(id: string): BookingData | undefined {
  */
 export async function checkAvailability(date: string): Promise<Set<string>> {
   try {
-    const { slots } = await getAvailableSlots(date);
+    const dayAvailability = await getDayAvailability(date);
+    const { slots } = dayAvailability;
     const bookedSlots = new Set<string>();
 
     slots.forEach(slot => {

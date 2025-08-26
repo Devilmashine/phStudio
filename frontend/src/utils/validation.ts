@@ -7,7 +7,13 @@ export function validatePhone(phone: string): boolean {
   // Удаляем все нецифровые символы
   const cleanPhone = phone.replace(/\D/g, '');
 
+  // Проверяем что номер не пустой и не только код страны
+  if (cleanPhone.length < 11 || cleanPhone === '7') {
+    return false;
+  }
+
   // Строгая проверка российских мобильных номеров
+  // Поддерживаем форматы: 79XXXXXXXXX, 89XXXXXXXXX, 9XXXXXXXXX
   const mobilePhoneRegex = /^(7|8)?9\d{9}$/;
   
   // Проверяем что номер соответствует формату мобильного телефона

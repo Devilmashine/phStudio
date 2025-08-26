@@ -66,7 +66,7 @@ def update_news_view(
 @router.delete(
     "/{news_id}",
     status_code=204,
-    response_class=None,
+    response_class=Response,
     responses={404: {"description": "Новость не найдена"}},
 )
 def delete_news_view(

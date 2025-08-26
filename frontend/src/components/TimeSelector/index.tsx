@@ -1,11 +1,9 @@
 import React, { useEffect, useState } from 'react';
-import { Box, Typography, CircularProgress, Paper } from '@mui/material';
-import { Dayjs } from 'dayjs';
-import { getAvailableSlots } from '../../data/availability';
+import { getDayAvailability } from '../../services/calendar/availability';
 import { BookingSlot } from '../../types/index';
 
 interface TimeSelectorProps {
-  date: Dayjs;
+  date: { format: (format: string) => string }; // Dayjs-like interface
   selectedTimes: string[];
   onTimeSelect: (times: string[]) => void;
 }
@@ -24,7 +22,7 @@ export const TimeSelector: React.FC<TimeSelectorProps> = ({
       try {
         setLoading(true);
         const dateStr = date.format('YYYY-MM-DD');
-        const response = await getAvailableSlots(dateStr);
+        const response = await getDayAvailability(dateStr);
         setSlots(response.slots || []);
         setError(null);
       } catch (err) {
@@ -42,92 +40,59 @@ export const TimeSelector: React.FC<TimeSelectorProps> = ({
 
   if (loading) {
     return (
-      <Box display="flex" justifyContent="center" alignItems="center" minHeight={200}>
-        <CircularProgress />
-      </Box>
+      <div className="flex justify-center items-center min-h-48">
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+      </div>
     );
   }
 
   if (error) {
     return (
-      <Paper elevation={0} sx={{ p: 2, bgcolor: 'error.light', color: 'error.contrastText' }}>
-        <Typography align="center">
-          {error}
-        </Typography>
-      </Paper>
+      <div className="p-4 bg-red-50 border border-red-200 rounded-md">
+        <p className="text-red-700 text-center">{error}</p>
+      </div>
     );
   }
 
   if (!slots.length) {
     return (
-      <Paper elevation={0} sx={{ p: 2, bgcolor: 'warning.light' }}>
-        <Typography align="center">
-          Нет доступных слотов на выбранную дату
-        </Typography>
-      </Paper>
+      <div className="p-4 bg-yellow-50 border border-yellow-200 rounded-md">
+        <p className="text-yellow-700 text-center">Нет доступных слотов на выбранную дату</p>
+      </div>
     );
   }
 
   return (
-    <Box sx={{ mt: 3 }}>
-      <Typography variant="h6" gutterBottom sx={{ mb: 2 }}>
-        Выберите время
-      </Typography>
-      <Box 
-        display="grid" 
-        gridTemplateColumns={{
-          xs: 'repeat(2, 1fr)',
-          sm: 'repeat(3, 1fr)',
-          md: 'repeat(4, 1fr)'
-        }}
-        gap={2}
-      >
+    <div className="mt-6">
+      <h3 className="text-lg font-semibold mb-4">Выберите время</h3>
+      <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-2">
         {slots.map((slot) => (
-          <Paper
-            key={slot.time}
+          <button
+            key={slot.startTime}
             onClick={() => {
               if (!slot.available) return;
-              const isSelected = selectedTimes.includes(slot.time);
+              const isSelected = selectedTimes.includes(slot.startTime);
               const newTimes = isSelected
-                ? selectedTimes.filter(t => t !== slot.time)
-                : [...selectedTimes, slot.time].sort();
+                ? selectedTimes.filter(t => t !== slot.startTime)
+                : [...selectedTimes, slot.startTime].sort();
               onTimeSelect(newTimes);
             }}
-            elevation={selectedTimes.includes(slot.time) ? 4 : 1}
-            sx={{
-              p: 2,
-              cursor: slot.available ? 'pointer' : 'not-allowed',
-              bgcolor: selectedTimes.includes(slot.time)
-                ? 'primary.main'
-                : slot.available
-                  ? 'background.paper'
-                  : 'action.disabledBackground',
-              color: selectedTimes.includes(slot.time)
-                ? 'primary.contrastText'
-                : slot.available
-                  ? 'text.primary'
-                  : 'text.disabled',
-              transition: 'all 0.2s ease-in-out',
-              '&:hover': {
-                transform: slot.available ? 'translateY(-2px)' : 'none',
-                bgcolor: slot.available
-                  ? selectedTimes.includes(slot.time)
-                    ? 'primary.dark'
-                    : 'primary.light'
-                  : 'action.disabledBackground'
+            disabled={!slot.available}
+            className={`
+              p-3 rounded-lg text-center font-medium transition-all duration-200
+              ${
+                selectedTimes.includes(slot.startTime)
+                  ? 'bg-blue-600 text-white transform scale-105 shadow-md'
+                  : slot.available
+                  ? 'bg-white border border-gray-300 text-gray-900 hover:bg-blue-50 hover:border-blue-300 hover:transform hover:scale-105'
+                  : 'bg-gray-100 text-gray-400 cursor-not-allowed'
               }
-            }}
+            `}
           >
-            <Typography 
-              align="center" 
-              variant="subtitle1" 
-              sx={{ fontWeight: selectedTimes.includes(slot.time) ? 'bold' : 'normal' }}
-            >
-              {slot.time}
-            </Typography>
-          </Paper>
+            {slot.startTime}
+          </button>
         ))}
-      </Box>
-    </Box>
+      </div>
+    </div>
   );
 }; 

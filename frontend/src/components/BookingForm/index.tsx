@@ -41,18 +41,22 @@ const BookingForm = () => {
         </div>
         
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-12">
-          <fieldset disabled={isSubmitting} className="space-y-6">
-            <Calendar
-              selectedDate={selectedDate}
-              onChange={handleDateChange}
-            />
+          <fieldset disabled={isSubmitting} className="space-y-6 flex flex-col items-center lg:items-start">
+            <div className="w-full max-w-md">
+              <Calendar
+                selectedDate={selectedDate}
+                onChange={handleDateChange}
+              />
+            </div>
 
             {selectedDate && (
-              <TimeSlots
-                date={selectedDate}
-                selectedTimes={selectedTimes}
-                onSelectTime={handleTimeSelect}
-              />
+              <div className="w-full max-w-md">
+                <TimeSlots
+                  date={selectedDate}
+                  selectedTimes={selectedTimes}
+                  onSelectTime={handleTimeSelect}
+                />
+              </div>
             )}
           </fieldset>
 
@@ -94,10 +98,10 @@ const BookingForm = () => {
 
             <button
               type="submit"
-              disabled={isSubmitting || formErrors.length > 0}
+              disabled={isSubmitting}
               className="w-full bg-indigo-600 text-white py-3 rounded-lg hover:bg-indigo-700 transition-colors disabled:bg-gray-300 disabled:cursor-not-allowed"
             >
-              {isSubmitting ? 'Отправка...' : 'Отправить заявку'}
+              {isSubmitting ? 'Отправка...' : 'Забронировать'}
             </button>
           </form>
         </div>

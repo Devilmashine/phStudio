@@ -1,4 +1,4 @@
-import { getAvailableSlots } from '../../data/availability';
+import { getDayAvailability } from '../calendar/availability';
 import { AvailabilityState } from '../../types/index';
 
 interface AvailableSlot {
@@ -10,7 +10,8 @@ interface AvailableSlot {
 }
 
 async function getMappedAvailableSlots(date: string): Promise<AvailableSlot[]> {
-  const { slots } = await getAvailableSlots(date);
+  const dayAvailability = await getDayAvailability(date);
+  const { slots } = dayAvailability;
   return slots.map(s => ({
     time: s.startTime,
     state: s.state,

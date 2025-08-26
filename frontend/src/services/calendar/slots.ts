@@ -1,5 +1,4 @@
 import { BookingSlot, DayAvailability } from '../../types';
-import { mockAvailability } from './mock';
 import { formatLocalDate } from '../../utils/dateUtils';
 import { getDayAvailability } from './availability';
 
@@ -17,7 +16,7 @@ export async function getTimeSlots(date: string): Promise<BookingSlot[]> {
 export async function getMultiDayAvailability(startDate?: string): Promise<DayAvailability[]> {
   console.log(`[slots.ts] Getting multi-day availability, start date: ${startDate || 'today'}`);
   const today = startDate ? new Date(startDate) : new Date();
-  const availabilityPromises = [];
+  const availabilityPromises: Promise<DayAvailability>[] = [];
 
   for (let i = 0; i < 30; i++) {
     const currentDate = new Date(today);
@@ -25,7 +24,7 @@ export async function getMultiDayAvailability(startDate?: string): Promise<DayAv
     const dateString = formatLocalDate(currentDate);
     
     availabilityPromises.push(
-      mockAvailability.getDayAvailability(dateString)
+      getDayAvailability(dateString)
     );
   }
 
@@ -57,5 +56,7 @@ export async function bookSlots(date: string, times: string[]): Promise<void> {
   const formattedDate = formatLocalDate(date);
   
   console.log(`[slots.ts] Booking slots for date: ${formattedDate}, times: ${times.join(', ')}`);
-  await mockAvailability.bookSlots(formattedDate, times);
+  // Note: Actual booking is handled through the booking API service, not here
+  // This function is kept for compatibility but doesn't need to do anything
+  // since bookings go through createBooking() service
 }

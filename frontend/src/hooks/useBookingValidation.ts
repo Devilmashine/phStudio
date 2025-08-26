@@ -55,8 +55,14 @@ export function useBookingValidation({
     return errors.length === 0;
   };
 
+  // Функция для очистки ошибок
+  const clearErrors = () => {
+    setFormErrors([]);
+  };
+
   return {
     validateForm,
-    formErrors
+    formErrors,
+    clearErrors
   };
 }

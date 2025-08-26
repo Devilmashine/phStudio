@@ -1,3 +1,3 @@
 export const ENV = {
-  API_URL: process.env.REACT_APP_API_URL || 'http://localhost:8000'
+  API_URL: '/api' // Use relative URL to work with Vite proxy
 }; 

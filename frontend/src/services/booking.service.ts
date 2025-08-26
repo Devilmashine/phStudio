@@ -80,10 +80,40 @@ export class BookingService {
   }
 
   private async getBookingById(bookingId: string): Promise<BookingData | null> {
-    // TODO: Implement actual booking retrieval logic
-    // This would typically involve fetching from a database
-    console.log(`Retrieving booking with ID: ${bookingId}`);
-    return null;
+    try {
+      // Try to get from the existing bookingService first (local storage or cache)
+      import('../services/booking/index').then(({ getBookingById: getLocalBooking }) => {
+        const localBooking = getLocalBooking(bookingId);
+        if (localBooking) {
+          return localBooking;
+        }
+      }).catch(() => {
+        // Fallback if local service fails
+      });
+
+      // Fallback to API call if not found locally
+      const API_URL = '/api'; // Use relative URL to work with Vite proxy
+      
+      const response = await fetch(`${API_URL}/bookings/${bookingId}`, {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json',
+        }
+      });
+      
+      if (!response.ok) {
+        if (response.status === 404) {
+          return null; // Booking not found
+        }
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+      
+      const booking = await response.json();
+      return booking;
+    } catch (error) {
+      console.error(`Error retrieving booking ${bookingId}:`, error);
+      return null;
+    }
   }
 }
 

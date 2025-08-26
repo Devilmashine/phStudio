@@ -1,59 +1,85 @@
 from datetime import date, timedelta
 from sqlalchemy.orm import Session
 from sqlalchemy import func, and_
-from typing import List, Dict, Any
+from sqlalchemy.exc import SQLAlchemyError
+from typing import List, Dict, Any, Optional, Union
+import logging
 
 from app.models.booking import Booking
 from app.schemas.booking import Booking as BookingSchema
 
+logger = logging.getLogger(__name__)
+
 
 class StatisticsService:
-    def __init__(self, db: Session):
+    """Service for generating booking statistics and analytics"""
+    
+    def __init__(self, db: Session) -> None:
         self.db = db
 
-    async def get_daily_stats(self, target_date: date) -> Dict[str, Any]:
-        """Получение статистики за день"""
-        bookings = (
-            self.db.query(Booking).filter(func.date(Booking.date) == target_date).all()
-        )
+    async def get_daily_stats(self, target_date: date) -> Dict[str, Union[int, float, Dict, List]]:
+        """Get comprehensive statistics for a specific date
+        
+        Args:
+            target_date: The date to generate statistics for
+            
+        Returns:
+            Dictionary containing daily statistics
+            
+        Raises:
+            SQLAlchemyError: If database query fails
+        """
+        try:
+            bookings = (
+                self.db.query(Booking)
+                .filter(func.date(Booking.date) == target_date)
+                .all()
+            )
 
-        total_bookings = len(bookings)
-        total_hours = sum(
-            (booking.end_time - booking.start_time).total_seconds() / 3600
-            for booking in bookings
-        )
-        total_revenue = sum(booking.total_price for booking in bookings)
+            total_bookings = len(bookings)
+            total_hours = sum(
+                (booking.end_time - booking.start_time).total_seconds() / 3600
+                for booking in bookings
+            )
+            total_revenue = sum(booking.total_price for booking in bookings)
 
-        time_distribution = self._get_time_distribution(bookings)
-        avg_duration = total_hours / total_bookings if total_bookings > 0 else 0
+            time_distribution = self._get_time_distribution(bookings)
+            avg_duration = total_hours / total_bookings if total_bookings > 0 else 0.0
 
-        success_rate = (
-            len([b for b in bookings if b.status == "completed"]) / total_bookings
-            if total_bookings > 0
-            else 0
-        )
-        cancellation_rate = (
-            len([b for b in bookings if b.status == "cancelled"]) / total_bookings
-            if total_bookings > 0
-            else 0
-        )
+            success_rate = (
+                len([b for b in bookings if b.status == "completed"]) / total_bookings
+                if total_bookings > 0
+                else 0.0
+            )
+            cancellation_rate = (
+                len([b for b in bookings if b.status == "cancelled"]) / total_bookings
+                if total_bookings > 0
+                else 0.0
+            )
 
-        popular_slots = self._get_popular_slots(bookings)
-        new_vs_returning = self._get_new_vs_returning(bookings)
-        notification_stats = self._get_notification_stats(bookings)
+            popular_slots = self._get_popular_slots(bookings)
+            new_vs_returning = self._get_new_vs_returning(bookings)
+            notification_stats = self._get_notification_stats(bookings)
 
-        return {
-            "total_bookings": total_bookings,
-            "total_hours": total_hours,
-            "total_revenue": total_revenue,
-            "time_distribution": time_distribution,
-            "average_duration": avg_duration,
-            "success_rate": success_rate,
-            "cancellation_rate": cancellation_rate,
-            "popular_slots": popular_slots,
-            "new_vs_returning": new_vs_returning,
-            "notification_stats": notification_stats,
-        }
+            return {
+                "date": target_date.isoformat(),
+                "total_bookings": total_bookings,
+                "total_hours": round(total_hours, 2),
+                "total_revenue": round(total_revenue, 2),
+                "time_distribution": time_distribution,
+                "average_duration": round(avg_duration, 2),
+                "success_rate": round(success_rate, 3),
+                "cancellation_rate": round(cancellation_rate, 3),
+                "popular_slots": popular_slots,
+                "new_vs_returning": new_vs_returning,
+                "notification_stats": notification_stats,
+            }
+        except SQLAlchemyError as e:
+            logger.error(f"Database error in get_daily_stats: {e}")
+            raise
+        except Exception as e:
+            logger.error(f"Unexpected error in get_daily_stats: {e}")
+            raise
 
     async def get_weekly_stats(self, start_date: date) -> Dict[str, Any]:
         """Получение статистики за неделю"""

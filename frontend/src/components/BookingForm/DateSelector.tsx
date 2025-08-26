@@ -1,6 +1,6 @@
 import React from 'react';
 import DatePicker from 'react-datepicker';
-import { getAvailableSlots } from '../../data/availability';
+import { getDayAvailability } from '../../services/calendar/availability';
 import { formatLocalDate } from '../../utils/dateUtils';
 import { 
   AvailabilityState,
@@ -17,28 +17,33 @@ const DateSelector = React.memo(({ selectedDate, onChange }: DateSelectorProps) 
 
   const getAvailabilityClass = async (date: Date) => {
     const dateStr = formatLocalDate(date);
-    const availability: DayAvailability = await getAvailableSlots(dateStr);
-    
-    if (!availability || !availability.status) return '';
-    
-    let className = '';
-    switch (availability.status) {
-      case AvailabilityState.AVAILABLE:
-        className = 'bg-green-100 text-green-800 hover:bg-green-200';
-        break;
-      case AvailabilityState.PARTIALLY_BOOKED:
-        className = 'bg-yellow-100 text-yellow-800 hover:bg-yellow-200';
-        break;
-      case AvailabilityState.FULLY_BOOKED:
-        className = 'bg-red-100 text-red-800 hover:bg-red-200';
-        break;
+    try {
+      const availability: DayAvailability = await getDayAvailability(dateStr);
+      
+      if (!availability || !availability.status) return '';
+      
+      let className = '';
+      switch (availability.status) {
+        case AvailabilityState.AVAILABLE:
+          className = 'bg-green-100 text-green-800 hover:bg-green-200';
+          break;
+        case AvailabilityState.PARTIALLY_BOOKED:
+          className = 'bg-yellow-100 text-yellow-800 hover:bg-yellow-200';
+          break;
+        case AvailabilityState.FULLY_BOOKED:
+          className = 'bg-red-100 text-red-800 hover:bg-red-200';
+          break;
+      }
+      
+      setAvailabilityClasses(prev => ({
+        ...prev,
+        [dateStr]: className
+      }));
+      return className;
+    } catch (error) {
+      console.error('Error fetching availability for date:', dateStr, error);
+      return '';
     }
-    
-    setAvailabilityClasses(prev => ({
-      ...prev,
-      [dateStr]: className
-    }));
-    return className;
   };
 
   React.useEffect(() => {

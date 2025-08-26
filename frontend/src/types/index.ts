@@ -56,4 +56,8 @@ export interface DayAvailability {
   isAvailable: boolean;
   status: AvailabilityState;
   slots: BookingSlot[];
+  // New fields for bulk availability data
+  available_slots?: number;
+  total_slots?: number;
+  booked_slots?: number;
 }

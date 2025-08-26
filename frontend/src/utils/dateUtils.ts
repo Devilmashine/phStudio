@@ -6,36 +6,27 @@
 export function formatLocalDate(date: string | Date): string {
   // If already a string in YYYY-MM-DD format, return as-is
   if (typeof date === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(date)) {
+    console.log(`🟢 [formatLocalDate] Already formatted: ${date}`);
     return date;
   }
 
-  // Create a new date object with explicit parsing
+  // Get date object
   let inputDate: Date;
   if (date instanceof Date) {
-    inputDate = new Date(date.getTime());
-  } else if (typeof date === 'string') {
-    // Try parsing with explicit time to avoid timezone shifts
-    inputDate = new Date(`${date}T12:00:00`);
+    inputDate = date;
   } else {
-    inputDate = new Date();
+    inputDate = new Date(date);
   }
   
-  // Log detailed parsing information
-  console.log(`[formatLocalDate] Input: ${date}`);
-  console.log(`[formatLocalDate] Parsed Date: ${inputDate}`);
-  console.log(`[formatLocalDate] getFullYear(): ${inputDate.getFullYear()}`);
-  console.log(`[formatLocalDate] getMonth(): ${inputDate.getMonth()}`);
-  console.log(`[formatLocalDate] getDate(): ${inputDate.getDate()}`);
-  console.log(`[formatLocalDate] getTimezoneOffset(): ${inputDate.getTimezoneOffset()}`);
-
-  // Extract components directly
+  // Use local date components to avoid timezone conversion
   const year = inputDate.getFullYear();
   const month = (inputDate.getMonth() + 1).toString().padStart(2, '0');
   const day = inputDate.getDate().toString().padStart(2, '0');
-  
-  // Return in YYYY-MM-DD format
   const formattedDate = `${year}-${month}-${day}`;
-  console.log(`[formatLocalDate] Formatted Date: ${formattedDate}`);
+  
+  console.log(`🟡 [formatLocalDate] Input: ${date}`);
+  console.log(`🟡 [formatLocalDate] Date object: ${inputDate}`);
+  console.log(`🟡 [formatLocalDate] Final formatted: ${formattedDate}`);
   
   return formattedDate;
 }

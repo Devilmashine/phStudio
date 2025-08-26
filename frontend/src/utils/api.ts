@@ -1,8 +1,6 @@
 import axios from 'axios';
 
-const API_URL = process.env.NODE_ENV === 'production'
-  ? 'https://your-production-api-url.com/api' // Заменить на реальный URL
-  : 'http://localhost:8000/api'; // Для локальной разработки
+const API_URL = '/api'; // Use relative URL to work with Vite proxy
 
 export const bookingApi = axios.create({
   baseURL: API_URL,

@@ -1,7 +1,7 @@
 import axios from 'axios';
 import { BookingFormData, BookingResponse } from '@/types/booking';
 
-const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000';
+const API_URL = '/api'; // Use relative URL to work with Vite proxy
 
 export const createBooking = async (data: BookingFormData): Promise<BookingResponse> => {
   try {

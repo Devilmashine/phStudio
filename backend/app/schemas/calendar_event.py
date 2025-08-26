@@ -34,3 +34,11 @@ class CalendarEventResponse(CalendarEventBase):
 
     class Config:
         from_attributes = True
+
+
+class MessageResponse(BaseModel):
+    message: str
+
+
+class IcalTokenResponse(BaseModel):
+    ical_token: str

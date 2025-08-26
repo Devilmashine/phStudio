@@ -17,7 +17,7 @@ export function useBookingForm() {
   const [showPrivacyModal, setShowPrivacyModal] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  const { formErrors, validateForm } = useBookingValidation({
+  const { formErrors, validateForm, clearErrors } = useBookingValidation({
     selectedDate,
     selectedTimes,
     name,
@@ -31,6 +31,7 @@ export function useBookingForm() {
   }, [selectedTimes]);
 
   const handleTimeSelect = (time: string) => {
+    clearErrors(); // Очищаем ошибки при выборе времени
     setSelectedTimes(prev => {
       if (prev.includes(time)) {
         return prev.filter(t => t !== time);
@@ -40,34 +41,58 @@ export function useBookingForm() {
   };
 
   const handleDateChange = (date: Date | null) => {
+    clearErrors(); // Очищаем ошибки при выборе даты
     setSelectedDate(date);
     setSelectedTimes([]);
   };
 
   const handleSubmit = async (e: React.FormEvent, totalPrice: number) => {
     e.preventDefault();
+    console.log('Form submitted with data:', {
+      selectedDate,
+      selectedTimes,
+      name,
+      phone,
+      termsAccepted,
+      privacyAccepted,
+      totalPrice
+    });
+    
+    // Clear any existing errors before validation
+    clearErrors();
     
     if (!validateForm()) {
+      console.log('Form validation failed:', formErrors);
+      toast.show('Пожалуйста, исправьте ошибки в форме.');
+      return;
+    }
+
+    if (!selectedDate) {
+      console.error('selectedDate is null, cannot proceed');
+      toast.show('Пожалуйста, выберите дату.');
       return;
     }
 
     const bookingData = {
-      date: selectedDate ? format(selectedDate, 'yyyy-MM-dd') : '',
+      date: format(selectedDate, 'yyyy-MM-dd'),
       times: selectedTimes,
       name: name.trim(),
       phone: phone.trim(),
       totalPrice
     };
 
+    console.log('Submitting booking data:', bookingData);
     setIsSubmitting(true);
+    
     try {
-      await createBooking(bookingData);
+      const result = await createBooking(bookingData);
+      console.log('Booking submitted successfully:', result);
       toast.show('Заявка успешно отправлена! Мы свяжемся с вами.');
       resetForm(); // Сбрасываем форму
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : 'Произошла неизвестная ошибка.';
-      toast.show(`Ошибка: ${errorMessage}`);
       console.error('Booking submission error:', error);
+      toast.show(`Ошибка: ${errorMessage}`);
     } finally {
       setIsSubmitting(false);
     }

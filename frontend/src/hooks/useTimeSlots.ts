@@ -1,6 +1,6 @@
 import { useState, useCallback } from 'react';
 import { format } from 'date-fns';
-import { getAvailableSlots } from '../data/availability';
+import { getDayAvailability } from '../services/calendar/availability';
 import { BookingSlot } from '../types/index';
 
 export function useTimeSlots() {
@@ -16,8 +16,8 @@ export function useTimeSlots() {
 
     setLoading(true);
     try {
-      const dayAvailability = await getAvailableSlots(dateStr);
-      const timeSlots = dayAvailability.slots;
+      const dayAvailability = await getDayAvailability(dateStr);
+      const timeSlots = dayAvailability.slots || [];
       
       setSlots(prev => ({
         ...prev,

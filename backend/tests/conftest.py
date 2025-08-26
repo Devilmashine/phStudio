@@ -1,41 +1,95 @@
 import pytest
+import pytest
 import os
-from sqlalchemy import create_engine
+from sqlalchemy import create_engine, text
 from sqlalchemy.orm import sessionmaker
 from ..app.models.base import Base
 from ..app.core.config import get_settings
+import asyncio
+from typing import Generator
 
+# Setup test database configuration
 @pytest.fixture(scope="session", autouse=True)
 def set_test_environment():
-    # Clear the cache to ensure test environment variables are loaded
-    get_settings.cache_clear()
     """
     Устанавливает переменные окружения для всех тестов.
-    Это гарантирует, что тесты не будут использовать продакшен базу данных.
+    Это гарантирует, что тесты будут использовать PostgreSQL тестовую базу данных.
     """
-    os.environ["DATABASE_URL"] = "sqlite:///:memory:"
+    # Clear the cache to ensure test environment variables are loaded
+    get_settings.cache_clear()
+    
+    # Set test environment variables
     os.environ["ENV"] = "testing"
+    
+    # Use PostgreSQL test database instead of SQLite
+    test_db_url = os.getenv(
+        "TEST_DATABASE_URL", 
+        "postgresql://postgres:postgres@localhost:5432/phstudio_test"
+    )
+    os.environ["DATABASE_URL"] = test_db_url
+    os.environ["TEST_DATABASE_URL"] = test_db_url
+    
+    # Set other test environment variables
+    os.environ["SECRET_KEY"] = "test-secret-key"
+    os.environ["TELEGRAM_BOT_TOKEN"] = "test-token"
+    os.environ["TELEGRAM_CHAT_ID"] = "test-chat-id"
+    os.environ["REDIS_URL"] = "redis://localhost:6379/1"
+    
+    yield
+    
+    # Cleanup after all tests
+    get_settings.cache_clear()
+
+@pytest.fixture(scope="session")
+def test_engine():
+    """Create a test database engine for PostgreSQL"""
+    settings = get_settings()
+    engine = create_engine(
+        settings.TEST_DATABASE_URL,
+        pool_pre_ping=True,
+        echo=False  # Set to True for SQL debugging
+    )
+    
+    # Create test database tables
+    Base.metadata.create_all(bind=engine)
+    
+    yield engine
+    
+    # Cleanup: drop all tables after tests
+    Base.metadata.drop_all(bind=engine)
+    engine.dispose()
 
 import json
 from ..app.models.settings import StudioSettings
 
 @pytest.fixture(scope="function")
-def db_session():
+def db_session(test_engine):
     """
     Фикстура для создания чистой базы данных для каждого теста.
+    Использует PostgreSQL с транзакционным откатом для изоляции тестов.
     """
     # Import all models here to ensure they are registered with the Base
-    # Импортируем через __init__.py для правильного порядка
-    from ..app.models import Base, User, UserRole, Booking, BookingStatus, Client, CalendarEvent, GalleryImage, News, StudioSettings
-    engine = create_engine(os.environ["DATABASE_URL"], connect_args={"check_same_thread": False})
-    Base.metadata.create_all(bind=engine)
-    TestingSessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
+    from ..app.models import (
+        Base, User, UserRole, Booking, BookingStatus, Client, 
+        CalendarEvent, GalleryImage, News, StudioSettings
+    )
+    
+    # Create a connection and transaction
+    connection = test_engine.connect()
+    transaction = connection.begin()
+    
+    # Create a session bound to the connection
+    TestingSessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=connection)
     session = TestingSessionLocal()
+    
     try:
         yield session
     finally:
         session.close()
-        Base.metadata.drop_all(bind=engine)
+        # Rollback the transaction to clean up data
+        transaction.rollback()
+        connection.close()
+        Base.metadata.drop_all(bind=test_engine)
 
 import pytest
 from fastapi.testclient import TestClient
@@ -46,8 +100,8 @@ def client(db_session):
     """
     Фикстура для создания TestClient с переопределенной зависимостью БД.
     """
-    from ..app.main import create_app
-    app = create_app()
+    from ..app.main import app
+    app = app
 
     def override_get_db():
         try:

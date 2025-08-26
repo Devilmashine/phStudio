@@ -17,13 +17,16 @@ import {
 export async function getAvailableSlots(date: string): Promise<DayAvailability> {
   // Ensure consistent date formatting
   const formattedDate = formatLocalDate(date);
+  console.log(`getAvailableSlots called for date: ${formattedDate}`);
 
   // Create UTC timestamps that preserve the local date
   const timeMinIso = preserveLocalDateInUTC(formattedDate + 'T00:00:00').toISOString();
   const timeMaxIso = preserveLocalDateInUTC(formattedDate + 'T23:59:59').toISOString();
 
   try {
+    console.log(`Fetching calendar events for ${formattedDate} from ${timeMinIso} to ${timeMaxIso}`);
     const events = await fetchCalendarEvents(timeMinIso, timeMaxIso);
+    console.log(`Calendar events received for ${formattedDate}:`, events);
 
     // Подсчет количества занятых часов
     const bookedSlots = new Set<string>();
@@ -44,7 +47,9 @@ export async function getAvailableSlots(date: string): Promise<DayAvailability> 
       }
     });
 
-    // Генерация слотов для дня
+    console.log(`Booked slots for ${formattedDate}:`, Array.from(bookedSlots));
+
+    // Генерация слотов для дня (9:00 - 20:00)
     const slots: BookingSlot[] = [];
 
     for (let hour = 9; hour <= 20; hour++) {
@@ -62,6 +67,8 @@ export async function getAvailableSlots(date: string): Promise<DayAvailability> 
       });
     }
 
+    console.log(`Generated ${slots.length} slots for ${formattedDate}:`, slots);
+
     // Определение статуса дня
     let status: AvailabilityState = AvailabilityState.UNKNOWN;
     if (slots.every(slot => !slot.available)) {
@@ -72,20 +79,21 @@ export async function getAvailableSlots(date: string): Promise<DayAvailability> 
       status = AvailabilityState.AVAILABLE;
     }
 
-    return { 
+    const result = { 
       date: formattedDate, 
       isAvailable: status !== AvailabilityState.FULLY_BOOKED,
       status,
       slots 
     };
+    
+    console.log(`Final availability result for ${formattedDate}:`, result);
+    return result;
   } catch (error) {
     console.error('Error fetching real calendar events in getAvailableSlots:', error);
-    return { 
-      date: formattedDate, 
-      isAvailable: false,
-      status: AvailabilityState.UNKNOWN,
-      slots: [] as BookingSlot[] 
-    };
+    
+    // Re-throw error instead of providing fallback data
+    // This ensures proper error handling without fake data
+    throw new Error(`Failed to fetch availability for ${formattedDate}: ${error}`);
   }
 }
 
