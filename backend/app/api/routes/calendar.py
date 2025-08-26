@@ -120,35 +120,60 @@ async def get_day_details(
         
         print(f"Found {len(bookings)} bookings for {date} (UTC range: {utc_start} to {utc_end})")
         
-        # Track booked hours in Moscow time
-        booked_hours = set()
+        # Track booked time slots (9:00-10:00, 10:00-11:00, etc.)
+        booked_slots = set()
         
         for booking in bookings:
             # Convert to Moscow time for hour calculation
-            # booking.start_time and booking.end_time are already datetime objects
             moscow_start = to_moscow_time(booking.start_time)
             moscow_end = to_moscow_time(booking.end_time)
             
             print(f"Booking: Moscow {moscow_start} to {moscow_end}")
             
-            start_hour = moscow_start.hour
-            end_hour = moscow_end.hour
+            # Calculate which time slots are occupied
+            # Time slots are 1-hour blocks from 9:00 to 20:00 (9:00-10:00, 10:00-11:00, etc.)
             
-            # If booking ends with minutes (e.g., 09:30), include that hour
-            if moscow_end.minute > 0:
-                end_hour += 1
-            
-            # Mark all hours that are affected by the booking
-            for hour in range(start_hour, end_hour):
-                if 9 <= hour <= 20:  # Only working hours
-                    booked_hours.add(hour)
-                    print(f"Marking hour {hour}:00 as booked")
+            # For each possible slot, check if booking overlaps with it
+            for hour in range(9, 20):  # Slots from 9:00 to 19:00 (covering 9:00-20:00 range)
+                slot_start_hour = hour
+                slot_end_hour = hour + 1
+                
+                # Create datetime objects for slot boundaries (using the same date as the booking)
+                # This ensures we're comparing slots on the correct day
+                slot_start = moscow_start.replace(
+                    year=moscow_start.year,
+                    month=moscow_start.month,
+                    day=moscow_start.day,
+                    hour=slot_start_hour,
+                    minute=0,
+                    second=0,
+                    microsecond=0
+                )
+                slot_end = moscow_start.replace(
+                    year=moscow_start.year,
+                    month=moscow_start.month,
+                    day=moscow_start.day,
+                    hour=slot_end_hour,
+                    minute=0,
+                    second=0,
+                    microsecond=0
+                )
+                
+                # Check for overlap: booking overlaps with slot if:
+                # booking_start < slot_end AND booking_end > slot_start
+                # This correctly handles the case where a booking ends exactly at a slot boundary
+                if moscow_start < slot_end and moscow_end > slot_start:
+                    time_slot = f"{hour:02d}:00"
+                    booked_slots.add(time_slot)
+                    print(f"Marking slot {time_slot} as booked due to overlap: booking {moscow_start} to {moscow_end} overlaps with slot {slot_start} to {slot_end}")
+                    print(f"  Overlap check: {moscow_start} < {slot_end} AND {moscow_end} > {slot_start}")
+                    print(f"  Result: {moscow_start < slot_end} AND {moscow_end > slot_start} = {moscow_start < slot_end and moscow_end > slot_start}")
         
         # Generate slots for 9:00-20:00
         slots = []
         for hour in range(9, 21):  # 9:00 to 20:00
             time_str = f"{hour:02d}:00"
-            available = hour not in booked_hours
+            available = time_str not in booked_slots
             
             slots.append({
                 "time": time_str,
@@ -160,7 +185,7 @@ async def get_day_details(
             "slots": slots
         }
         
-        print(f"Returning {len(slots)} slots for {date}, booked hours: {sorted(booked_hours)}")
+        print(f"Returning {len(slots)} slots for {date}, booked slots: {sorted(booked_slots)}")
         return result
         
     except ValueError as e:

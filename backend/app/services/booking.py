@@ -55,6 +55,16 @@ class BookingService:
                 if booking_data.start_time >= booking_data.end_time:
                     raise BookingError("Start time must be before end time", "INVALID_TIME_RANGE")
                 
+                # Validate that bookings are only at full hours
+                start_moscow = to_moscow_time(booking_data.start_time)
+                end_moscow = to_moscow_time(booking_data.end_time)
+                
+                if start_moscow.minute != 0 or start_moscow.second != 0 or start_moscow.microsecond != 0:
+                    raise BookingError("Bookings must start at full hours (e.g., 10:00, 11:00)", "INVALID_START_TIME")
+                
+                if end_moscow.minute != 0 or end_moscow.second != 0 or end_moscow.microsecond != 0:
+                    raise BookingError("Bookings must end at full hours (e.g., 11:00, 12:00)", "INVALID_END_TIME")
+                
                 # Check for time conflicts with existing bookings
                 conflicting_bookings = self.db.query(BookingModel).filter(
                     and_(

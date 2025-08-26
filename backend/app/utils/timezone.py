@@ -45,8 +45,11 @@ def parse_moscow_datetime(date_str: str) -> datetime:
     - 2025-08-28T10:00:00
     """
     if date_str.endswith('+03:00'):
-        # Already has Moscow timezone
-        return datetime.fromisoformat(date_str.replace('+03:00', '')).replace(tzinfo=MOSCOW_TZ)
+        # Already has Moscow timezone - parse and ensure correct timezone
+        dt_str = date_str.replace('+03:00', '')
+        dt = datetime.fromisoformat(dt_str)
+        # Localize to Moscow timezone
+        return MOSCOW_TZ.localize(dt)
     elif 'T' in date_str:
         # ISO format without timezone - assume Moscow time
         dt = datetime.fromisoformat(date_str)
