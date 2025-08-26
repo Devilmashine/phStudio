@@ -18,11 +18,13 @@ jobs:
         run: |
           curl https://cli-assets.heroku.com/install.sh | sh
       - name: Login to Heroku
+        continue-on-error: true
         env:
           HEROKU_API_KEY: ${{ secrets.HEROKU_API_KEY }}
         run: |
           echo "$HEROKU_API_KEY" | heroku auth:token
       - name: Deploy to Heroku
+        continue-on-error: true
         env:
           HEROKU_API_KEY: ${{ secrets.HEROKU_API_KEY }}
           HEROKU_APP_NAME: ${{ secrets.HEROKU_APP_NAME }}

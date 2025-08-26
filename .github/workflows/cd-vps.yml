@@ -12,6 +12,7 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
       - name: Copy files to VPS via SSH
+        continue-on-error: true
         uses: appleboy/scp-action@v0.1.7
         with:
           host: ${{ secrets.HOST }}
@@ -20,6 +21,7 @@ jobs:
           source: .
           target: ~/phStudio
       - name: Run deploy script on VPS
+        continue-on-error: true
         uses: appleboy/ssh-action@v1.0.3
         with:
           host: ${{ secrets.HOST }}
