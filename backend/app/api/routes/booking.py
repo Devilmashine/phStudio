@@ -5,8 +5,7 @@ from app.core.database import get_db
 from app.services.booking import BookingService
 from app.schemas.booking import Booking, BookingCreate, BookingStatusUpdate, MessageResponse
 from app.models.user import User, UserRole
-from app.api.routes.auth import get_current_admin, get_current_manager
-from app.services.telegram_bot import TelegramBotService
+from app.deps import get_current_admin, get_current_manager
 
 router = APIRouter(prefix="/bookings", tags=["bookings"])
 
@@ -57,21 +56,38 @@ async def create_public_booking(booking_data: BookingCreate, db: Session = Depen
     Не требует аутентификации.
     """
     from app.core.errors import BookingError
+    from app.services.telegram.booking_notifications import booking_notification_service
+    from app.models.telegram import BookingData, Language
     
     service = BookingService(db)
     try:
         db_booking = service.create_booking(booking_data)
-        telegram_service = TelegramBotService()
-        await telegram_service.send_booking_notification(
-            message="Новое бронирование",
-            service="Студийная фотосессия",
-            date=booking_data.date.strftime('%Y-%m-%d'),
-            times=[booking_data.start_time.strftime('%H:%M'), booking_data.end_time.strftime('%H:%M')],
-            name=booking_data.client_name,
-            phone=booking_data.client_phone,
-            total_price=int(booking_data.total_price),
-            people_count=1
-        )
+        
+        # Send notification using new system
+        try:
+            notification_booking_data = BookingData(
+                id=str(db_booking.id),
+                service="Студийная фотосессия",
+                date=booking_data.date,
+                time_slots=[f"{booking_data.start_time.strftime('%H:%M')}-{booking_data.end_time.strftime('%H:%M')}"],
+                client_name=booking_data.client_name,
+                client_phone=booking_data.client_phone,
+                people_count=getattr(booking_data, 'people_count', 1),
+                total_price=float(booking_data.total_price),
+                description=booking_data.notes,
+                status="pending"
+            )
+            
+            await booking_notification_service.send_booking_notification(
+                booking_data=notification_booking_data,
+                language=Language.RU,
+                queue=True
+            )
+        except Exception as e:
+            # Log notification error but don't fail the booking
+            import logging
+            logging.getLogger(__name__).error(f"Failed to send notification for booking {db_booking.id}: {e}")
+        
         return db_booking
     except BookingError as e:
         # Return specific validation error messages
@@ -88,19 +104,37 @@ async def create_public_booking(booking_data: BookingCreate, db: Session = Depen
 async def create_booking(
     booking_data: BookingCreate, db: Session = Depends(get_db), current_user: User = Depends(get_current_admin)
 ):
+    from app.services.telegram.booking_notifications import booking_notification_service
+    from app.models.telegram import BookingData, Language
+    
     service = BookingService(db)
     db_booking = service.create_booking(booking_data)
-    telegram_service = TelegramBotService()
-    await telegram_service.send_booking_notification(
-        message="Новое бронирование (админ)",
-        service="Студийная фотосессия",
-        date=booking_data.date.strftime('%Y-%m-%d'),
-        times=[booking_data.start_time.strftime('%H:%M'), booking_data.end_time.strftime('%H:%M')],
-        name=booking_data.client_name,
-        phone=booking_data.client_phone,
-        total_price=int(booking_data.total_price),
-        people_count=1
-    )
+    
+    # Send notification using new system
+    try:
+        notification_booking_data = BookingData(
+            id=str(db_booking.id),
+            service="Студийная фотосессия",
+            date=booking_data.date,
+            time_slots=[f"{booking_data.start_time.strftime('%H:%M')}-{booking_data.end_time.strftime('%H:%M')}"],
+            client_name=booking_data.client_name,
+            client_phone=booking_data.client_phone,
+            people_count=getattr(booking_data, 'people_count', 1),
+            total_price=float(booking_data.total_price),
+            description=booking_data.notes,
+            status="pending"
+        )
+        
+        await booking_notification_service.send_booking_notification(
+            booking_data=notification_booking_data,
+            language=Language.RU,
+            queue=True
+        )
+    except Exception as e:
+        # Log notification error but don't fail the booking
+        import logging
+        logging.getLogger(__name__).error(f"Failed to send notification for booking {db_booking.id}: {e}")
+    
     return db_booking
 
 
