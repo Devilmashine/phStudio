@@ -5,7 +5,7 @@ from ...core.database import get_db
 from ...services.client import ClientService
 from ...schemas.client import ClientCreate, ClientUpdate, ClientResponse
 from ...models.user import User
-from .auth import get_current_admin, get_current_manager
+from app.deps import get_current_admin, get_current_manager
 
 router = APIRouter(prefix="/clients", tags=["clients"])
 

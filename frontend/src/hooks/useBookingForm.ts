@@ -4,6 +4,7 @@ import { useBookingValidation } from './useBookingValidation';
 import { createBooking } from '../services/booking'; 
 import { studio } from '../data/studio';
 import { useToast } from '../components/Toast';
+import consentService from '../services/consentService';
 
 export function useBookingForm() {
   const toast = useToast();
@@ -85,6 +86,15 @@ export function useBookingForm() {
     setIsSubmitting(true);
     
     try {
+      // First record the consent (required by 152-ФЗ)
+      console.log('Recording booking consent...');
+      await consentService.recordBookingConsent({
+        ...bookingData,
+        client_phone: phone.trim(),
+        client_name: name.trim()
+      });
+      
+      // Then create the booking
       const result = await createBooking(bookingData);
       console.log('Booking submitted successfully:', result);
       toast.show('Заявка успешно отправлена! Мы свяжемся с вами.');

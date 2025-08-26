@@ -1,6 +1,6 @@
 from fastapi import APIRouter, Depends, HTTPException, status
 from fastapi import APIRouter, Depends, HTTPException, status, Request, Response, Cookie
-from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
+from fastapi.security import OAuth2PasswordRequestForm
 from fastapi.responses import JSONResponse
 from sqlalchemy.orm import Session
 from datetime import datetime, timedelta, timezone
@@ -8,6 +8,7 @@ from jose import JWTError, jwt
 from typing import List, Optional
 import logging
 from app.core.database import get_db
+from app.deps import get_current_admin, get_current_manager, get_current_user
 from app.services.user import UserService
 from app.schemas.user import UserCreate, UserResponse, UserUpdate, UserLogin, TokenResponse, MessageResponse, SecurityStats, PasswordValidation, GeneratedPassword
 from app.models.user import User, UserRole
@@ -17,7 +18,6 @@ from app.services.log_service import log_action
 logger = logging.getLogger(__name__)
 
 router = APIRouter()
-oauth2_scheme = OAuth2PasswordBearer(tokenUrl="token")
 
 
 def get_client_ip(request: Request) -> str:
@@ -77,50 +77,6 @@ def set_refresh_cookie(response: Response, refresh_token: str):
 
 def clear_refresh_cookie(response: Response):
     response.delete_cookie("refresh_token")
-
-
-async def get_current_user(token: str = Depends(oauth2_scheme), db: Session = Depends(get_db)):
-    credentials_exception = HTTPException(
-        status_code=status.HTTP_401_UNAUTHORIZED,
-        detail="Неверные учетные данные",
-        headers={"WWW-Authenticate": "Bearer"},
-    )
-    try:
-        settings = get_settings()
-        payload = jwt.decode(
-            token, settings.SECRET_KEY, algorithms=[settings.ALGORITHM]
-        )
-        username: Optional[str] = payload.get("sub")
-        role: Optional[str] = payload.get("role")
-        if username is None or role is None:
-            raise credentials_exception
-    except JWTError:
-        raise credentials_exception
-
-    user_service = UserService(db)
-    user = user_service.get_user_by_username(username)
-    if user is None:
-        raise credentials_exception
-    # Если роль в токене не совпадает с ролью в БД — считаем токен недействительным
-    if role and user.role.name != role:
-        raise credentials_exception
-    return user
-
-
-async def get_current_admin(current_user=Depends(get_current_user)):
-    if current_user.role != UserRole.admin:
-        raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN, detail="Недостаточно прав"
-        )
-    return current_user
-
-
-async def get_current_manager(current_user=Depends(get_current_user)):
-    if current_user.role not in [UserRole.admin, UserRole.manager]:
-        raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN, detail="Недостаточно прав"
-        )
-    return current_user
 
 
 @router.post("/token", response_model=TokenResponse)

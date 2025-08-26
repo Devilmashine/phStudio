@@ -8,6 +8,7 @@ import AdminPanel from './pages/AdminPanel';
 import ManagerPanel from './pages/ManagerPanel';
 import Login from './pages/Login';
 import PrivacyPolicy from './pages/PrivacyPolicy';
+import CookiePolicy from './pages/CookiePolicy';
 import ProtectedRoute from './components/ProtectedRoute';
 import { StudioSettingsForm } from './components/StudioSettingsForm';
 import { Gallery } from './components/Gallery';
@@ -16,6 +17,7 @@ import BookingTable from './components/BookingTable';
 import { ToastProvider } from './components/Toast';
 import AdminCalendarPage from './pages/AdminCalendarPage';
 import UserManagement from './components/UserManagement';
+import CookieConsentBanner from './components/CookieConsentBanner';
 
 const Dashboard = () => (
   <div>
@@ -78,9 +80,11 @@ function App() {
               />
               <Route path="/login" element={<Login />} />
               <Route path="/privacy" element={<PrivacyPolicy />} />
+              <Route path="/cookie-policy" element={<CookiePolicy />} />
             </Routes>
           </main>
           <Footer />
+          <CookieConsentBanner />
         </div>
       </Router>
     </ToastProvider>

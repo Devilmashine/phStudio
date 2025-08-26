@@ -83,7 +83,6 @@ app.add_middleware(
 
 from app.core.rate_limiter import setup_rate_limiter, default_rate_limit
 from app.core.cache import setup_cache, cache_calendar_state, cache_settings, cache_gallery
-from app.services.telegram_bot import TelegramBotService
 from app.api.routes.calendar_events import router as calendar_events_router
 from app.api.routes.calendar import router as calendar_router
 from app.api.routes.settings import router as settings_router
@@ -92,6 +91,9 @@ from app.api.routes.news import router as news_router
 from app.api.routes.auth import router as auth_router
 from app.api.routes.booking import router as booking_router
 from app.api.routes.employees import router as employees_router
+from app.api.routes.telegram import router as telegram_router
+from app.api.routes.consent import router as consent_router
+from app.api.routes.legal_documents import router as legal_documents_router
 
 @app.on_event("startup")
 async def startup_event():
@@ -100,6 +102,15 @@ async def startup_event():
     from app.core.config import get_settings
     if hasattr(get_settings, "ENV") and get_settings().ENV == "testing":
         return
+    
+    # Initialize new Telegram service
+    try:
+        from app.services.telegram.service import telegram_service
+        await telegram_service.initialize()
+        logger.info("New Telegram service initialized successfully")
+    except Exception as e:
+        logger.error(f"Error initializing new Telegram service: {str(e)}")
+    
     # try:
     #     await setup_rate_limiter()
     #     await setup_cache()
@@ -143,12 +154,27 @@ app.include_router(news_router, prefix="/api/news", tags=["news"])
 app.include_router(auth_router, prefix="/api/auth", tags=["auth"])
 app.include_router(booking_router, prefix="/api/bookings", tags=["bookings"])
 app.include_router(employees_router, prefix="/api/employees", tags=["employees"])
+app.include_router(telegram_router, prefix="/api/telegram", tags=["telegram"])
+app.include_router(consent_router, prefix="/api/consent", tags=["consent"])
+app.include_router(legal_documents_router, prefix="/api/legal", tags=["legal-documents"])
 
 
-# Инициализация Telegram бота
+@app.on_event("shutdown")
+async def shutdown_event():
+    """Graceful shutdown of services"""
+    try:
+        from app.services.telegram.service import telegram_service
+        await telegram_service.shutdown()
+        logger.info("Telegram service shutdown completed")
+    except Exception as e:
+        logger.error(f"Error during Telegram service shutdown: {str(e)}")
+
+
+# Legacy Telegram service initialization (to be removed after migration)
 try:
-    telegram_service = TelegramBotService()
-    logger.info("Telegram Bot Service successfully initialized")
+    from app.services.telegram_bot import TelegramBotService
+    legacy_telegram_service = TelegramBotService()
+    logger.warning("Legacy Telegram Bot Service initialized - will be deprecated")
 except Exception as e:
-    logger.error(f"Error initializing Telegram Bot Service: {str(e)}")
-    telegram_service = None
+    logger.error(f"Error initializing legacy Telegram Bot Service: {str(e)}")
+    legacy_telegram_service = None

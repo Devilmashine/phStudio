@@ -76,7 +76,14 @@ class TelegramBotService:
         }
 
         try:
-            async with aiohttp.ClientSession() as session:
+            # Create SSL context that handles certificate verification
+            ssl_context = ssl.create_default_context()
+            # For development environments with SSL certificate issues
+            ssl_context.check_hostname = False
+            ssl_context.verify_mode = ssl.CERT_NONE
+            
+            connector = aiohttp.TCPConnector(ssl=ssl_context)
+            async with aiohttp.ClientSession(connector=connector) as session:
                 async with session.post(self.api_url, json=payload) as resp:
                     if resp.status == 200:
                         logger.info(f"Sending Telegram notification: {payload['text']}")
@@ -114,7 +121,11 @@ class TelegramBotService:
             if additional_info:
                 message += f"\n📝 Дополнительная информация:\n{additional_info}"
 
-            async with aiohttp.ClientSession() as session:
+            ssl_context = ssl.create_default_context()
+            ssl_context.check_hostname = False
+            ssl_context.verify_mode = ssl.CERT_NONE
+            connector = aiohttp.TCPConnector(ssl=ssl_context)
+            async with aiohttp.ClientSession(connector=connector) as session:
                 payload = {
                     "chat_id": self.chat_id,
                     "text": message,
@@ -149,7 +160,11 @@ class TelegramBotService:
             if reason:
                 message += f"\n📝 Причина отмены:\n{reason}"
 
-            async with aiohttp.ClientSession() as session:
+            ssl_context = ssl.create_default_context()
+            ssl_context.check_hostname = False
+            ssl_context.verify_mode = ssl.CERT_NONE
+            connector = aiohttp.TCPConnector(ssl=ssl_context)
+            async with aiohttp.ClientSession(connector=connector) as session:
                 payload = {
                     "chat_id": self.chat_id,
                     "text": message,

@@ -130,24 +130,40 @@ class BookingService:
         return booking
 
     async def create_booking_with_notification(self, booking_data: BookingCreate) -> BookingModel:
-        """Create booking and send Telegram notification"""
+        """Create booking and send Telegram notification using new system"""
+        from app.services.telegram.booking_notifications import booking_notification_service
+        from app.models.telegram import BookingData, Language
+        
+        # Create booking first
         booking = self.create_booking(booking_data)
         
         try:
-            telegram_service = TelegramBotService()
-            message = (
-                f"🎥 Новое бронирование:\n\n"
-                f"📅 Дата: {booking.date}\n"
-                f"🕒 Время: {booking.start_time} - {booking.end_time}\n"
-                f"👤 Клиент: {booking.client_name}\n"
-                f"📞 Телефон: {booking.client_phone}\n"
-                f"💰 Сумма: {booking.total_price} руб."
+            # Prepare booking data for notification
+            notification_booking_data = BookingData(
+                id=str(booking.id),
+                service="Студийная фотосессия",  # Default service name
+                date=booking.date,
+                time_slots=[f"{booking.start_time.strftime('%H:%M')}-{booking.end_time.strftime('%H:%M')}"],
+                client_name=booking.client_name,
+                client_phone=booking.client_phone,
+                people_count=getattr(booking, 'people_count', 1),  # Default to 1 if not set
+                total_price=float(booking.total_price),
+                description=booking.description,
+                status="pending"
             )
-            if booking.description:
-                message += f"\n💬 Комментарий: {booking.description}"
             
-            await telegram_service.send_booking_notification(message)
-            logger.info(f"Notification sent for booking {booking.id}")
+            # Send notification using new system
+            result = await booking_notification_service.send_booking_notification(
+                booking_data=notification_booking_data,
+                language=Language.RU,
+                queue=True  # Use queue for reliability
+            )
+            
+            if result.success:
+                logger.info(f"Notification sent for booking {booking.id} (message_id: {result.message_id})")
+            else:
+                logger.error(f"Failed to send notification for booking {booking.id}: {result.error}")
+                
         except Exception as e:
             logger.error(f"Failed to send notification for booking {booking.id}: {e}")
             # Don't fail the booking creation if notification fails

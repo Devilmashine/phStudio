@@ -6,6 +6,9 @@ from .booking import Booking, BookingStatus
 from .gallery import GalleryImage
 from .news import News
 from .settings import StudioSettings
+from .consent import UserConsent
+from .legal_document import LegalDocument
+from .compliance_audit import ComplianceAuditLog
 
 __all__ = [
     "Base",
@@ -18,4 +21,7 @@ __all__ = [
     "GalleryImage",
     "News",
     "StudioSettings",
+    "UserConsent",
+    "LegalDocument",
+    "ComplianceAuditLog",
 ]

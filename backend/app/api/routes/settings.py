@@ -3,7 +3,7 @@ from sqlalchemy.orm import Session
 from app.schemas.settings import StudioSettings, StudioSettingsCreate, StudioSettingsUpdate
 from app.services.settings import StudioSettingsService
 from app.core.database import get_db
-from app.api.routes.auth import get_current_admin
+from app.deps import get_current_admin
 from app.models.user import User
 
 router = APIRouter()

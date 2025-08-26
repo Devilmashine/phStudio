@@ -6,7 +6,7 @@ from app.core.database import get_db
 from app.services.calendar_event import CalendarEventService
 from app.schemas.calendar_event import CalendarEventCreate, CalendarEventUpdate, CalendarEventResponse, MessageResponse, IcalTokenResponse
 from app.models.user import User, UserRole
-from app.api.routes.auth import get_current_admin, get_current_manager
+from app.deps import get_current_admin, get_current_manager
 from fastapi.responses import Response, StreamingResponse
 from ics import Calendar, Event as IcsEvent
 from secrets import token_urlsafe

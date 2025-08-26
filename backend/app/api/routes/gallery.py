@@ -3,7 +3,7 @@ from sqlalchemy.orm import Session
 from app.schemas.gallery import GalleryImage, GalleryImageCreate
 from app.services.gallery import GalleryService
 from app.core.database import get_db
-from app.api.routes.auth import get_current_admin
+from app.deps import get_current_admin
 from app.models.user import User
 from typing import List
 import os

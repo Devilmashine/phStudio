@@ -1,32 +1,64 @@
-from app.models.user import UserSchema, UserRole
+from app.models.user import UserSchema, UserRole, User
 from app.core.database import get_db
-from fastapi import Request, HTTPException, status
+from fastapi import Request, HTTPException, status, Depends
+from fastapi.security import OAuth2PasswordBearer
+from sqlalchemy.orm import Session
+from jose import JWTError, jwt
+from typing import Optional
 from types import SimpleNamespace
 
+# Import additional dependencies
+from app.core.config import get_settings
+from app.services.user import UserService
 
-def get_current_user(request: Request):
-    # Проверка заголовка X-User-Role для имитации авторизации
-    role = request.headers.get("X-User-Role", "anonymous")
-    user_id = int(request.headers.get("X-User-Id", "0"))
-    username = request.headers.get("X-User-Name", "guest")
-    if role == "admin":
-        return SimpleNamespace(
-            id=user_id or 1, username=username or "admin", role=UserRole.admin
+# OAuth2 scheme for JWT token authentication
+oauth2_scheme = OAuth2PasswordBearer(tokenUrl="token")
+
+
+async def get_current_user(token: str = Depends(oauth2_scheme), db: Session = Depends(get_db)):
+    credentials_exception = HTTPException(
+        status_code=status.HTTP_401_UNAUTHORIZED,
+        detail="Неверные учетные данные",
+        headers={"WWW-Authenticate": "Bearer"},
+    )
+    try:
+        settings = get_settings()
+        payload = jwt.decode(
+            token, settings.SECRET_KEY, algorithms=[settings.ALGORITHM]
         )
-    elif role == "manager":
-        return SimpleNamespace(
-            id=user_id or 2, username=username or "manager", role=UserRole.manager
-        )
-    elif role == "user":
-        return SimpleNamespace(
-            id=user_id or 3, username=username or "user", role=UserRole.user
-        )
-    else:
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED, detail="Not authenticated"
-        )
+        username: Optional[str] = payload.get("sub")
+        role: Optional[str] = payload.get("role")
+        if username is None or role is None:
+            raise credentials_exception
+    except JWTError:
+        raise credentials_exception
+
+    user_service = UserService(db)
+    user = user_service.get_user_by_username(username)
+    if user is None:
+        raise credentials_exception
+    # Если роль в токене не совпадает с ролью в БД — считаем токен недействительным
+    if role and user.role.name != role:
+        raise credentials_exception
+    return user
 
 
 def get_current_active_user(request: Request):
     # Для совместимости с Depends(get_current_active_user)
     return get_current_user(request)
+
+
+async def get_current_admin(current_user=Depends(get_current_user)):
+    if current_user.role != UserRole.admin:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN, detail="Недостаточно прав"
+        )
+    return current_user
+
+
+async def get_current_manager(current_user=Depends(get_current_user)):
+    if current_user.role not in [UserRole.admin, UserRole.manager]:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN, detail="Недостаточно прав"
+        )
+    return current_user

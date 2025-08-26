@@ -55,9 +55,36 @@ class Settings(BaseSettings):
             return ["http://localhost:3000", "http://localhost:5173"]
         return [i.strip() for i in self.CORS_ORIGINS_STR.split(",") if i.strip()]
 
-    # --- Интеграции ---
+    # --- Telegram Integration (Comprehensive) ---
+    # Bot Configuration
     TELEGRAM_BOT_TOKEN: str = Field(..., description="Telegram bot token")
-    TELEGRAM_CHAT_ID: str = Field(..., description="Telegram chat ID")
+    TELEGRAM_CHAT_ID: str = Field(..., description="Telegram chat ID for notifications")
+    TELEGRAM_WEBHOOK_URL: str = Field(default="", description="Telegram webhook URL")
+    TELEGRAM_WEBHOOK_SECRET: str = Field(default="", description="Telegram webhook secret token")
+    
+    # API Configuration
+    TELEGRAM_API_TIMEOUT: int = Field(default=30, description="Telegram API request timeout in seconds")
+    TELEGRAM_CONNECTION_POOL_SIZE: int = Field(default=10, description="HTTP connection pool size")
+    TELEGRAM_MAX_RETRIES: int = Field(default=3, description="Maximum retry attempts for failed messages")
+    TELEGRAM_RETRY_BACKOFF_FACTOR: float = Field(default=2.0, description="Exponential backoff factor for retries")
+    
+    # Rate Limiting
+    TELEGRAM_RATE_LIMIT_REQUESTS: int = Field(default=30, description="Max requests per window")
+    TELEGRAM_RATE_LIMIT_WINDOW: int = Field(default=60, description="Rate limit window in seconds")
+    
+    # Queue Configuration
+    TELEGRAM_QUEUE_NAME: str = Field(default="telegram_messages", description="Redis queue name for messages")
+    TELEGRAM_DLQ_NAME: str = Field(default="telegram_dlq", description="Dead letter queue name")
+    TELEGRAM_WORKER_CONCURRENCY: int = Field(default=5, description="Number of concurrent message workers")
+    
+    # Message Configuration
+    TELEGRAM_MESSAGE_MAX_LENGTH: int = Field(default=4096, description="Maximum message length")
+    TELEGRAM_DEFAULT_PARSE_MODE: str = Field(default="HTML", description="Default message parse mode")
+    
+    # Feature Flags
+    TELEGRAM_ENABLE_WEBHOOKS: bool = Field(default=True, description="Enable webhook processing")
+    TELEGRAM_ENABLE_QUEUE: bool = Field(default=True, description="Enable message queuing")
+    TELEGRAM_ENABLE_METRICS: bool = Field(default=True, description="Enable metrics collection")
     
     # --- Redis для кэширования ---
     REDIS_URL: str = Field(default="redis://localhost:6379/0", description="Redis URL for caching")
@@ -74,6 +101,21 @@ class Settings(BaseSettings):
     @property
     def IS_PRODUCTION(self) -> bool:
         return self.ENV == "production"
+    
+    # Telegram configuration validation
+    def validate_telegram_config(self) -> bool:
+        """Validate essential Telegram configuration"""
+        if not self.TELEGRAM_BOT_TOKEN:
+            return False
+        if not self.TELEGRAM_CHAT_ID:
+            return False
+        # Validate bot token format
+        if not (self.TELEGRAM_BOT_TOKEN.startswith('bot') or ':' in self.TELEGRAM_BOT_TOKEN):
+            return False
+        # Validate chat ID format
+        if not (self.TELEGRAM_CHAT_ID.startswith('-') or self.TELEGRAM_CHAT_ID.isdigit()):
+            return False
+        return True
 
     class Config:
         env_file = ".env"
