@@ -13,6 +13,7 @@
     "test": "jest --config jest.config.js"
   },
   "dependencies": {
+    "@heroicons/react": "^2.2.0",
     "date-fns": "^4.1.0",
     "ical-generator": "^8.1.1",
     "jose": "^5.9.6",

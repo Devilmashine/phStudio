@@ -56,7 +56,6 @@ def booking_message_with_buttons(
     )
     message = (
         f"🎨 Новое бронирование:\n"
-        f"Услуга: {fixed_service}\n"
         f"Дата: {date}\n"
         f"Время: {', '.join(times)}\n"
         f"Клиент: {name}\n"

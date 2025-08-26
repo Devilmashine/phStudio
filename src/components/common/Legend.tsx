@@ -55,11 +55,6 @@ export const CalendarLegendItems: LegendItem[] = [
     icon: <div className="w-4 h-4 bg-red-100 border border-red-400 rounded"></div>,
     label: "Занято", 
     description: "Все слоты на этот день заняты"
-  },
-  {
-    icon: <div className="w-4 h-4 bg-gray-100 border border-gray-400 rounded"></div>,
-    label: "Прошло",
-    description: "Дата уже прошла и недоступна для выбора"
   }
 ];
 
@@ -70,26 +65,12 @@ export const TimeSlotsLegendItems: LegendItem[] = [
     description: "Слот можно выбрать"
   },
   {
-    icon: <div className="w-4 h-4 bg-indigo-600 rounded"></div>,
-    label: "Выбрано",
-    description: "Выбранный слот"
-  },
-  {
     icon: (
       <div className="w-4 h-4 bg-gray-100 border border-gray-300 rounded relative">
-        <span className="absolute -top-1 -right-1 text-red-500 text-xs leading-none">❌</span>
+        <span className="absolute -top-1 -right-1 text-red-500 text-xs leading-none"></span>
       </div>
     ),
     label: "Занято",
     description: "Слот уже забронирован"
-  },
-  {
-    icon: (
-      <div className="w-4 h-4 bg-gray-100 border border-gray-300 rounded relative">
-        <span className="absolute -top-1 -right-1 text-gray-500 text-xs leading-none">⏰</span>
-      </div>
-    ),
-    label: "Прошло",
-    description: "Время уже прошло"
   }
 ];

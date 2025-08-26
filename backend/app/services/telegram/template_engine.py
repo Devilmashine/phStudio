@@ -42,7 +42,6 @@ class TelegramTemplateEngine:
             Language.RU: {
                 TemplateType.BOOKING_NOTIFICATION: """🎨 <b>Новое бронирование</b>
 
-📋 <b>Услуга:</b> {{ service }}
 📅 <b>Дата:</b> {{ date }}
 🕒 <b>Время:</b> {{ times | join(', ') }}
 👤 <b>Клиент:</b> {{ client_name }}
@@ -91,7 +90,6 @@ class TelegramTemplateEngine:
 👤 <b>Клиент:</b> {{ client_name }}
 📅 <b>Дата:</b> {{ date }}
 🕒 <b>Время:</b> {{ time }}
-📍 <b>Услуга:</b> {{ service }}
 
 ⚠️ <i>До начала сеанса осталось {{ hours_until }} {{ 'час' if hours_until == 1 else 'часа' if hours_until < 5 else 'часов' }}</i>""",
 
@@ -127,7 +125,6 @@ class TelegramTemplateEngine:
             Language.EN: {
                 TemplateType.BOOKING_NOTIFICATION: """🎨 <b>New Booking</b>
 
-📋 <b>Service:</b> {{ service }}
 📅 <b>Date:</b> {{ date }}
 🕒 <b>Time:</b> {{ times | join(', ') }}
 👤 <b>Client:</b> {{ client_name }}
@@ -176,7 +173,6 @@ class TelegramTemplateEngine:
 👤 <b>Client:</b> {{ client_name }}
 📅 <b>Date:</b> {{ date }}
 🕒 <b>Time:</b> {{ time }}
-📍 <b>Service:</b> {{ service }}
 
 ⚠️ <i>{{ hours_until }} hour{{ 's' if hours_until != 1 else '' }} until session starts</i>""",
 
@@ -384,9 +380,6 @@ class TelegramTemplateEngine:
             trim_blocks=True,
             lstrip_blocks=True
         )
-        
-        # Clear cache to force re-rendering
-        self.render_template.cache_clear()
         
         logger.info(f"Added custom template {template_type} for language {language}")
 
