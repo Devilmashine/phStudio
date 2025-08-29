@@ -8,7 +8,7 @@ export interface StudioSettings {
   description?: string;
 }
 
-const API_URL = '/api/settings/';
+const API_URL = '/settings/';  // Removed /api prefix since it's already in the base URL
 
 export async function fetchSettings(): Promise<StudioSettings> {
   const token = localStorage.getItem('token');

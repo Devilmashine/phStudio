@@ -17,7 +17,7 @@
 }
 
 .modern-calendar .react-datepicker__header {
-  background: linear-gradient(135deg, #4f46e5 0%, #7c3aed 100%) !important;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%) !important;
   border: none !important;
   color: white !important;
   padding: 1.5rem 1rem 1rem !important;
@@ -107,7 +107,7 @@
 }
 
 .modern-calendar .react-datepicker__day--disabled {
-  color: #9ca3af !important;
+  color: #d1d5db !important;
   cursor: not-allowed !important;
   background: #f9fafb !important;
 }
@@ -120,7 +120,7 @@
   color: #dc2626 !important;
 }
 
-/* Стили для состояний доступности с улучшенным контрастом */
+/* Стили для состояний доступности с Tailwind классами */
 .modern-calendar .bg-green-100 {
   background-color: #dcfce7 !important;
   color: #166534 !important;
@@ -163,7 +163,7 @@
 
 .modern-calendar .bg-gray-100 {
   background-color: #f3f4f6 !important;
-  color: #6b7280 !important;
+  color: #9ca3af !important;
   border: 2px solid #d1d5db !important;
 }
 
@@ -196,4 +196,83 @@
   background: #f9fafb;
   border-radius: 0.5rem;
   border: 1px solid #e5e7eb;
+}
+
+@media (max-width: 640px) {
+  .calendar-legend {
+    flex-direction: column;
+    gap: 0.5rem;
+  }
+  
+  .calendar-legend > div {
+    justify-content: center;
+  }
+}
+
+/* Анимации для лучшего UX */
+.modern-calendar .react-datepicker__day {
+  position: relative;
+}
+
+.modern-calendar .react-datepicker__day::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: transparent;
+  border-radius: inherit;
+  transition: all 0.2s ease-in-out;
+  z-index: -1;
+}
+
+.modern-calendar .react-datepicker__day:hover::before {
+  background: rgba(0, 0, 0, 0.05);
+}
+
+/* Убираем лишние отступы и улучшаем позиционирование */
+.calendar-wrapper {
+  position: relative;
+}
+
+.modern-calendar .react-datepicker__navigation {
+  border: none;
+  background: rgba(255, 255, 255, 0.2);
+  border-radius: 50%;
+  width: 2rem;
+  height: 2rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s ease-in-out;
+}
+
+.modern-calendar .react-datepicker__navigation:hover {
+  background: rgba(255, 255, 255, 0.3);
+  transform: scale(1.1);
+}
+
+.modern-calendar .react-datepicker__navigation-icon::before {
+  border-color: white;
+  border-width: 2px 2px 0 0;
+}
+
+/* Адаптивность для мобильных устройств */
+@media (max-width: 640px) {
+  .modern-calendar {
+    width: 100% !important;
+    max-width: 100% !important;
+  }
+  
+  .modern-calendar .react-datepicker__day {
+    width: 2rem !important;
+    height: 2rem !important;
+    line-height: 2rem !important;
+    font-size: 0.75rem !important;
+  }
+  
+  .modern-calendar .react-datepicker__header {
+    padding: 1rem 0.5rem 0.5rem !important;
+  }
 }

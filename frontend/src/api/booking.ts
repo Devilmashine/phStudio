@@ -1,30 +1,21 @@
 import axios from 'axios';
-import { BookingFormData, BookingResponse } from '@/types/booking';
+import { BookingFormData, BookingResponse } from '../types/booking';
+import { apiClient } from './api';
 
-const API_URL = '/api'; // Use relative URL to work with Vite proxy
-
-export const createBooking = async (data: BookingFormData): Promise<BookingResponse> => {
-  try {
-    const response = await axios.post<BookingResponse>(`${API_URL}/bookings`, data);
-    return response.data;
-  } catch (error) {
-    if (axios.isAxiosError(error) && error.response) {
-      throw new Error(error.response.data.detail || 'Ошибка при создании бронирования');
-    }
-    throw new Error('Ошибка сети');
-  }
+// Updated import paths to be relative instead of using @ alias
+export const bookingApi = {
+  createBooking: (data: BookingFormData) => 
+    apiClient.post<BookingResponse>('/api/bookings/bookings/public/', data),
+  
+  getBookings: () => 
+    apiClient.get<BookingResponse[]>('/api/bookings/bookings/'),
+  
+  getBooking: (id: number) => 
+    apiClient.get<BookingResponse>(`/api/bookings/bookings/${id}`),
+  
+  updateBooking: (id: number, data: Partial<BookingFormData>) => 
+    apiClient.put<BookingResponse>(`/api/bookings/bookings/${id}`, data),
+  
+  deleteBooking: (id: number) => 
+    apiClient.delete(`/api/bookings/bookings/${id}`),
 };
-
-export const getAvailableSlots = async (date: string) => {
-  try {
-    const response = await axios.get(`${API_URL}/calendar/available-slots`, {
-      params: { date }
-    });
-    return response.data;
-  } catch (error) {
-    if (axios.isAxiosError(error) && error.response) {
-      throw new Error(error.response.data.detail || 'Ошибка при получении доступных слотов');
-    }
-    throw new Error('Ошибка сети');
-  }
-}; 

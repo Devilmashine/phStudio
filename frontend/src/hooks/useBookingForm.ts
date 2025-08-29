@@ -62,6 +62,17 @@ export function useBookingForm() {
     // Clear any existing errors before validation
     clearErrors();
     
+    // Validate that all selected times are full hours
+    const invalidTimes = selectedTimes.filter(time => {
+      const [hours, minutes] = time.split(':').map(Number);
+      return isNaN(hours) || isNaN(minutes) || minutes !== 0;
+    });
+
+    if (invalidTimes.length > 0) {
+      toast.show('Все временные слоты должны быть целыми часами (например, 10:00, 11:00)');
+      return;
+    }
+    
     if (!validateForm()) {
       console.log('Form validation failed:', formErrors);
       toast.show('Пожалуйста, исправьте ошибки в форме.');

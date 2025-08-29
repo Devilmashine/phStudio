@@ -66,7 +66,7 @@
 
 ### 1. Архитектура и требования
 
-- Frontend: React/TypeScript (src/)
+- Frontend: React/TypeScript (frontend/src/)
 - Backend: FastAPI (backend/)
 - БД: PostgreSQL (SQLAlchemy, Alembic)
 - Календарь: собственная реализация (UI + API), поддержка подписки (iCal/Webcal)

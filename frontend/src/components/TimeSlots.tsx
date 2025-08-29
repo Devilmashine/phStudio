@@ -128,12 +128,12 @@ export default function TimeSlots({ date, selectedTimes, onSelectTime }: TimeSlo
             {slot.startTime}
             {isPastSlot && (
               <span className="absolute top-1 right-1 text-xs text-gray-500">
-                {/* Removed ⏰ emoji */}
+                ⏰
               </span>
             )}
             {!slot.available && !isPastSlot && (
               <span className="absolute top-1 right-1 text-xs text-red-500">
-                {/* Removed ❌ emoji */}
+                ❌
               </span>
             )}
           </button>

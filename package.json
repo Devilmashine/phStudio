@@ -9,7 +9,7 @@
     "build": "tsc && vite build",
     "preview": "vite preview",
     "update-deps": "ncu -u && npm install",
-    "telegram-bot": "ts-node src/telegram-bot.ts",
+    "telegram-bot": "ts-node frontend/src/telegram-bot.ts",
     "test": "jest --config jest.config.js"
   },
   "dependencies": {
