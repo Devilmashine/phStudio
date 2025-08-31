@@ -9,6 +9,7 @@ import Modal from './Modal';
 import CheckboxField from './ui/CheckboxField';
 import { termsContent } from '../data/terms';
 import { createBooking } from '../services/booking';
+import { formatPhoneNumber } from '../utils/validation/phoneValidation';
 
 // Валидация телефона с помощью регулярного выражения
 const validatePhone = (phone: string): boolean => {
@@ -21,25 +22,7 @@ const usePhoneMask = (initialValue: string = '') => {
   const [value, setValue] = useState(initialValue);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const inputVal = e.target.value.replace(/\D/g, '');
-    let formattedVal = '';
-
-    if (inputVal.length > 0) {
-      formattedVal = '+7 ';
-      if (inputVal.length > 1) {
-        formattedVal += '(' + inputVal.slice(1, 4);
-      }
-      if (inputVal.length > 4) {
-        formattedVal += ') ' + inputVal.slice(4, 7);
-      }
-      if (inputVal.length > 7) {
-        formattedVal += '-' + inputVal.slice(7, 9);
-      }
-      if (inputVal.length > 9) {
-        formattedVal += '-' + inputVal.slice(9, 11);
-      }
-    }
-
+    const formattedVal = formatPhoneNumber(e.target.value);
     setValue(formattedVal);
   };
 
