@@ -14,6 +14,7 @@ class BookingBase(BaseModel):
     client_phone: str
     client_email: Optional[str] = None
     notes: Optional[str] = None
+    people_count: int
 
 
 class BookingCreate(BookingBase):

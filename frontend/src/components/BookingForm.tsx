@@ -190,7 +190,8 @@ export default function BookingForm() {
         times: bookingData.times,
         name: bookingData.name,
         phone: bookingData.phone,
-        totalPrice: bookingData.total_price
+        totalPrice: bookingData.total_price,
+        peopleCount: bookingData.people_count
       });
 
       console.log('Booking created successfully:', bookingResponse);

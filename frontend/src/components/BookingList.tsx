@@ -1,33 +1,17 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import bookingService from '../services/bookingService';
-
-// Assuming a BookingStatus enum/type exists
-enum BookingStatus {
-  Pending = 'pending',
-  Confirmed = 'confirmed',
-  Cancelled = 'cancelled',
-}
-
-interface Booking {
-  id: number;
-  client_name: string;
-  client_phone: string;
-  start_time: string;
-  end_time: string;
-  status: BookingStatus;
-  // Add other fields as necessary
-}
+import { BookingService } from '../services/bookingService';
+import { BookingResponse, BookingState } from '../types/booking';
 
 const BookingList: React.FC = () => {
-  const [bookings, setBookings] = useState<Booking[]>([]);
+  const [bookings, setBookings] = useState<BookingResponse[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
   const fetchBookings = useCallback(async () => {
     try {
       setLoading(true);
-      const response = await bookingService.getAllBookings();
-      setBookings(response.data);
+      const response = await BookingService.getBookings();
+      setBookings(response.bookings);
     } catch (err) {
       setError('Failed to fetch bookings.');
       console.error(err);
@@ -40,9 +24,9 @@ const BookingList: React.FC = () => {
     fetchBookings();
   }, [fetchBookings]);
 
-  const handleStatusUpdate = async (bookingId: number, status: BookingStatus) => {
+  const handleStatusUpdate = async (bookingId: number, newState: BookingState) => {
     try {
-      await bookingService.updateBookingStatus(bookingId, status);
+      await BookingService.updateBookingState(bookingId, newState);
       fetchBookings(); // Refresh list after update
     } catch (err) {
       setError('Failed to update booking status.');
@@ -82,19 +66,19 @@ const BookingList: React.FC = () => {
                 <td className="py-2 px-4 border-b">{booking.client_phone}</td>
                 <td className="py-2 px-4 border-b">{new Date(booking.start_time).toLocaleString()}</td>
                 <td className="py-2 px-4 border-b">{new Date(booking.end_time).toLocaleString()}</td>
-                <td className="py-2 px-4 border-b">{booking.status}</td>
+                <td className="py-2 px-4 border-b">{booking.state}</td>
                 <td className="py-2 px-4 border-b text-center">
-                  {booking.status === BookingStatus.Pending && (
+                  {booking.state === 'pending' && (
                     <button
-                      onClick={() => handleStatusUpdate(booking.id, BookingStatus.Confirmed)}
+                      onClick={() => handleStatusUpdate(booking.id, 'confirmed')}
                       className="text-green-600 hover:underline mr-2"
                     >
                       Confirm
                     </button>
                   )}
-                  {booking.status !== BookingStatus.Cancelled && (
+                  {booking.state !== 'cancelled' && (
                     <button
-                      onClick={() => handleStatusUpdate(booking.id, BookingStatus.Cancelled)}
+                      onClick={() => handleStatusUpdate(booking.id, 'cancelled')}
                       className="text-red-600 hover:underline"
                     >
                       Cancel

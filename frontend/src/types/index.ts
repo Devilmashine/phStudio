@@ -46,6 +46,7 @@ export interface BookingData {
   name: string;
   phone: string;
   totalPrice: number;
+  peopleCount?: number;
   service?: string;
   status?: 'pending' | 'confirmed' | 'cancelled';
   studioId?: number;

@@ -34,13 +34,14 @@ export const createBooking = async (bookingData: Omit<BookingData, 'description'
       end_time: endDateTime,
       client_name: bookingData.name,
       client_phone: bookingData.phone,
-      total_price: bookingData.totalPrice
+      total_price: bookingData.totalPrice,
+      people_count: bookingData.peopleCount || 1
     };
 
     console.log('Sending API payload:', apiPayload);
     
     // Используем правильный публичный эндпоинт
-    const response = await bookingApi.post<BookingResponse>('/bookings/bookings/public/', apiPayload);
+    const response = await bookingApi.post<BookingResponse>('/bookings/public/', apiPayload);
     return response.data;
   } catch (error) {
     if (axios.isAxiosError(error) && error.response) {

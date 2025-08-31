@@ -94,6 +94,59 @@ from app.api.routes.employees import router as employees_router
 from app.api.routes.telegram import router as telegram_router
 from app.api.routes.consent import router as consent_router
 from app.api.routes.legal_documents import router as legal_documents_router
+from app.api.main_router import api_router
+
+# Debug router for Telegram configuration
+from fastapi import APIRouter
+from app.core.config import get_settings
+import functools
+
+debug_router = APIRouter(prefix="/debug", tags=["debug"])
+
+@debug_router.get("/telegram-config")
+async def debug_telegram_config():
+    """Debug endpoint to check Telegram configuration"""
+    settings = get_settings()
+    
+    return {
+        "telegram_bot_token": settings.TELEGRAM_BOT_TOKEN,
+        "telegram_chat_id": settings.TELEGRAM_CHAT_ID,
+        "token_length": len(settings.TELEGRAM_BOT_TOKEN),
+        "chat_id_length": len(settings.TELEGRAM_CHAT_ID),
+        "is_valid": settings.validate_telegram_config()
+    }
+
+@debug_router.get("/telegram-config-fresh")
+async def debug_telegram_config_fresh():
+    """Debug endpoint to check Telegram configuration with fresh settings"""
+    # Clear the cache
+    get_settings.cache_clear()
+    
+    # Get fresh settings
+    settings = get_settings()
+    
+    return {
+        "telegram_bot_token": settings.TELEGRAM_BOT_TOKEN,
+        "telegram_chat_id": settings.TELEGRAM_CHAT_ID,
+        "token_length": len(settings.TELEGRAM_BOT_TOKEN),
+        "chat_id_length": len(settings.TELEGRAM_CHAT_ID),
+        "is_valid": settings.validate_telegram_config()
+    }
+
+@debug_router.get("/cwd")
+async def debug_cwd():
+    """Debug endpoint to check current working directory"""
+    import os
+    return {
+        "cwd": os.getcwd(),
+        "env_file_exists": os.path.exists(".env"),
+        "backend_env_file_exists": os.path.exists("backend/.env"),
+        "root_env_file_exists": os.path.exists("../.env"),
+        "env_vars": {
+            "TELEGRAM_BOT_TOKEN": os.getenv("TELEGRAM_BOT_TOKEN"),
+            "TELEGRAM_CHAT_ID": os.getenv("TELEGRAM_CHAT_ID")
+        }
+    }
 
 @app.on_event("startup")
 async def startup_event():
@@ -157,6 +210,12 @@ app.include_router(employees_router, prefix="/api/employees", tags=["employees"]
 app.include_router(telegram_router, prefix="/api/telegram", tags=["telegram"])
 app.include_router(consent_router, prefix="/api/consent", tags=["consent"])
 app.include_router(legal_documents_router, prefix="/api/legal", tags=["legal-documents"])
+
+# Include debug router
+app.include_router(debug_router)
+
+# Include enhanced API routes
+app.include_router(api_router, prefix="/api/v2", tags=["enhanced-api"])
 
 
 @app.on_event("shutdown")

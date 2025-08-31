@@ -1,9 +1,8 @@
-from sqlalchemy import Column, Integer, String, DateTime, Text, Enum as SAEnum, Index
+from sqlalchemy import Column, Integer, String, DateTime, Text, Enum as SAEnum, Index, ForeignKey
 from sqlalchemy.orm import relationship
 from datetime import datetime, timezone
-from .base import Base
 from .calendar_event_status import CalendarEventStatus
-
+from .base import Base
 
 class CalendarEvent(Base):
     __tablename__ = "calendar_events"

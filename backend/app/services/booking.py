@@ -11,6 +11,9 @@ from app.services.telegram_bot import TelegramBotService
 from app.core.errors import BookingError, ErrorHandler, handle_database_error, handle_not_found_error
 from app.utils.timezone import from_moscow_time, to_moscow_time, get_moscow_now
 
+# Import WebSocket manager
+from app.core.websocket_manager import ws_manager
+
 logger = logging.getLogger(__name__)
 
 
@@ -93,6 +96,10 @@ class BookingService:
                 self.db.refresh(booking)
                 
                 logger.info(f"Created booking {booking.id} for client {booking.client_name}")
+                
+                # Send WebSocket notification about new booking
+                self._send_booking_notification(booking, "created")
+                
                 return booking
                 
         except BookingError:
@@ -119,6 +126,10 @@ class BookingService:
             raise ValueError("Некорректный тип статуса бронирования")
         self.db.commit()
         self.db.refresh(booking)
+        
+        # Send WebSocket notification about booking update
+        self._send_booking_notification(booking, "status_updated")
+        
         return booking
 
     def delete_booking(self, booking_id: int) -> bool:
@@ -127,6 +138,10 @@ class BookingService:
             return False
         self.db.delete(booking)
         self.db.commit()
+        
+        # Send WebSocket notification about booking deletion
+        self._send_booking_notification(booking, "deleted")
+        
         return True
 
     def update_booking(self, booking_id: int, booking_data: BookingCreate) -> Optional[BookingModel]:
@@ -137,7 +152,34 @@ class BookingService:
             setattr(booking, field, value)
         self.db.commit()
         self.db.refresh(booking)
+        
+        # Send WebSocket notification about booking update
+        self._send_booking_notification(booking, "updated")
+        
         return booking
+
+    def _send_booking_notification(self, booking: BookingModel, action: str):
+        """Send WebSocket notification about booking changes"""
+        try:
+            import asyncio
+            
+            # Create notification message
+            message = {
+                "type": "booking_update",
+                "action": action,
+                "booking_id": booking.id,
+                "client_name": booking.client_name,
+                "status": booking.status,
+                "timestamp": datetime.now(timezone.utc).isoformat()
+            }
+            
+            # Broadcast to notifications room
+            # Using asyncio.create_task to avoid blocking the main thread
+            asyncio.create_task(
+                ws_manager.broadcast_to_room("notifications", message)
+            )
+        except Exception as e:
+            logger.error(f"Failed to send WebSocket notification for booking {booking.id}: {e}")
 
     async def create_booking_with_notification(self, booking_data: BookingCreate) -> BookingModel:
         """Create booking and send Telegram notification using new system"""
@@ -241,9 +283,9 @@ class BookingService:
                 stats_result = self.db.execute(text("""
                     SELECT 
                         COUNT(*) as total_bookings,
-                        COUNT(CASE WHEN status = 'completed' THEN 1 END) as completed_bookings,
-                        COUNT(CASE WHEN status = 'pending' THEN 1 END) as pending_bookings,
-                        COUNT(CASE WHEN status = 'cancelled' THEN 1 END) as cancelled_bookings,
+                        COUNT(CASE WHEN status = 'COMPLETED' THEN 1 END) as completed_bookings,
+                        COUNT(CASE WHEN status = 'PENDING' THEN 1 END) as pending_bookings,
+                        COUNT(CASE WHEN status = 'CANCELLED' THEN 1 END) as cancelled_bookings,
                         COALESCE(SUM(total_price), 0) as total_revenue,
                         COALESCE(AVG(total_price), 0) as average_price,
                         COUNT(DISTINCT client_phone) as unique_clients

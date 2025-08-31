@@ -114,6 +114,10 @@ export async function createBooking(bookingData: BookingRequest): Promise<Bookin
     // Send booking to backend API
     const apiResponse = await createBookingApi(apiBookingData);
     
+    // Only proceed with local booking and calendar event if backend API call succeeds
+    console.warn('✅ BACKEND BOOKING CREATED SUCCESSFULLY');
+    console.log('📋 Backend Booking Response:', apiResponse);
+    
     // Prepare booking data for local storage and calendar
     const bookingId = generateBookingId();
     const booking: BookingData = {

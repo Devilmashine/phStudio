@@ -2,6 +2,7 @@ from sqlalchemy import create_engine, event
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy.pool import QueuePool
 from ..models.base import Base
+from ..models.enhanced_base import EnhancedBase
 from .config import get_settings
 import logging
 
@@ -81,9 +82,14 @@ def get_db():
         db.close()
 
 def init_db():
-    """Initialize database tables"""
+    """Initialize database tables for both original and enhanced models"""
+    # Initialize original models
     Base.metadata.create_all(bind=get_engine())
-    logger.info("Database tables initialized")
+    
+    # Initialize enhanced models
+    EnhancedBase.metadata.create_all(bind=get_engine())
+    
+    logger.info("Database tables initialized for both original and enhanced models")
 
 def health_check():
     """Check database connectivity"""

@@ -5,256 +5,172 @@ This module provides consistent error handling patterns and custom exceptions
 for better error management and user experience.
 """
 
-from typing import Dict, Any, Optional
-from fastapi import HTTPException, status
-from sqlalchemy.exc import SQLAlchemyError, IntegrityError
-from pydantic import ValidationError
+from typing import Optional, Dict, Any
+from dataclasses import dataclass
 import logging
+from sqlalchemy.exc import SQLAlchemyError
 
 logger = logging.getLogger(__name__)
 
-
-class PhStudioError(Exception):
-    """Base exception class for phStudio application"""
+@dataclass
+class AppError(Exception):
+    """Base application error"""
+    message: str
+    error_code: str
+    details: Optional[Dict[str, Any]] = None
+    status_code: int = 500
     
-    def __init__(self, message: str, code: str = "UNKNOWN_ERROR"):
-        self.message = message
-        self.code = code
+    def __post_init__(self):
         super().__init__(self.message)
 
+class ValidationError(AppError):
+    """Validation error"""
+    def __init__(self, message: str, error_code: str, details: Dict[str, Any] = None):
+        super().__init__(message, error_code, details, 400)
 
-class BookingError(PhStudioError):
-    """Exception raised for booking-related errors"""
-    pass
+class AuthenticationError(AppError):
+    """Authentication error"""
+    def __init__(self, message: str, error_code: str, details: Dict[str, Any] = None):
+        super().__init__(message, error_code, details, 401)
 
+class AuthorizationError(AppError):
+    """Authorization error"""
+    def __init__(self, message: str, error_code: str, details: Dict[str, Any] = None):
+        super().__init__(message, error_code, details, 403)
 
-class AuthenticationError(PhStudioError):
-    """Exception raised for authentication-related errors"""
-    pass
+class NotFoundError(AppError):
+    """Resource not found error"""
+    def __init__(self, message: str, error_code: str, details: Dict[str, Any] = None):
+        super().__init__(message, error_code, details, 404)
 
+class ConflictError(AppError):
+    """Resource conflict error"""
+    def __init__(self, message: str, error_code: str, details: Dict[str, Any] = None):
+        super().__init__(message, error_code, details, 409)
 
-class AuthorizationError(PhStudioError):
-    """Exception raised for authorization-related errors"""
-    pass
+class BusinessLogicError(AppError):
+    """Business logic error"""
+    def __init__(self, message: str, error_code: str, details: Dict[str, Any] = None):
+        super().__init__(message, error_code, details, 422)
 
+class ExternalServiceError(AppError):
+    """External service error"""
+    def __init__(self, message: str, error_code: str, details: Dict[str, Any] = None):
+        super().__init__(message, error_code, details, 502)
 
-class ValidationError(PhStudioError):
-    """Exception raised for validation-related errors"""
-    pass
-
-
-class ServiceError(PhStudioError):
-    """Exception raised for service-related errors"""
-    pass
-
-
-def handle_database_error(error: SQLAlchemyError, operation: str) -> HTTPException:
-    """
-    Handle database errors and convert them to appropriate HTTP exceptions.
-    
-    Args:
-        error: The SQLAlchemy error that occurred
-        operation: Description of the operation that failed
-        
-    Returns:
-        HTTPException with appropriate status code and message
-    """
-    logger.error(f"Database error during {operation}: {error}")
-    
-    if isinstance(error, IntegrityError):
-        # Handle constraint violations
-        return HTTPException(
-            status_code=status.HTTP_409_CONFLICT,
-            detail={
-                "error": "INTEGRITY_ERROR",
-                "message": "Данная операция нарушает ограничения базы данных",
-                "operation": operation
-            }
-        )
-    
-    # Generic database error
-    return HTTPException(
-        status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-        detail={
-            "error": "DATABASE_ERROR",
-            "message": "Ошибка базы данных",
-            "operation": operation
-        }
-    )
-
-
-def handle_validation_error(error: ValidationError, field: str = None) -> HTTPException:
-    """
-    Handle validation errors and convert them to HTTP exceptions.
-    
-    Args:
-        error: The validation error that occurred
-        field: Optional field name that caused the error
-        
-    Returns:
-        HTTPException with validation error details
-    """
-    logger.warning(f"Validation error for field {field}: {error}")
-    
-    return HTTPException(
-        status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
-        detail={
-            "error": "VALIDATION_ERROR",
-            "message": "Ошибка валидации данных",
-            "field": field,
-            "details": str(error)
-        }
-    )
-
-
-def handle_not_found_error(resource: str, identifier: Any) -> HTTPException:
-    """
-    Handle not found errors.
-    
-    Args:
-        resource: Type of resource that was not found
-        identifier: Identifier that was searched for
-        
-    Returns:
-        HTTPException with not found error
-    """
-    logger.info(f"{resource} not found: {identifier}")
-    
-    return HTTPException(
-        status_code=status.HTTP_404_NOT_FOUND,
-        detail={
-            "error": "NOT_FOUND",
-            "message": f"{resource} не найден",
-            "resource": resource,
-            "identifier": str(identifier)
-        }
-    )
-
-
-def handle_authorization_error(operation: str, user_role: str = None) -> HTTPException:
-    """
-    Handle authorization errors.
-    
-    Args:
-        operation: Operation that was attempted
-        user_role: User's role (if available)
-        
-    Returns:
-        HTTPException with authorization error
-    """
-    logger.warning(f"Authorization denied for operation {operation}, user role: {user_role}")
-    
-    return HTTPException(
-        status_code=status.HTTP_403_FORBIDDEN,
-        detail={
-            "error": "AUTHORIZATION_ERROR",
-            "message": "Недостаточно прав для выполнения операции",
-            "operation": operation,
-            "required_role": "admin или manager"
-        }
-    )
-
-
-def handle_authentication_error(reason: str = None) -> HTTPException:
-    """
-    Handle authentication errors.
-    
-    Args:
-        reason: Optional reason for authentication failure
-        
-    Returns:
-        HTTPException with authentication error
-    """
-    logger.info(f"Authentication failed: {reason}")
-    
-    return HTTPException(
-        status_code=status.HTTP_401_UNAUTHORIZED,
-        detail={
-            "error": "AUTHENTICATION_ERROR",
-            "message": "Ошибка аутентификации",
-            "reason": reason
-        },
-        headers={"WWW-Authenticate": "Bearer"},
-    )
-
-
-def handle_service_error(service: str, operation: str, error: Exception) -> HTTPException:
-    """
-    Handle service-specific errors.
-    
-    Args:
-        service: Name of the service
-        operation: Operation that failed
-        error: The original exception
-        
-    Returns:
-        HTTPException with service error details
-    """
-    logger.error(f"Service error in {service}.{operation}: {error}")
-    
-    return HTTPException(
-        status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-        detail={
-            "error": "SERVICE_ERROR",
-            "message": f"Ошибка в сервисе {service}",
-            "operation": operation,
-            "service": service
-        }
-    )
-
-
-def create_error_response(
-    error_code: str,
-    message: str,
-    status_code: int = status.HTTP_500_INTERNAL_SERVER_ERROR,
-    details: Optional[Dict[str, Any]] = None
-) -> HTTPException:
-    """
-    Create a standardized error response.
-    
-    Args:
-        error_code: Unique error code
-        message: Human-readable error message
-        status_code: HTTP status code
-        details: Additional error details
-        
-    Returns:
-        HTTPException with standardized error structure
-    """
-    error_detail = {
-        "error": error_code,
-        "message": message
-    }
-    
-    if details:
-        error_detail.update(details)
-    
-    return HTTPException(
-        status_code=status_code,
-        detail=error_detail
-    )
-
+class BookingError(AppError):
+    """Booking-specific error"""
+    def __init__(self, message: str, error_code: str, details: Dict[str, Any] = None):
+        super().__init__(message, error_code, details, 400)
 
 class ErrorHandler:
-    """Context manager for handling errors in service operations"""
+    """Context manager for handling errors"""
     
-    def __init__(self, operation: str, service: str = "unknown"):
+    def __init__(self, operation: str, component: str):
         self.operation = operation
-        self.service = service
+        self.component = component
     
     def __enter__(self):
+        logger.debug(f"Starting operation: {self.operation} in {self.component}")
         return self
     
     def __exit__(self, exc_type, exc_val, exc_tb):
-        if exc_type is None:
-            return False
-        
-        if isinstance(exc_val, PhStudioError):
-            # Re-raise custom errors
-            return False
-        elif isinstance(exc_val, SQLAlchemyError):
-            raise handle_database_error(exc_val, self.operation)
-        elif isinstance(exc_val, ValidationError):
-            raise handle_validation_error(exc_val)
+        if exc_type:
+            logger.error(
+                f"Error in {self.component}.{self.operation}: {exc_val}",
+                exc_info=(exc_type, exc_val, exc_tb)
+            )
         else:
-            raise handle_service_error(self.service, self.operation, exc_val)
+            logger.debug(f"Completed operation: {self.operation} in {self.component}")
+        # Don't suppress the exception
+        return False
+
+# Error factory functions
+def create_validation_error(field: str, message: str) -> ValidationError:
+    """Create a validation error"""
+    return ValidationError(
+        message=message,
+        error_code=f"validation_{field}",
+        details={"field": field, "message": message}
+    )
+
+def create_authentication_error(message: str) -> AuthenticationError:
+    """Create an authentication error"""
+    return AuthenticationError(
+        message=message,
+        error_code="authentication_failed"
+    )
+
+def create_authorization_error(message: str) -> AuthorizationError:
+    """Create an authorization error"""
+    return AuthorizationError(
+        message=message,
+        error_code="authorization_failed"
+    )
+
+def create_not_found_error(resource: str, identifier: str) -> NotFoundError:
+    """Create a not found error"""
+    return NotFoundError(
+        message=f"{resource} not found: {identifier}",
+        error_code=f"{resource}_not_found",
+        details={"resource": resource, "identifier": identifier}
+    )
+
+def create_conflict_error(resource: str, identifier: str, reason: str) -> ConflictError:
+    """Create a conflict error"""
+    return ConflictError(
+        message=f"Conflict with {resource} {identifier}: {reason}",
+        error_code=f"{resource}_conflict",
+        details={"resource": resource, "identifier": identifier, "reason": reason}
+    )
+
+def create_business_logic_error(message: str, error_code: str) -> BusinessLogicError:
+    """Create a business logic error"""
+    return BusinessLogicError(
+        message=message,
+        error_code=error_code
+    )
+
+def create_external_service_error(service: str, message: str) -> ExternalServiceError:
+    """Create an external service error"""
+    return ExternalServiceError(
+        message=f"External service error [{service}]: {message}",
+        error_code=f"{service}_error",
+        details={"service": service, "message": message}
+    )
+
+# Database error handlers
+def handle_database_error(error: SQLAlchemyError, operation: str) -> AppError:
+    """Convert SQLAlchemy errors to appropriate application errors"""
+    error_msg = str(error.orig) if hasattr(error, 'orig') else str(error)
+    
+    # Handle specific database errors
+    if "duplicate key" in error_msg.lower() or "unique constraint" in error_msg.lower():
+        return ConflictError(
+            message=f"Resource already exists",
+            error_code="RESOURCE_EXISTS",
+            details={"operation": operation, "error": error_msg}
+        )
+    elif "foreign key constraint" in error_msg.lower():
+        return ValidationError(
+            message=f"Invalid reference",
+            error_code="INVALID_REFERENCE",
+            details={"operation": operation, "error": error_msg}
+        )
+    elif "not null constraint" in error_msg.lower():
+        return ValidationError(
+            message=f"Required field missing",
+            error_code="MISSING_REQUIRED_FIELD",
+            details={"operation": operation, "error": error_msg}
+        )
+    else:
+        return AppError(
+            message=f"Database error during {operation}",
+            error_code="DATABASE_ERROR",
+            details={"operation": operation, "error": error_msg},
+            status_code=500
+        )
+
+def handle_not_found_error(resource: str, identifier: str) -> NotFoundError:
+    """Create a standardized not found error"""
+    return create_not_found_error(resource, identifier)

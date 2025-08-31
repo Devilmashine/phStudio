@@ -125,6 +125,36 @@ DEFAULT_CURRENCY=RUB
 - `tests/` — тесты (юнит, интеграция)
 - `.github/` — CI/CD
 
+## Документация
+
+### Основная документация
+- `README.md` — основная информация о проекте
+- `CHANGELOG.md` — история изменений
+- `PROJECT_PLAN.md` — план проекта и дорожная карта
+
+### Техническая документация
+- `docs/API.md` — документация API
+- `docs/TUTORIAL.md` — туториал для разработчиков
+
+### Руководства по развертыванию
+- `docs/DEPLOY_LOCAL.md` — локальное развертывание
+- `docs/DEPLOY_DOCKER.md` — развертывание с Docker
+- `docs/DEPLOY_HEROKU.md` — развертывание на Heroku
+- `docs/DEPLOY_VPS.md` — развертывание на VPS
+- `docs/DEPLOY_YC_CLOUD.md` — развертывание в Yandex Cloud
+- `docs/DEPLOY_REG_RU.md` — развертывание на Reg.ru
+- `docs/DEPLOY_VERCEL_NETLIFY.md` — развертывание на Vercel/Netlify
+
+### Отчеты и аудиты
+- `AUDIT_REPORT.md` — аудит кода и очистка
+- `BUDGET_DEPLOYMENT_GUIDE.md` — руководство по бюджетному развертыванию
+- `FIXES_APPLIED.md` — примененные исправления
+- `GITHUB_ACTIONS_FIXES.md` — исправления GitHub Actions
+- `LEGAL_COMPLIANCE_IMPLEMENTATION_REPORT.md` — отчет о соблюдении законодательства
+- `SECURITY_AUDIT_REPORT.md` — отчет по безопасности
+- `SECURITY_IMPLEMENTATION_FINAL_REPORT.md` — финальный отчет по безопасности
+- `TELEGRAM_REFACTOR_REPORT.md` — отчет о рефакторинге Telegram
+
 ## Советы
 - Для новых API и сценариев — обновляйте docs/API.md и тесты.
 - Все тесты должны проходить перед пушем.

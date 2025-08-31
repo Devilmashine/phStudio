@@ -58,4 +58,4 @@ class Booking(Base):
 
     # Связи
     calendar_event_id = Column(Integer, ForeignKey("calendar_events.id"), nullable=True)
-    calendar_event = relationship("CalendarEvent", back_populates="bookings")
+    calendar_event = relationship("CalendarEvent", back_populates="bookings", foreign_keys=[calendar_event_id])

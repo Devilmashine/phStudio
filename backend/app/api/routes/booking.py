@@ -6,8 +6,10 @@ from app.services.booking import BookingService
 from app.schemas.booking import Booking, BookingCreate, BookingStatusUpdate, MessageResponse
 from app.models.user import User, UserRole
 from app.deps import get_current_admin, get_current_manager
+from datetime import datetime, timedelta
+from typing import Optional
 
-router = APIRouter(prefix="/bookings", tags=["bookings"])
+router = APIRouter(tags=["bookings"])
 
 
 @router.get("/", response_model=List[Booking])
@@ -21,6 +23,42 @@ async def get_bookings(
     return service.get_bookings(skip=skip, limit=limit)
 
 
+@router.get("/stats")
+async def get_public_booking_stats(
+    days_back: int = 30,
+    db: Session = Depends(get_db)
+):
+    """Public endpoint to get booking statistics"""
+    service = BookingService(db)
+    return service.get_booking_statistics(days_back)
+
+
+@router.get("/recent")
+async def get_public_recent_bookings(
+    limit: int = 10,
+    db: Session = Depends(get_db)
+):
+    """Public endpoint to get recent bookings"""
+    service = BookingService(db)
+    # Get recent bookings ordered by creation date
+    from sqlalchemy import desc
+    from app.models.booking import Booking as BookingModel
+    
+    recent_bookings = db.query(BookingModel).order_by(desc(BookingModel.created_at)).limit(limit).all()
+    
+    # Convert to the format expected by the frontend
+    return [
+        {
+            "id": booking.id,
+            "client_name": booking.client_name,
+            "date": booking.date.isoformat() if booking.date else None,
+            "start_time": booking.start_time.isoformat() if booking.start_time else None,
+            "status": booking.status
+        }
+        for booking in recent_bookings
+    ]
+
+
 @router.get("/{booking_id}", response_model=Booking)
 async def get_booking(
     booking_id: int,
@@ -32,6 +70,8 @@ async def get_booking(
     if not booking:
         raise HTTPException(status_code=404, detail="Бронирование не найдено")
     return booking
+
+
 @router.patch("/{booking_id}/status", response_model=Booking)
 async def update_booking_status(
     booking_id: int,
@@ -48,6 +88,7 @@ async def update_booking_status(
     if not booking:
         raise HTTPException(status_code=404, detail="Бронирование не найдено")
     return booking
+
 
 @router.post("/public/", response_model=Booking, status_code=status.HTTP_201_CREATED)
 async def create_public_booking(booking_data: BookingCreate, db: Session = Depends(get_db)):
@@ -91,7 +132,7 @@ async def create_public_booking(booking_data: BookingCreate, db: Session = Depen
         return db_booking
     except BookingError as e:
         # Return specific validation error messages
-        if e.code == "TIME_CONFLICT":
+        if e.error_code == "TIME_CONFLICT":
             raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail=e.message)
         else:
             raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=e.message)
@@ -99,6 +140,7 @@ async def create_public_booking(booking_data: BookingCreate, db: Session = Depen
         raise e
     except Exception as e:
         raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="Произошла внутренняя ошибка при создании бронирования.")
+
 
 @router.post("/", response_model=Booking)
 async def create_booking(
