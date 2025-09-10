@@ -1,64 +1,156 @@
-import { useState, useEffect, useRef } from 'react';
+/**
+ * useWebSocket Hook
+ * React hook для работы с enhanced WebSocket service
+ */
 
-interface WebSocketHook {
-  lastMessage: string | null;
-  sendMessage: (message: string) => void;
-  readyState: number;
+import { useEffect, useCallback, useRef } from 'react';
+import { useUIStore } from '../stores';
+import { enhancedWebSocketService } from '../services/websocket/enhancedWebSocketService';
+import { DomainEvent } from '../stores/types';
+
+interface UseWebSocketOptions {
+  autoConnect?: boolean;
+  onConnect?: () => void;
+  onDisconnect?: () => void;
+  onError?: (error: Event) => void;
+  onMessage?: (event: DomainEvent) => void;
 }
 
-export const useWebSocket = (url: string | null): WebSocketHook => {
-  const [lastMessage, setLastMessage] = useState<string | null>(null);
-  const [readyState, setReadyState] = useState<number>(WebSocket.CONNECTING);
-  const ws = useRef<WebSocket | null>(null);
+export const useWebSocket = (options: UseWebSocketOptions = {}) => {
+  const {
+    autoConnect = true,
+    onConnect,
+    onDisconnect,
+    onError,
+    onMessage
+  } = options;
 
+  const { wsConnected, wsReconnecting } = useUIStore();
+  const callbacksRef = useRef({ onConnect, onDisconnect, onError, onMessage });
+
+  // Update callbacks ref when they change
   useEffect(() => {
-    // Don't connect if no URL is provided
-    if (!url) {
-      setReadyState(WebSocket.CLOSED);
-      return;
+    callbacksRef.current = { onConnect, onDisconnect, onError, onMessage };
+  }, [onConnect, onDisconnect, onError, onMessage]);
+
+  // Auto connect/disconnect
+  useEffect(() => {
+    if (autoConnect && !wsConnected && !wsReconnecting) {
+      enhancedWebSocketService.connect()
+        .then(() => {
+          callbacksRef.current.onConnect?.();
+        })
+        .catch((error) => {
+          callbacksRef.current.onError?.(error);
+        });
     }
 
-    // Create WebSocket connection
-    ws.current = new WebSocket(url);
-    
-    ws.current.onopen = () => {
-      console.log('WebSocket connected');
-      setReadyState(WebSocket.OPEN);
-    };
-    
-    ws.current.onmessage = (event) => {
-      setLastMessage(event.data);
-    };
-    
-    ws.current.onclose = () => {
-      console.log('WebSocket disconnected');
-      setReadyState(WebSocket.CLOSED);
-    };
-    
-    ws.current.onerror = (error) => {
-      console.error('WebSocket error:', error);
-      setReadyState(WebSocket.CLOSED);
-    };
-    
-    // Clean up function
     return () => {
-      if (ws.current) {
-        ws.current.close();
+      if (autoConnect) {
+        enhancedWebSocketService.disconnect();
+        callbacksRef.current.onDisconnect?.();
       }
     };
-  }, [url]);
+  }, [autoConnect, wsConnected, wsReconnecting]);
 
-  const sendMessage = (message: string) => {
-    if (ws.current && ws.current.readyState === WebSocket.OPEN) {
-      ws.current.send(message);
-    } else {
-      console.warn('WebSocket is not open. Message not sent:', message);
+  // Subscribe to specific events
+  const subscribe = useCallback((eventType: string, handler: (event: DomainEvent) => void) => {
+    return enhancedWebSocketService.subscribe(eventType, handler);
+  }, []);
+
+  // Send message
+  const send = useCallback((message: any) => {
+    enhancedWebSocketService.send(message);
+  }, []);
+
+  // Manual connect
+  const connect = useCallback(async () => {
+    try {
+      await enhancedWebSocketService.connect();
+      callbacksRef.current.onConnect?.();
+    } catch (error) {
+      callbacksRef.current.onError?.(error as Event);
+      throw error;
     }
-  };
+  }, []);
+
+  // Manual disconnect
+  const disconnect = useCallback(() => {
+    enhancedWebSocketService.disconnect();
+    callbacksRef.current.onDisconnect?.();
+  }, []);
 
   return {
-    lastMessage,
-    sendMessage,
-    readyState
+    isConnected: wsConnected,
+    isReconnecting: wsReconnecting,
+    connectionState: enhancedWebSocketService.getConnectionState(),
+    subscribe,
+    send,
+    connect,
+    disconnect,
   };
 };
+
+// Specialized hooks for different event types
+export const useBookingEvents = (options: {
+  onBookingCreated?: (event: any) => void;
+  onBookingUpdated?: (event: any) => void;
+  onBookingStateChanged?: (event: any) => void;
+  onBookingCancelled?: (event: any) => void;
+} = {}) => {
+  const { subscribe } = useWebSocket({ autoConnect: true });
+
+  useEffect(() => {
+    const unsubscribers: (() => void)[] = [];
+
+    if (options.onBookingCreated) {
+      unsubscribers.push(subscribe('BOOKING_CREATED', options.onBookingCreated));
+    }
+
+    if (options.onBookingUpdated) {
+      unsubscribers.push(subscribe('BOOKING_UPDATED', options.onBookingUpdated));
+    }
+
+    if (options.onBookingStateChanged) {
+      unsubscribers.push(subscribe('BOOKING_STATE_CHANGED', options.onBookingStateChanged));
+    }
+
+    if (options.onBookingCancelled) {
+      unsubscribers.push(subscribe('BOOKING_CANCELLED', options.onBookingCancelled));
+    }
+
+    return () => {
+      unsubscribers.forEach(unsubscribe => unsubscribe());
+    };
+  }, [subscribe, options.onBookingCreated, options.onBookingUpdated, options.onBookingStateChanged, options.onBookingCancelled]);
+};
+
+export const useEmployeeEvents = (options: {
+  onEmployeeCreated?: (event: any) => void;
+  onEmployeeUpdated?: (event: any) => void;
+  onEmployeeStatusChanged?: (event: any) => void;
+} = {}) => {
+  const { subscribe } = useWebSocket({ autoConnect: true });
+
+  useEffect(() => {
+    const unsubscribers: (() => void)[] = [];
+
+    if (options.onEmployeeCreated) {
+      unsubscribers.push(subscribe('EMPLOYEE_CREATED', options.onEmployeeCreated));
+    }
+
+    if (options.onEmployeeUpdated) {
+      unsubscribers.push(subscribe('EMPLOYEE_UPDATED', options.onEmployeeUpdated));
+    }
+
+    if (options.onEmployeeStatusChanged) {
+      unsubscribers.push(subscribe('EMPLOYEE_STATUS_CHANGED', options.onEmployeeStatusChanged));
+    }
+
+    return () => {
+      unsubscribers.forEach(unsubscribe => unsubscribe());
+    };
+  }, [subscribe, options.onEmployeeCreated, options.onEmployeeUpdated, options.onEmployeeStatusChanged]);
+};
+
+export default useWebSocket;

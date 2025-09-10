@@ -8,13 +8,12 @@ from ...core.database import get_db
 from ...models.booking_enhanced import Booking, BookingState, BookingSource
 from ...repositories.booking_repository import BookingRepository
 from ...core.cqrs import (
-    BookingCommandHandler, BookingQueryHandler,
-    CreateBookingCommand, UpdateBookingStateCommand, DeleteBookingCommand,
-    GetBookingsQuery, GetBookingByIdQuery, GetBookingByReferenceQuery,
-    BookingDTO
+    CreateBookingCommandHandler, GetBookingQueryHandler,
+    CreateBookingCommand, UpdateBookingCommand, CancelBookingCommand,
+    GetBookingQuery, GetBookingsForDateQuery, GetBookingAnalyticsQuery
 )
 from ...services.booking_domain_service import BookingDomainService
-from ...core.event_bus import event_bus
+from ...core.event_bus import get_event_bus
 from ...core.validation import BookingValidator
 
 logger = logging.getLogger(__name__)
@@ -65,7 +64,7 @@ class BookingListResponse(BaseModel):
     total: int
 
 # Helper function to convert Booking DTO to response
-def booking_dto_to_response(booking_dto: BookingDTO) -> BookingResponse:
+def booking_dto_to_response(booking_dto) -> BookingResponse:
     # In a real implementation, we would get the full booking entity to include all fields
     # For now, we'll create a minimal response
     return BookingResponse(
@@ -93,27 +92,13 @@ async def create_booking(
     booking_data: BookingCreate,
     db: Session = Depends(get_db)
 ):
-    """Create a new booking using CQRS pattern"""
-    # Validate input
-    validator = BookingValidator()
-    validation_result = validator.validate_booking_data(booking_data.dict())
-    
-    if not validation_result.is_valid():
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail={
-                "error": "validation_error",
-                "message": "Invalid booking data",
-                "details": [error.__dict__ for error in validation_result.get_errors()]
-            }
-        )
-    
+    """Create a new booking"""
     try:
-        # Create command
-        command = CreateBookingCommand(
+        # Simple implementation without CQRS
+        booking_repo = BookingRepository(db)
+        booking = booking_repo.create(
             client_name=booking_data.client_name,
             client_phone=booking_data.client_phone,
-            client_phone_normalized=booking_data.client_phone,  # In real implementation, normalize this
             client_email=booking_data.client_email,
             booking_date=booking_data.booking_date,
             start_time=booking_data.start_time,
@@ -126,42 +111,27 @@ async def create_booking(
             source=booking_data.source
         )
         
-        # Execute command
-        booking_repo = BookingRepository(db)
-        command_handler = BookingCommandHandler(booking_repo)
-        result = await command_handler.handle(command)
-        
-        if not result.success:
-            raise HTTPException(
-                status_code=status.HTTP_400_BAD_REQUEST,
-                detail=result.error
-            )
-        
-        # For now, return a simple response
-        # In a real implementation, we would return the created booking
         return BookingResponse(
-            id=1,  # Placeholder
-            booking_reference="REF-20230101-0001",  # Placeholder
-            client_name=booking_data.client_name,
-            client_phone=booking_data.client_phone,
-            client_email=booking_data.client_email,
-            booking_date=booking_data.booking_date,
-            start_time=booking_data.start_time,
-            end_time=booking_data.end_time,
-            state=BookingState.PENDING,
-            space_type=booking_data.space_type,
-            duration_hours=booking_data.duration_hours,
-            base_price=booking_data.base_price,
-            total_price=booking_data.total_price,
-            special_requirements=booking_data.special_requirements,
-            source=booking_data.source,
-            created_at="2023-01-01T00:00:00Z",  # Placeholder
-            updated_at="2023-01-01T00:00:00Z",  # Placeholder
-            state_history=[]
+            id=booking.id,
+            booking_reference=booking.booking_reference,
+            client_name=booking.client_name,
+            client_phone=booking.client_phone,
+            client_email=booking.client_email,
+            booking_date=booking.booking_date.isoformat() if booking.booking_date else None,
+            start_time=booking.start_time.isoformat() if booking.start_time else None,
+            end_time=booking.end_time.isoformat() if booking.end_time else None,
+            state=booking.state,
+            space_type=booking.space_type,
+            duration_hours=booking.duration_hours,
+            base_price=float(booking.base_price) if booking.base_price else 0.0,
+            total_price=float(booking.total_price) if booking.total_price else 0.0,
+            special_requirements=booking.special_requirements,
+            source=booking.source.value if booking.source else "website",
+            created_at=booking.created_at.isoformat() if booking.created_at else None,
+            updated_at=booking.updated_at.isoformat() if booking.updated_at else None,
+            state_history=booking.state_history or []
         )
         
-    except HTTPException:
-        raise
     except Exception as e:
         logger.error(f"Error creating booking: {e}")
         raise HTTPException(
@@ -177,23 +147,35 @@ async def list_bookings(
     limit: int = 100,
     db: Session = Depends(get_db)
 ):
-    """List bookings using CQRS pattern"""
+    """List bookings"""
     try:
-        # Create query
-        query = GetBookingsQuery(
-            date=date,
-            state=state,
-            limit=limit,
-            offset=skip
-        )
-        
-        # Execute query
+        # Simple implementation without CQRS
         booking_repo = BookingRepository(db)
-        query_handler = BookingQueryHandler(booking_repo)
-        booking_dtos = await query_handler.handle(query)
+        bookings = booking_repo.get_all(skip=skip, limit=limit)
         
         # Convert to responses
-        booking_responses = [booking_dto_to_response(dto) for dto in booking_dtos]
+        booking_responses = []
+        for booking in bookings:
+            booking_responses.append(BookingResponse(
+                id=booking.id,
+                booking_reference=booking.booking_reference,
+                client_name=booking.client_name,
+                client_phone=booking.client_phone,
+                client_email=booking.client_email,
+                booking_date=booking.booking_date.isoformat() if booking.booking_date else None,
+                start_time=booking.start_time.isoformat() if booking.start_time else None,
+                end_time=booking.end_time.isoformat() if booking.end_time else None,
+                state=booking.state,
+                space_type=booking.space_type,
+                duration_hours=booking.duration_hours,
+                base_price=float(booking.base_price) if booking.base_price else 0.0,
+                total_price=float(booking.total_price) if booking.total_price else 0.0,
+                special_requirements=booking.special_requirements,
+                source=booking.source.value if booking.source else "website",
+                created_at=booking.created_at.isoformat() if booking.created_at else None,
+                updated_at=booking.updated_at.isoformat() if booking.updated_at else None,
+                state_history=booking.state_history or []
+            ))
         
         return BookingListResponse(
             bookings=booking_responses,
@@ -212,23 +194,38 @@ async def get_booking(
     booking_id: int,
     db: Session = Depends(get_db)
 ):
-    """Get booking by ID using CQRS pattern"""
+    """Get booking by ID"""
     try:
-        # Create query
-        query = GetBookingByIdQuery(booking_id=booking_id)
-        
-        # Execute query
+        # Simple implementation without CQRS
         booking_repo = BookingRepository(db)
-        query_handler = BookingQueryHandler(booking_repo)
-        booking_dto = await query_handler.handle(query)
+        booking = booking_repo.get_by_id(booking_id)
         
-        if not booking_dto:
+        if not booking:
             raise HTTPException(
                 status_code=status.HTTP_404_NOT_FOUND,
                 detail="Booking not found"
             )
         
-        return booking_dto_to_response(booking_dto)
+        return BookingResponse(
+            id=booking.id,
+            booking_reference=booking.booking_reference,
+            client_name=booking.client_name,
+            client_phone=booking.client_phone,
+            client_email=booking.client_email,
+            booking_date=booking.booking_date.isoformat() if booking.booking_date else None,
+            start_time=booking.start_time.isoformat() if booking.start_time else None,
+            end_time=booking.end_time.isoformat() if booking.end_time else None,
+            state=booking.state,
+            space_type=booking.space_type,
+            duration_hours=booking.duration_hours,
+            base_price=float(booking.base_price) if booking.base_price else 0.0,
+            total_price=float(booking.total_price) if booking.total_price else 0.0,
+            special_requirements=booking.special_requirements,
+            source=booking.source.value if booking.source else "website",
+            created_at=booking.created_at.isoformat() if booking.created_at else None,
+            updated_at=booking.updated_at.isoformat() if booking.updated_at else None,
+            state_history=booking.state_history or []
+        )
         
     except HTTPException:
         raise
@@ -245,30 +242,35 @@ async def update_booking_state(
     state_data: BookingUpdateState,
     db: Session = Depends(get_db)
 ):
-    """Update booking state using domain service"""
+    """Update booking state"""
     try:
-        # Use domain service for state transition
-        booking_service = BookingDomainService(db, event_bus)
-        result = await booking_service.transition_state(
-            booking_id=booking_id,
-            target_state=state_data.new_state,
-            notes=state_data.notes
-        )
+        # Simple implementation without domain service
+        booking_repo = BookingRepository(db)
+        booking = booking_repo.get_by_id(booking_id)
         
-        if result.is_failure():
-            if "not found" in result.error.lower():
-                raise HTTPException(
-                    status_code=status.HTTP_404_NOT_FOUND,
-                    detail=result.error
-                )
-            else:
-                raise HTTPException(
-                    status_code=status.HTTP_400_BAD_REQUEST,
-                    detail=result.error
-                )
+        if not booking:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="Booking not found"
+            )
         
-        # Convert booking to response
-        booking = result.value
+        # Update the booking state
+        booking.state = state_data.new_state
+        booking.updated_at = datetime.utcnow()
+        
+        # Add to state history
+        if not booking.state_history:
+            booking.state_history = []
+        booking.state_history.append({
+            "state": state_data.new_state,
+            "timestamp": datetime.utcnow().isoformat(),
+            "notes": state_data.notes
+        })
+        
+        # Save the booking
+        db.commit()
+        db.refresh(booking)
+        
         return BookingResponse(
             id=booking.id,
             booking_reference=booking.booking_reference,

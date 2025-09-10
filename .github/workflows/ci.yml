@@ -24,10 +24,17 @@ jobs:
           pip install -r requirements.txt
           pip install -r requirements-dev.txt
           pip install flake8
+          pip install coverage
       - name: Lint (flake8)
         run: flake8 .
       - name: Run tests (pytest)
-        run: pytest
+        run: pytest --cov=app --cov-report=xml --cov-report=term-missing
+      - name: Upload coverage to Codecov
+        uses: codecov/codecov-action@v3
+        with:
+          file: ./backend/coverage.xml
+          flags: backend
+          name: backend-coverage
 
   frontend:
     runs-on: ubuntu-latest
@@ -42,9 +49,15 @@ jobs:
       - name: Lint (eslint)
         run: npm run lint
       - name: Run tests
-        run: npm run test
+        run: npm run test:coverage
       - name: Build
         run: npm run build
+      - name: Upload coverage to Codecov
+        uses: codecov/codecov-action@v3
+        with:
+          file: ./frontend/coverage/lcov.info
+          flags: frontend
+          name: frontend-coverage
 
   notify:
     runs-on: ubuntu-latest

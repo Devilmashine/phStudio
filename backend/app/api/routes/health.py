@@ -5,7 +5,7 @@ from fastapi import APIRouter, Depends, HTTPException
 from typing import Dict, Any
 import logging
 
-from ..core.health import get_database_health, db_health
+from ...core.health import get_database_health, db_health
 
 logger = logging.getLogger(__name__)
 

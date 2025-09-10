@@ -1,0 +1,125 @@
+# Prometheus Alert Rules
+# Правила алертов для мониторинга
+
+groups:
+  - name: phstudio-crm-alerts
+    rules:
+      # High Error Rate
+      - alert: HighErrorRate
+        expr: rate(http_requests_total{status=~"5.."}[5m]) > 0.1
+        for: 2m
+        labels:
+          severity: critical
+        annotations:
+          summary: "High error rate detected"
+          description: "Error rate is {{ $value }} errors per second"
+
+      # High Response Time
+      - alert: HighResponseTime
+        expr: histogram_quantile(0.95, rate(http_request_duration_seconds_bucket[5m])) > 2
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "High response time"
+          description: "95th percentile response time is {{ $value }} seconds"
+
+      # Database Connection Issues
+      - alert: DatabaseConnectionIssues
+        expr: up{job="postgres-exporter"} == 0
+        for: 1m
+        labels:
+          severity: critical
+        annotations:
+          summary: "Database connection issues"
+          description: "PostgreSQL exporter is down"
+
+      # Redis Connection Issues
+      - alert: RedisConnectionIssues
+        expr: up{job="redis-exporter"} == 0
+        for: 1m
+        labels:
+          severity: critical
+        annotations:
+          summary: "Redis connection issues"
+          description: "Redis exporter is down"
+
+      # High Memory Usage
+      - alert: HighMemoryUsage
+        expr: (node_memory_MemTotal_bytes - node_memory_MemAvailable_bytes) / node_memory_MemTotal_bytes > 0.9
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "High memory usage"
+          description: "Memory usage is {{ $value | humanizePercentage }}"
+
+      # High CPU Usage
+      - alert: HighCPUUsage
+        expr: 100 - (avg by(instance) (rate(node_cpu_seconds_total{mode="idle"}[5m])) * 100) > 80
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "High CPU usage"
+          description: "CPU usage is {{ $value }}%"
+
+      # Disk Space Low
+      - alert: DiskSpaceLow
+        expr: (node_filesystem_avail_bytes / node_filesystem_size_bytes) < 0.1
+        for: 5m
+        labels:
+          severity: critical
+        annotations:
+          summary: "Disk space low"
+          description: "Disk space is {{ $value | humanizePercentage }} available"
+
+      # Application Down
+      - alert: ApplicationDown
+        expr: up{job="backend-api"} == 0
+        for: 1m
+        labels:
+          severity: critical
+        annotations:
+          summary: "Application is down"
+          description: "Backend API is not responding"
+
+      # High Queue Length
+      - alert: HighQueueLength
+        expr: celery_queue_length > 100
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "High queue length"
+          description: "Celery queue length is {{ $value }}"
+
+      # Failed Login Attempts
+      - alert: HighFailedLoginAttempts
+        expr: rate(auth_failed_attempts_total[5m]) > 10
+        for: 2m
+        labels:
+          severity: warning
+        annotations:
+          summary: "High failed login attempts"
+          description: "Failed login rate is {{ $value }} per second"
+
+      # SSL Certificate Expiry
+      - alert: SSLCertificateExpiry
+        expr: ssl_certificate_expiry_seconds < 86400 * 30
+        for: 1h
+        labels:
+          severity: warning
+        annotations:
+          summary: "SSL certificate expiring soon"
+          description: "SSL certificate expires in {{ $value | humanizeDuration }}"
+
+      # Backup Failure
+      - alert: BackupFailure
+        expr: backup_last_success_timestamp < (time() - 86400)
+        for: 1h
+        labels:
+          severity: critical
+        annotations:
+          summary: "Backup failure"
+          description: "Last successful backup was {{ $value | humanizeDuration }} ago"

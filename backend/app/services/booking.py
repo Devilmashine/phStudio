@@ -5,7 +5,7 @@ from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy import and_, or_, func, text
 from typing import List, Optional, Dict, Any
 
-from app.models.booking import Booking as BookingModel, BookingStatus
+from app.models.booking import BookingLegacy as BookingModel, BookingStatus
 from app.schemas.booking import BookingCreate
 from app.services.telegram_bot import TelegramBotService
 from app.core.errors import BookingError, ErrorHandler, handle_database_error, handle_not_found_error
@@ -279,7 +279,7 @@ class BookingService:
             with ErrorHandler("get_booking_statistics", "BookingService"):
                 cutoff_date = datetime.now(timezone.utc) - timedelta(days=days_back)
                 
-                # Use optimized aggregation query
+                # Use optimized aggregation query - fixed table name to bookings_legacy
                 stats_result = self.db.execute(text("""
                     SELECT 
                         COUNT(*) as total_bookings,
@@ -289,7 +289,7 @@ class BookingService:
                         COALESCE(SUM(total_price), 0) as total_revenue,
                         COALESCE(AVG(total_price), 0) as average_price,
                         COUNT(DISTINCT client_phone) as unique_clients
-                    FROM bookings 
+                    FROM bookings_legacy 
                     WHERE created_at >= :cutoff_date
                 """), {"cutoff_date": cutoff_date}).fetchone()
                 

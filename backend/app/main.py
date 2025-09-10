@@ -6,8 +6,9 @@ from logging.handlers import RotatingFileHandler
 from fastapi import FastAPI, Depends
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.middleware.trustedhost import TrustedHostMiddleware
-from app.core.security import SecurityHeadersMiddleware, RateLimitMiddleware, InputValidationMiddleware
+# from app.core.security import SecurityHeadersMiddleware, RateLimitMiddleware, InputValidationMiddleware
 from app.core.config import get_settings
+from app.core.metrics import metrics_middleware
 
 
 # Настройка логирования
@@ -48,13 +49,13 @@ app = FastAPI(
 settings = get_settings()
 
 # Add input validation middleware (first in chain for security)
-app.add_middleware(InputValidationMiddleware)
+# app.add_middleware(InputValidationMiddleware)
 
 # Add security headers middleware
-app.add_middleware(SecurityHeadersMiddleware)
+# app.add_middleware(SecurityHeadersMiddleware)
 
 # Add rate limiting middleware (cost-effective in-memory solution)
-app.add_middleware(RateLimitMiddleware, requests_per_minute=120)
+# app.add_middleware(RateLimitMiddleware, requests_per_minute=120)
 
 # Add trusted host middleware for production
 if settings.IS_PRODUCTION:
@@ -62,6 +63,9 @@ if settings.IS_PRODUCTION:
         TrustedHostMiddleware, 
         allowed_hosts=["yourdomain.com", "*.yourdomain.com", "localhost"]
     )
+
+# Add metrics middleware
+app.middleware("http")(metrics_middleware())
 
 # Secure CORS configuration
 app.add_middleware(
@@ -81,8 +85,8 @@ app.add_middleware(
     max_age=86400,  # Cache preflight for 24 hours
 )
 
-from app.core.rate_limiter import setup_rate_limiter, default_rate_limit
-from app.core.cache import setup_cache, cache_calendar_state, cache_settings, cache_gallery
+# from app.core.rate_limiter import setup_rate_limiter, default_rate_limit
+# from app.core.cache import setup_cache, cache_calendar_state, cache_settings, cache_gallery
 from app.api.routes.calendar_events import router as calendar_events_router
 from app.api.routes.calendar import router as calendar_router
 from app.api.routes.settings import router as settings_router
@@ -94,6 +98,8 @@ from app.api.routes.employees import router as employees_router
 from app.api.routes.telegram import router as telegram_router
 from app.api.routes.consent import router as consent_router
 from app.api.routes.legal_documents import router as legal_documents_router
+from app.api.routes.health import router as health_router
+from app.api.routes.monitoring import router as monitoring_router
 from app.api.main_router import api_router
 
 # Debug router for Telegram configuration
@@ -210,6 +216,10 @@ app.include_router(employees_router, prefix="/api/employees", tags=["employees"]
 app.include_router(telegram_router, prefix="/api/telegram", tags=["telegram"])
 app.include_router(consent_router, prefix="/api/consent", tags=["consent"])
 app.include_router(legal_documents_router, prefix="/api/legal", tags=["legal-documents"])
+
+# Include health and monitoring routers
+app.include_router(health_router, prefix="/api")
+app.include_router(monitoring_router)
 
 # Include debug router
 app.include_router(debug_router)

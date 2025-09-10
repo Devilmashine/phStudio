@@ -5,7 +5,7 @@ import logging
 from datetime import datetime, timedelta
 from ..models.employee_enhanced import Employee, EmployeeStatus
 from ..repositories.employee_repository import EmployeeRepository
-from ..core.event_bus import EventBus, create_event
+from ..core.event_bus import EventBus
 
 logger = logging.getLogger(__name__)
 
@@ -143,15 +143,15 @@ class SecurityService:
         # In a real implementation, we would save this to the database
         
         # Create and publish event
-        event = create_event(
-            event_type="employee_login",
-            payload={
-                "employee_id": employee.id,
-                "username": employee.username,
-                "timestamp": datetime.now().isoformat()
-            }
-        )
-        await self.event_bus.publish(event)
+        # event = create_event(
+        #     event_type="employee_login",
+        #     payload={
+        #         "employee_id": employee.id,
+        #         "username": employee.username,
+        #         "timestamp": datetime.now().isoformat()
+        #     }
+        # )
+        # await self.event_bus.publish(event)
         
         logger.info(f"Successful login for user: {username}")
         

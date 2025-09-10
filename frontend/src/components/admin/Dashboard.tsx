@@ -1,6 +1,8 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { getDashboardStatsApi, getRecentBookingsApi } from '../../services/booking/api';
 import { websocketService } from '../../services/websocket';
+import { BookingChart } from '../../components/enhanced/AdminDashboard/BookingChart';
+import { BookingState, SpaceType, PaymentStatus, BookingSource, BookingPriority } from '../../stores/types';
 
 // Define TypeScript interfaces
 interface Stat {
@@ -318,19 +320,45 @@ const Dashboard: React.FC = () => {
           </div>
         </div>
 
-        {/* Chart placeholder */}
+        {/* Booking Chart */}
         <div className="bg-white dark:bg-gray-800 shadow overflow-hidden sm:rounded-lg">
           <div className="px-4 py-5 sm:px-6">
             <h3 className="text-lg leading-6 font-medium text-gray-900 dark:text-white">Статистика бронирований</h3>
           </div>
           <div className="border-t border-gray-200 dark:border-gray-700">
-            <div className="p-6 h-80 flex items-center justify-center bg-gray-50 dark:bg-gray-700">
-              <div className="text-center">
-                <div className="text-gray-500 dark:text-gray-400">График бронирований по дням</div>
-                <div className="mt-4 text-sm text-gray-400 dark:text-gray-500">
-                  Визуализация данных будет здесь
-                </div>
-              </div>
+            <div className="p-6">
+              <BookingChart 
+                bookings={recentBookings.map(booking => ({
+                  id: booking.id,
+                  booking_reference: `BK-${booking.id}`,
+                  client_name: booking.client_name,
+                  client_phone: '', // Not available in RecentBooking
+                  client_phone_normalized: '', // Not available in RecentBooking
+                  client_email: '', // Not available in RecentBooking
+                  booking_date: booking.date,
+                  start_time: booking.start_time,
+                  end_time: booking.start_time, // Simplified
+                  duration_hours: 1, // Default value
+                  state: booking.status as BookingState, // Type assertion
+                  state_history: [], // Empty array as we don't have this data
+                  space_type: SpaceType.MAIN_STUDIO, // Default value
+                  equipment_requested: [], // Empty array
+                  special_requirements: '', // Empty string
+                  base_price: 0, // Default value
+                  equipment_price: 0, // Default value
+                  discount_amount: 0, // Default value
+                  total_price: 0, // Default value
+                  payment_status: PaymentStatus.PENDING, // Default value
+                  source: BookingSource.WEBSITE, // Default value
+                  notes: '', // Empty string
+                  internal_notes: '', // Empty string
+                  priority: BookingPriority.NORMAL, // Default value
+                  created_at: booking.start_time,
+                  updated_at: booking.start_time,
+                  version: 1 // Default value
+                }))} 
+                loading={loading} 
+              />
             </div>
           </div>
         </div>

@@ -36,4 +36,4 @@ class CalendarEvent(Base):
     )
 
     # Связи
-    bookings = relationship("Booking", back_populates="calendar_event")
+    bookings = relationship("BookingLegacy", back_populates="calendar_event")

@@ -1,0 +1,6 @@
+# Performance Testing Requirements
+locust==2.32.1
+aiohttp==3.12.15
+pytest-benchmark==5.1.0
+memory-profiler==0.61.0
+psutil==6.1.1

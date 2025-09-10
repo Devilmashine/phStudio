@@ -2,7 +2,7 @@ import sys
 import getpass
 import re
 import secrets
-from app.core.database import SessionLocal
+from app.core.database import get_session_local, get_engine
 from app.services.user import UserService
 from app.schemas.user import UserCreate
 from app.models.user import UserRole
@@ -44,6 +44,10 @@ def prompt_admin_data():
     return username, email, password, full_name
 
 def create_admin():
+    # Initialize the database engine and session
+    engine = get_engine()
+    SessionLocal = get_session_local()
+    
     db = SessionLocal()
     try:
         user_service = UserService(db)
@@ -66,6 +70,7 @@ def create_admin():
         print(f"Администратор успешно создан: {username} ({email})")
     except Exception as e:
         print(f"Ошибка при создании администратора: {e}")
+        raise
     finally:
         db.close()
 

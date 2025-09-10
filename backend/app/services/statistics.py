@@ -5,7 +5,7 @@ from sqlalchemy.exc import SQLAlchemyError
 from typing import List, Dict, Any, Optional, Union
 import logging
 
-from app.models.booking import Booking
+from app.models.booking import BookingLegacy
 from app.schemas.booking import Booking as BookingSchema
 
 logger = logging.getLogger(__name__)
@@ -31,8 +31,8 @@ class StatisticsService:
         """
         try:
             bookings = (
-                self.db.query(Booking)
-                .filter(func.date(Booking.date) == target_date)
+                self.db.query(BookingLegacy)
+                .filter(func.date(BookingLegacy.date) == target_date)
                 .all()
             )
 
@@ -109,8 +109,8 @@ class StatisticsService:
             end_date = date(year, month + 1, 1) - timedelta(days=1)
 
         bookings = (
-            self.db.query(Booking)
-            .filter(and_(Booking.date >= start_date, Booking.date <= end_date))
+            self.db.query(BookingLegacy)
+            .filter(and_(BookingLegacy.date >= start_date, BookingLegacy.date <= end_date))
             .all()
         )
 
@@ -132,7 +132,7 @@ class StatisticsService:
             "average_daily_revenue": total_revenue / end_date.day,
         }
 
-    def _get_time_distribution(self, bookings: List[Booking]) -> Dict[str, int]:
+    def _get_time_distribution(self, bookings: List[BookingLegacy]) -> Dict[str, int]:
         """Распределение бронирований по времени суток"""
         distribution = {"morning": 0, "afternoon": 0, "evening": 0}
         for booking in bookings:
@@ -145,7 +145,7 @@ class StatisticsService:
                 distribution["evening"] += 1
         return distribution
 
-    def _get_popular_slots(self, bookings: List[Booking]) -> List[Dict[str, Any]]:
+    def _get_popular_slots(self, bookings: List[BookingLegacy]) -> List[Dict[str, Any]]:
         """Популярные временные слоты"""
         slots = {}
         for booking in bookings:
@@ -157,7 +157,7 @@ class StatisticsService:
             for slot, count in sorted(slots.items(), key=lambda x: x[1], reverse=True)
         ]
 
-    def _get_new_vs_returning(self, bookings: List[Booking]) -> Dict[str, int]:
+    def _get_new_vs_returning(self, bookings: List[BookingLegacy]) -> Dict[str, int]:
         """Статистика новых и постоянных клиентов"""
         clients = {}
         for booking in bookings:
@@ -169,7 +169,7 @@ class StatisticsService:
 
         return {"new": new, "returning": returning}
 
-    def _get_notification_stats(self, bookings: List[Booking]) -> Dict[str, int]:
+    def _get_notification_stats(self, bookings: List[BookingLegacy]) -> Dict[str, int]:
         """Статистика уведомлений"""
         return {
             "total_sent": len([b for b in bookings if b.notification_sent]),

@@ -2,7 +2,7 @@ from .base import Base
 from .user import User, UserRole
 from .client import Client
 from .calendar_event import CalendarEvent
-from .booking import Booking, BookingStatus
+from .booking import BookingLegacy, BookingStatus
 from .gallery import GalleryImage
 from .news import News
 from .settings import StudioSettings
@@ -16,7 +16,7 @@ __all__ = [
     "UserRole",
     "Client",
     "CalendarEvent",
-    "Booking",
+    "BookingLegacy",
     "BookingStatus",
     "GalleryImage",
     "News",

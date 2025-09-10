@@ -13,8 +13,8 @@ class BookingStatus(enum.Enum):
     COMPLETED = "completed"
 
 
-class Booking(Base):
-    __tablename__ = "bookings"
+class BookingLegacy(Base):
+    __tablename__ = "bookings_legacy"
     __table_args__ = (
         Index("idx_bookings_date_range", "start_time", "end_time"),
         Index("idx_bookings_status", "status"),

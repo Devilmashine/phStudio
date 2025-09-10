@@ -2,14 +2,12 @@ from sqlalchemy import Column, Integer, String, DateTime, JSON, Index
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.sql import func
 import uuid
-from .base_enhanced import EnhancedBase
-from .base import Base
+from .base_enhanced import BaseEnhanced
 
-class DomainEvent(Base, EnhancedBase):
+class DomainEvent(BaseEnhanced):
     __tablename__ = "domain_events"
     __table_args__ = {'extend_existing': True}
     
-    id = Column(Integer, primary_key=True)
     event_id = Column(UUID(as_uuid=True), default=uuid.uuid4, unique=True)
     aggregate_id = Column(String(50), nullable=False)
     aggregate_type = Column(String(50), nullable=False)

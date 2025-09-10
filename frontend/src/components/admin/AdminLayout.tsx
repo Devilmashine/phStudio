@@ -27,7 +27,6 @@ const navigation = [
   { name: 'Расписание', href: 'schedule', icon: CalendarIcon },
   { name: 'Календарь', href: 'calendar', icon: CalendarIcon },
   { name: 'Пользователи', href: 'users', icon: UserGroupIcon },
-  { name: 'Аналитика', href: 'analytics', icon: ChartBarIcon },
 ];
 
 const AdminLayout: React.FC<AdminLayoutProps> = ({ children }) => {

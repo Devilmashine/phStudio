@@ -18,7 +18,7 @@ import { ToastProvider } from './components/Toast';
 import AdminCalendarPage from './pages/AdminCalendarPage';
 import UserManagement from './components/UserManagement';
 import CookieConsentBanner from './components/CookieConsentBanner';
-import AdminDashboard from './pages/AdminDashboard';
+import { EnhancedAdminDashboard } from './components/enhanced';
 import { DarkModeProvider } from './contexts/DarkModeContext';
 
 const Dashboard = () => (
@@ -63,15 +63,15 @@ function App() {
                     </ProtectedRoute>
                   }
                 >
-                  <Route index element={<AdminDashboard />} />
-                  <Route path="dashboard" element={<AdminDashboard />} />
+                  <Route index element={<EnhancedAdminDashboard />} />
+                  <Route path="dashboard" element={<EnhancedAdminDashboard />} />
                   <Route path="settings" element={<StudioSettingsForm />} />
                   <Route path="gallery" element={<Gallery />} />
                   <Route path="news" element={<NewsAdmin />} />
                   <Route path="schedule" element={<div>Расписание (заглушка)</div>} />
                   <Route path="calendar" element={<AdminCalendarPage />} />
                   <Route path="users" element={<UserManagement />} />
-                  <Route path="*" element={<AdminDashboard />} />
+                  <Route path="*" element={<EnhancedAdminDashboard />} />
                 </Route>
                 <Route
                   path="/manager"

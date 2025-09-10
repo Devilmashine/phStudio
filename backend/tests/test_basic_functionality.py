@@ -3,7 +3,7 @@ from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 from app.models.base import Base
 from app.models.employee import Employee
-from app.models.booking import Booking
+from app.models.booking import BookingLegacy
 
 # Create in-memory SQLite database for testing
 @pytest.fixture
@@ -37,7 +37,7 @@ def test_employee_model_creation(db_session):
 def test_booking_model_creation(db_session):
     """Test creation of booking model"""
     from datetime import datetime
-    booking = Booking(
+    booking = BookingLegacy(
         client_name="Jane Smith",
         client_phone="+1234567890",
         phone_normalized="+1234567890",

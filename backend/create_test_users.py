@@ -16,7 +16,7 @@ sys.path.append(os.path.join(os.path.dirname(__file__)))
 
 from app.core.database import get_engine, get_session_local
 from app.models.user import User, UserRole
-from app.models.employee import Employee
+from app.models.employee_enhanced import Employee
 from app.models.booking import Booking
 from app.models.news import News
 from app.models.base import Base
@@ -116,28 +116,44 @@ def create_test_employees(db: Session):
     """Create one employee of each type for testing"""
     print("Creating test employees...")
     
+    # Common password for all test employees
+    test_password = "TestPass123!"
+    hashed_password = pwd_context.hash(test_password)
+    
     # Create employees with different roles
     employees_data = [
         {
+            "employee_id": "EMP001",
+            "username": "testowner",
             "full_name": "Test Owner",
             "position": "Owner",
             "email": "owner@company.com",
             "phone": "+1234567890",
-            "is_active": True
+            "password_hash": hashed_password,
+            "role": EmployeeRole.OWNER,
+            "status": "active"
         },
         {
+            "employee_id": "EMP002",
+            "username": "testadmin",
             "full_name": "Test Admin",
             "position": "System Administrator",
             "email": "admin@company.com",
             "phone": "+1234567891",
-            "is_active": True
+            "password_hash": hashed_password,
+            "role": EmployeeRole.ADMIN,
+            "status": "active"
         },
         {
+            "employee_id": "EMP003",
+            "username": "testmanager",
             "full_name": "Test Manager",
             "position": "Operations Manager",
             "email": "manager@company.com",
             "phone": "+1234567892",
-            "is_active": True
+            "password_hash": hashed_password,
+            "role": EmployeeRole.MANAGER,
+            "status": "active"
         }
     ]
     
@@ -155,7 +171,7 @@ def create_test_employees(db: Session):
     
     print(f"Created {len(created_employees)} test employees:")
     for employee in created_employees:
-        print(f"  - {employee.full_name} ({employee.position}) - Email: {employee.email}")
+        print(f"  - {employee.full_name} ({employee.position}) - Email: {employee.email} - Password: {test_password}")
     
     return created_employees
 

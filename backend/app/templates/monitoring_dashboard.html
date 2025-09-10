@@ -1,0 +1,357 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Photo Studio Monitoring Dashboard</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        .metric-card {
+            transition: all 0.3s ease;
+        }
+        .metric-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 25px rgba(0,0,0,0.1);
+        }
+        .status-indicator {
+            display: inline-block;
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            margin-right: 8px;
+        }
+        .status-healthy { background-color: #10B981; }
+        .status-degraded { background-color: #F59E0B; }
+        .status-unhealthy { background-color: #EF4444; }
+    </style>
+</head>
+<body class="bg-gray-100">
+    <div class="min-h-screen">
+        <!-- Header -->
+        <header class="bg-white shadow">
+            <div class="max-w-7xl mx-auto px-4 py-6 sm:px-6 lg:px-8">
+                <div class="flex justify-between items-center">
+                    <h1 class="text-3xl font-bold text-gray-900">Photo Studio Monitoring Dashboard</h1>
+                    <div class="flex items-center">
+                        <span id="last-updated" class="text-sm text-gray-500 mr-4"></span>
+                        <button id="refresh-btn" class="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded">
+                            Refresh
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </header>
+
+        <!-- Main Content -->
+        <main class="max-w-7xl mx-auto px-4 py-6 sm:px-6 lg:px-8">
+            <!-- Status Overview -->
+            <div class="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
+                <div class="metric-card bg-white rounded-lg shadow p-6">
+                    <div class="flex items-center">
+                        <div>
+                            <p class="text-sm font-medium text-gray-500">Application Status</p>
+                            <div class="mt-1 flex items-center">
+                                <span id="app-status-indicator" class="status-indicator status-healthy"></span>
+                                <span id="app-status" class="text-2xl font-semibold text-gray-900">Healthy</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="metric-card bg-white rounded-lg shadow p-6">
+                    <div class="flex items-center">
+                        <div>
+                            <p class="text-sm font-medium text-gray-500">Uptime</p>
+                            <p id="uptime" class="text-2xl font-semibold text-gray-900">0s</p>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="metric-card bg-white rounded-lg shadow p-6">
+                    <div class="flex items-center">
+                        <div>
+                            <p class="text-sm font-medium text-gray-500">Health Score</p>
+                            <p id="health-score" class="text-2xl font-semibold text-gray-900">100%</p>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="metric-card bg-white rounded-lg shadow p-6">
+                    <div class="flex items-center">
+                        <div>
+                            <p class="text-sm font-medium text-gray-500">Total Requests</p>
+                            <p id="total-requests" class="text-2xl font-semibold text-gray-900">0</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Charts Section -->
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
+                <!-- Request Volume Chart -->
+                <div class="bg-white rounded-lg shadow p-6">
+                    <h2 class="text-lg font-medium text-gray-900 mb-4">Request Volume</h2>
+                    <canvas id="requests-chart" height="300"></canvas>
+                </div>
+
+                <!-- Error Rate Chart -->
+                <div class="bg-white rounded-lg shadow p-6">
+                    <h2 class="text-lg font-medium text-gray-900 mb-4">Error Rate</h2>
+                    <canvas id="errors-chart" height="300"></canvas>
+                </div>
+            </div>
+
+            <!-- Endpoint Performance -->
+            <div class="bg-white rounded-lg shadow mb-8">
+                <div class="px-6 py-4 border-b border-gray-200">
+                    <h2 class="text-lg font-medium text-gray-900">Endpoint Performance</h2>
+                </div>
+                <div class="px-6 py-4">
+                    <div class="overflow-x-auto">
+                        <table class="min-w-full divide-y divide-gray-200">
+                            <thead class="bg-gray-50">
+                                <tr>
+                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Endpoint</th>
+                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Requests</th>
+                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Avg Duration (ms)</th>
+                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Error Rate</th>
+                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
+                                </tr>
+                            </thead>
+                            <tbody id="endpoints-table" class="bg-white divide-y divide-gray-200">
+                                <!-- Data will be populated by JavaScript -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <!-- System Metrics -->
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                <div class="metric-card bg-white rounded-lg shadow p-6">
+                    <h3 class="text-lg font-medium text-gray-900 mb-4">CPU Usage</h3>
+                    <div class="flex items-center">
+                        <div class="w-full bg-gray-200 rounded-full h-4">
+                            <div id="cpu-bar" class="bg-blue-600 h-4 rounded-full" style="width: 0%"></div>
+                        </div>
+                        <span id="cpu-value" class="ml-4 text-lg font-semibold">0%</span>
+                    </div>
+                </div>
+
+                <div class="metric-card bg-white rounded-lg shadow p-6">
+                    <h3 class="text-lg font-medium text-gray-900 mb-4">Memory Usage</h3>
+                    <div class="flex items-center">
+                        <div class="w-full bg-gray-200 rounded-full h-4">
+                            <div id="memory-bar" class="bg-green-600 h-4 rounded-full" style="width: 0%"></div>
+                        </div>
+                        <span id="memory-value" class="ml-4 text-lg font-semibold">0 MB</span>
+                    </div>
+                </div>
+
+                <div class="metric-card bg-white rounded-lg shadow p-6">
+                    <h3 class="text-lg font-medium text-gray-900 mb-4">Cache Hit Rate</h3>
+                    <div class="flex items-center">
+                        <div class="w-full bg-gray-200 rounded-full h-4">
+                            <div id="cache-bar" class="bg-purple-600 h-4 rounded-full" style="width: 0%"></div>
+                        </div>
+                        <span id="cache-value" class="ml-4 text-lg font-semibold">0%</span>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <script>
+        // Global variables for charts
+        let requestsChart = null;
+        let errorsChart = null;
+
+        // Function to update dashboard data
+        async function updateDashboard() {
+            try {
+                // Update last updated time
+                document.getElementById('last-updated').textContent = 'Last updated: ' + new Date().toLocaleTimeString();
+                
+                // Fetch application health data
+                const healthResponse = await fetch('/api/monitoring/health/application');
+                const healthData = await healthResponse.json();
+                
+                // Update status indicators
+                document.getElementById('app-status').textContent = healthData.status.charAt(0).toUpperCase() + healthData.status.slice(1);
+                document.getElementById('uptime').textContent = formatUptime(healthData.uptime_seconds);
+                document.getElementById('health-score').textContent = healthData.health_score + '%';
+                document.getElementById('total-requests').textContent = healthData.metrics.total_requests;
+                
+                // Update status indicator color
+                const statusIndicator = document.getElementById('app-status-indicator');
+                statusIndicator.className = 'status-indicator';
+                if (healthData.status === 'healthy') {
+                    statusIndicator.classList.add('status-healthy');
+                } else if (healthData.status === 'degraded') {
+                    statusIndicator.classList.add('status-degraded');
+                } else {
+                    statusIndicator.classList.add('status-unhealthy');
+                }
+                
+                // Fetch metrics summary
+                const metricsResponse = await fetch('/api/monitoring/metrics/summary');
+                const metricsData = await metricsResponse.json();
+                
+                // Update system metrics if available
+                if (metricsData.system_metrics && !metricsData.system_metrics.error) {
+                    const cpuPercent = metricsData.system_metrics.cpu_percent || 0;
+                    const memoryBytes = metricsData.system_metrics.memory_rss || 0;
+                    const memoryMB = Math.round(memoryBytes / (1024 * 1024));
+                    
+                    document.getElementById('cpu-bar').style.width = cpuPercent + '%';
+                    document.getElementById('cpu-value').textContent = cpuPercent.toFixed(1) + '%';
+                    
+                    document.getElementById('memory-bar').style.width = Math.min(100, memoryMB / 100) + '%';
+                    document.getElementById('memory-value').textContent = memoryMB + ' MB';
+                }
+                
+                // Update endpoint performance table
+                updateEndpointTable(healthData.metrics.endpoint_stats);
+                
+                // Update charts
+                updateCharts(healthData.metrics.endpoint_stats);
+                
+            } catch (error) {
+                console.error('Error updating dashboard:', error);
+            }
+        }
+        
+        // Function to format uptime
+        function formatUptime(seconds) {
+            if (seconds < 60) {
+                return Math.round(seconds) + 's';
+            } else if (seconds < 3600) {
+                return Math.round(seconds / 60) + 'm';
+            } else if (seconds < 86400) {
+                return Math.round(seconds / 3600) + 'h';
+            } else {
+                return Math.round(seconds / 86400) + 'd';
+            }
+        }
+        
+        // Function to update endpoint performance table
+        function updateEndpointTable(endpointStats) {
+            const tableBody = document.getElementById('endpoints-table');
+            tableBody.innerHTML = '';
+            
+            for (const [endpoint, stats] of Object.entries(endpointStats)) {
+                const row = document.createElement('tr');
+                
+                // Determine status based on error rate
+                let statusClass = 'text-green-600';
+                let statusText = 'Healthy';
+                if (stats.error_rate > 0.05) {
+                    statusClass = 'text-red-600';
+                    statusText = 'Issues';
+                } else if (stats.error_rate > 0) {
+                    statusClass = 'text-yellow-600';
+                    statusText = 'Degraded';
+                }
+                
+                row.innerHTML = `
+                    <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">${endpoint}</td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">${stats.count}</td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">${(stats.average_duration * 1000).toFixed(2)}</td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">${(stats.error_rate * 100).toFixed(2)}%</td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm ${statusClass}">${statusText}</td>
+                `;
+                
+                tableBody.appendChild(row);
+            }
+        }
+        
+        // Function to update charts
+        function updateCharts(endpointStats) {
+            // Prepare data for charts
+            const endpoints = Object.keys(endpointStats);
+            const requestCounts = endpoints.map(endpoint => endpointStats[endpoint].count);
+            const errorRates = endpoints.map(endpoint => endpointStats[endpoint].error_rate * 100);
+            
+            // Destroy existing charts if they exist
+            if (requestsChart) {
+                requestsChart.destroy();
+            }
+            if (errorsChart) {
+                errorsChart.destroy();
+            }
+            
+            // Create requests chart
+            const requestsCtx = document.getElementById('requests-chart').getContext('2d');
+            requestsChart = new Chart(requestsCtx, {
+                type: 'bar',
+                data: {
+                    labels: endpoints,
+                    datasets: [{
+                        label: 'Requests',
+                        data: requestCounts,
+                        backgroundColor: 'rgba(59, 130, 246, 0.5)',
+                        borderColor: 'rgba(59, 130, 246, 1)',
+                        borderWidth: 1
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            title: {
+                                display: true,
+                                text: 'Number of Requests'
+                            }
+                        }
+                    }
+                }
+            });
+            
+            // Create errors chart
+            const errorsCtx = document.getElementById('errors-chart').getContext('2d');
+            errorsChart = new Chart(errorsCtx, {
+                type: 'line',
+                data: {
+                    labels: endpoints,
+                    datasets: [{
+                        label: 'Error Rate (%)',
+                        data: errorRates,
+                        borderColor: 'rgba(239, 68, 68, 1)',
+                        backgroundColor: 'rgba(239, 68, 68, 0.1)',
+                        fill: true,
+                        tension: 0.4
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            title: {
+                                display: true,
+                                text: 'Error Rate (%)'
+                            }
+                        }
+                    }
+                }
+            });
+        }
+        
+        // Initialize dashboard
+        document.addEventListener('DOMContentLoaded', function() {
+            // Set up refresh button
+            document.getElementById('refresh-btn').addEventListener('click', updateDashboard);
+            
+            // Initial update
+            updateDashboard();
+            
+            // Set up auto-refresh every 30 seconds
+            setInterval(updateDashboard, 30000);
+        });
+    </script>
+</body>
+</html>

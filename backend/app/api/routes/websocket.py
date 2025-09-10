@@ -1,4 +1,4 @@
-from fastapi import APIRouter, WebSocket, WebSocketDisconnect, Depends
+from fastapi import APIRouter, WebSocket, WebSocketDisconnect, Depends, HTTPException
 from sqlalchemy.orm import Session
 from typing import Dict, Any
 import asyncio
@@ -8,18 +8,82 @@ from ...core.database import get_db
 from ...core.websocket_manager import ws_manager
 from ...deps import get_current_employee
 from ...models.employee_enhanced import Employee
+from fastapi.security import OAuth2PasswordBearer
+from jose import JWTError, jwt
+from ...core.config import get_settings
 
 logger = logging.getLogger(__name__)
 
 router = APIRouter(prefix="/ws", tags=["websocket"])
 
+# OAuth2 scheme for JWT token authentication
+oauth2_scheme = OAuth2PasswordBearer(tokenUrl="token")
+
+async def get_employee_from_websocket(websocket: WebSocket, db: Session):
+    """Extract and validate employee from WebSocket connection"""
+    # Get token from query parameters or headers
+    token = websocket.query_params.get("token")
+    if not token:
+        # Try to get token from Authorization header
+        auth_header = websocket.headers.get("authorization")
+        if auth_header and auth_header.startswith("Bearer "):
+            token = auth_header[7:]  # Remove "Bearer " prefix
+    
+    if not token:
+        raise HTTPException(
+            status_code=401,
+            detail="Authentication token required"
+        )
+    
+    credentials_exception = HTTPException(
+        status_code=401,
+        detail="Could not validate credentials",
+        headers={"WWW-Authenticate": "Bearer"},
+    )
+    
+    try:
+        settings = get_settings()
+        payload = jwt.decode(
+            token, settings.SECRET_KEY, algorithms=[settings.ALGORITHM]
+        )
+        username: str = payload.get("sub")
+        if username is None:
+            raise credentials_exception
+    except JWTError:
+        raise credentials_exception
+
+    # Import here to avoid circular imports
+    from ...repositories.employee_repository import EmployeeRepository
+    
+    # Get employee from repository
+    employee_repo = EmployeeRepository(db)
+    employee = employee_repo.get_by_username(username)
+    if employee is None:
+        raise credentials_exception
+    
+    # Check if employee is active
+    if employee.status.value != "active":
+        raise HTTPException(
+            status_code=403,
+            detail="Employee account is not active"
+        )
+    
+    return employee
+
 @router.websocket("/kanban")
 async def kanban_websocket(
     websocket: WebSocket,
-    db: Session = Depends(get_db),
-    employee: Employee = Depends(get_current_employee)
+    db: Session = Depends(get_db)
 ):
     """WebSocket endpoint for kanban board updates"""
+    try:
+        # Authenticate employee
+        employee = await get_employee_from_websocket(websocket, db)
+    except HTTPException as e:
+        # Close connection with error code
+        await websocket.close(code=4001, reason=e.detail)
+        return
+    
     # Accept the WebSocket connection
     await websocket.accept()
     
@@ -114,10 +178,17 @@ async def kanban_websocket(
 @router.websocket("/notifications")
 async def notifications_websocket(
     websocket: WebSocket,
-    db: Session = Depends(get_db),
-    employee: Employee = Depends(get_current_employee)
+    db: Session = Depends(get_db)
 ):
     """WebSocket endpoint for general notifications"""
+    try:
+        # Authenticate employee
+        employee = await get_employee_from_websocket(websocket, db)
+    except HTTPException as e:
+        # Close connection with error code
+        await websocket.close(code=4001, reason=e.detail)
+        return
+    
     # Accept the WebSocket connection
     await websocket.accept()
     

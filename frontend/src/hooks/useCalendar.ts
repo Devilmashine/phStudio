@@ -1,5 +1,4 @@
 import { useState, useCallback, useMemo } from 'react';
-import { useState, useCallback, useMemo } from 'react';
 import { format, startOfMonth, endOfMonth, eachDayOfInterval } from 'date-fns';
 import { fetchMonthAvailability, fetchDayDetails, MonthAvailabilityResponse, DayDetailResponse } from '../services/calendar/api';
 import { AvailabilityState, DayAvailability, BookingSlot } from '../types/index';
@@ -118,17 +117,16 @@ export function useCalendar() {
   const fetchDayAvailability = useCallback(async (date: Date): Promise<DayAvailability | null> => {
     const dateStr = format(date, 'yyyy-MM-dd');
     
-    // TEMPORARILY DISABLE CACHE FOR DEBUGGING
     // Check cache first (1 minute TTL for day details)
-    // const cached = dayDetailsCache[dateStr];
-    // const now = Date.now();
-    // if (cached && (now - cached.loadedAt) < 60 * 1000) {
-    //   console.log(`Using cached day details for ${dateStr}`);
-    //   return convertDayDetailsToAvailability(cached.data);
-    // }
+    const cached = dayDetailsCache[dateStr];
+    const now = Date.now();
+    if (cached && (now - cached.loadedAt) < 60 * 1000) {
+      console.log(`Using cached day details for ${dateStr}`);
+      return convertDayDetailsToAvailability(cached.data);
+    }
 
     try {
-      console.log(`🔴 [useCalendar] FORCE Loading day details for ${dateStr} (cache disabled)`);
+      console.log(`Loading day details for ${dateStr}`);
       const dayDetails = await fetchDayDetails(dateStr);
       
       // Cache the day details

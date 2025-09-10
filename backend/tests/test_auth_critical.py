@@ -1,8 +1,3 @@
-"""
-Critical authentication flow tests - 100% coverage required.
-Tests all authentication scenarios, security edge cases, and token handling.
-"""
-
 import pytest
 from unittest.mock import Mock, patch, MagicMock
 from datetime import datetime, timezone, timedelta
@@ -16,11 +11,9 @@ from app.api.routes.auth import (
     get_client_ip,
     login,
     refresh_token,
-    logout,
-    get_current_user,
-    get_current_admin,
-    get_current_manager
+    logout
 )
+from app.deps import get_current_user, get_current_admin, get_current_manager
 from app.models.user import User, UserRole
 from app.core.config import get_settings
 
@@ -55,7 +48,8 @@ def mock_admin_user():
     user.id = 1
     user.username = "admin"
     user.email = "admin@example.com"
-    user.role = UserRole.admin
+    user.role = Mock()
+    user.role.name = "admin"
     return user
 
 
@@ -184,6 +178,8 @@ class TestLoginEndpoint:
         mock_service_instance = Mock()
         mock_user_service.return_value = mock_service_instance
         mock_service_instance.authenticate_user.return_value = mock_user
+        # Mock the check_account_lockout method to return proper values
+        mock_service_instance.check_account_lockout.return_value = (False, None, 5)
         mock_db = Mock()
         
         form_data = Mock(spec=OAuth2PasswordRequestForm)
@@ -197,8 +193,8 @@ class TestLoginEndpoint:
         assert "access_token" in response.body.decode()
         assert "token_type" in response.body.decode()
         
-        # Verify logging was called
-        mock_log_action.assert_called_once_with("testuser", "LOGIN", "ip=192.168.1.1")
+        # Verify logging was called with correct parameters
+        mock_log_action.assert_called_once_with("testuser", "LOGIN_SUCCESS", "ip=192.168.1.1,role=user")
         
     @pytest.mark.asyncio
     @patch('app.api.routes.auth.UserService')
@@ -208,6 +204,8 @@ class TestLoginEndpoint:
         mock_service_instance = Mock()
         mock_user_service.return_value = mock_service_instance
         mock_service_instance.authenticate_user.return_value = None
+        # Mock the check_account_lockout method to return proper values
+        mock_service_instance.check_account_lockout.return_value = (False, None, 3)
         mock_db = Mock()
         
         form_data = Mock(spec=OAuth2PasswordRequestForm)
@@ -220,6 +218,8 @@ class TestLoginEndpoint:
         
         assert exc_info.value.status_code == 401
         assert "Неверное имя пользователя или пароль" in str(exc_info.value.detail)
+        # Check that the header contains the remaining attempts
+        assert "X-Remaining-Attempts" in exc_info.value.headers
 
 
 class TestRefreshTokenEndpoint:
@@ -249,6 +249,9 @@ class TestRefreshTokenEndpoint:
             "exp": datetime.now(timezone.utc) + timedelta(hours=24)
         }
         valid_refresh_token = jwt.encode(refresh_token_data, mock_settings.SECRET_KEY, algorithm=mock_settings.ALGORITHM)
+        
+        # Mock the request cookie
+        mock_request.cookies = {"refresh_token": valid_refresh_token}
         
         # Execute refresh
         result = await refresh_token(mock_request, mock_response, valid_refresh_token, mock_db)
@@ -300,8 +303,8 @@ class TestCurrentUserAuthentication:
     """Test current user authentication - CRITICAL for protected routes"""
     
     @pytest.mark.asyncio
-    @patch('app.api.routes.auth.UserService')
-    @patch('app.api.routes.auth.get_settings')
+    @patch('app.deps.UserService')
+    @patch('app.deps.get_settings')
     async def test_get_current_user_success(self, mock_get_settings, mock_user_service, mock_user, mock_settings):
         """CRITICAL: Test successful current user retrieval"""
         mock_get_settings.return_value = mock_settings
@@ -318,7 +321,9 @@ class TestCurrentUserAuthentication:
         }
         valid_token = jwt.encode(token_data, mock_settings.SECRET_KEY, algorithm=mock_settings.ALGORITHM)
         
-        user = await get_current_user(valid_token, mock_db)
+        # Patch the oauth2_scheme dependency
+        with patch('app.deps.oauth2_scheme', return_value=valid_token):
+            user = await get_current_user(valid_token, mock_db)
         
         assert user == mock_user
         mock_service_instance.get_user_by_username.assert_called_once_with("testuser")
@@ -368,6 +373,8 @@ class TestRoleBasedAccess:
     @pytest.mark.asyncio
     async def test_get_current_admin_success(self, mock_admin_user):
         """CRITICAL: Test admin access control success"""
+        # Set the role correctly for comparison
+        mock_admin_user.role = UserRole.admin
         result = await get_current_admin(mock_admin_user)
         assert result == mock_admin_user
         
@@ -385,6 +392,7 @@ class TestRoleBasedAccess:
     @pytest.mark.asyncio
     async def test_get_current_manager_admin_access(self, mock_admin_user):
         """CRITICAL: Test manager endpoint allows admin access"""
+        mock_admin_user.role = UserRole.admin
         result = await get_current_manager(mock_admin_user)
         assert result == mock_admin_user
         
@@ -496,10 +504,4 @@ class TestConcurrentAuthentication:
         """CRITICAL: Test multiple concurrent refresh token attempts"""
         # This would test race conditions in token refresh
         # Implementation would depend on actual concurrency requirements
-        pass
-        
-    @pytest.mark.asyncio
-    async def test_session_invalidation_security(self):
-        """CRITICAL: Test that invalidated sessions cannot be reused"""
-        # This would test session invalidation mechanisms
         pass

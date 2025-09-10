@@ -17,7 +17,7 @@ sys.path.append(os.path.join(os.path.dirname(__file__)))
 
 from app.core.database import get_engine, get_session_local
 from app.models.user import User, UserRole
-from app.models.employee import Employee
+from app.models.employee_enhanced import Employee, EmployeeRole
 from app.models.client import Client
 from app.models.booking import Booking, BookingStatus
 from app.models.news import News
@@ -102,54 +102,82 @@ def create_test_employees(db: Session):
     """Create test employees"""
     print("Creating test employees...")
     
+    # Common password for all test employees
+    test_password = "TestPass123!"
+    hashed_password = pwd_context.hash(test_password)
+    
     # Create employees with different positions
     employees_data = [
         {
+            "employee_id": "EMP001",
+            "username": "alex.johnson",
             "full_name": "Alex Johnson",
             "position": "Owner",
             "email": "alex.johnson@company.com",
             "phone": "+1234567890",
-            "is_active": True,
+            "password_hash": hashed_password,
+            "role": EmployeeRole.OWNER,
+            "status": "active",
             "hire_date": datetime.now(timezone.utc).date() - timedelta(days=365)
         },
         {
+            "employee_id": "EMP002",
+            "username": "maria.garcia",
             "full_name": "Maria Garcia",
             "position": "System Administrator",
             "email": "maria.garcia@company.com",
             "phone": "+1234567891",
-            "is_active": True,
+            "password_hash": hashed_password,
+            "role": EmployeeRole.ADMIN,
+            "status": "active",
             "hire_date": datetime.now(timezone.utc).date() - timedelta(days=180)
         },
         {
+            "employee_id": "EMP003",
+            "username": "james.wilson",
             "full_name": "James Wilson",
             "position": "Operations Manager",
             "email": "james.wilson@company.com",
             "phone": "+1234567892",
-            "is_active": True,
+            "password_hash": hashed_password,
+            "role": EmployeeRole.MANAGER,
+            "status": "active",
             "hire_date": datetime.now(timezone.utc).date() - timedelta(days=90)
         },
         {
+            "employee_id": "EMP004",
+            "username": "sarah.davis",
             "full_name": "Sarah Davis",
             "position": "Senior Photographer",
             "email": "sarah.davis@company.com",
             "phone": "+1234567893",
-            "is_active": True,
+            "password_hash": hashed_password,
+            "role": EmployeeRole.STAFF,
+            "status": "active",
             "hire_date": datetime.now(timezone.utc).date() - timedelta(days=60)
         },
         {
+            "employee_id": "EMP005",
+            "username": "robert.miller",
             "full_name": "Robert Miller",
             "position": "Photographer",
             "email": "robert.miller@company.com",
             "phone": "+1234567894",
-            "is_active": True,
+            "password_hash": hashed_password,
+            "role": EmployeeRole.STAFF,
+            "status": "active",
             "hire_date": datetime.now(timezone.utc).date() - timedelta(days=45)
         },
         {
+            "employee_id": "EMP006",
+            "username": "emily.brown",
             "full_name": "Emily Brown",
             "position": "Assistant Photographer",
             "email": "emily.brown@company.com",
             "phone": "+1234567895",
-            "is_active": True,
+            "password_hash": hashed_password,
+            "role": EmployeeRole.STAFF,
+            "status": "active",
             "hire_date": datetime.now(timezone.utc).date() - timedelta(days=30)
         }
     ]
@@ -175,7 +203,7 @@ def create_test_employees(db: Session):
     
     print(f"Created/verified {len(created_employees)} test employees:")
     for employee in created_employees:
-        print(f"  - {employee.full_name} ({employee.position}) - Email: {employee.email}")
+        print(f"  - {employee.full_name} ({employee.position}) - Email: {employee.email} - Password: {test_password}")
     
     return created_employees
 

@@ -3,7 +3,7 @@ from datetime import datetime, timedelta, timezone
 from fastapi import HTTPException
 import time_machine
 
-from ..app.models.booking import Booking as BookingModel, BookingStatus
+from ..app.models.booking import BookingLegacy as BookingModel, BookingStatus
 from ..app.services.booking import BookingService
 from ..app.schemas.booking import BookingCreate
 
@@ -20,7 +20,8 @@ def test_create_booking_in_past_fails(booking_service, studio_settings, travel_t
         start_time=past_time,
         end_time=past_time + timedelta(hours=1),
         date=past_time.date(),
-        client_name="Test", client_phone="123", total_price=1000
+        client_name="Test", client_phone="123", total_price=1000,
+        people_count=1
     )
     with pytest.raises(HTTPException) as excinfo:
         booking_service.create_booking(booking_data)
@@ -38,7 +39,8 @@ def test_create_booking_overlapping_fails(booking_service, studio_settings, trav
         end_time=start_time + timedelta(hours=2),
         date=start_time.date(),
         status=BookingStatus.CONFIRMED,
-        client_name="Old Client", client_phone="000", total_price=2000
+        client_name="Old Client", client_phone="000", total_price=2000,
+        people_count=1
     )
     booking_service.db.add(existing_booking)
     booking_service.db.commit()
@@ -47,7 +49,8 @@ def test_create_booking_overlapping_fails(booking_service, studio_settings, trav
         start_time=start_time + timedelta(hours=1),
         end_time=start_time + timedelta(hours=3),
         date=start_time.date(),
-        client_name="New Client", client_phone="111", total_price=2000
+        client_name="New Client", client_phone="111", total_price=2000,
+        people_count=1
     )
     with pytest.raises(HTTPException) as excinfo:
         booking_service.create_booking(overlapping_data)
@@ -66,7 +69,8 @@ def test_create_booking_on_weekend_fails(booking_service, studio_settings, trave
         start_time=start_time,
         end_time=start_time + timedelta(hours=1),
         date=start_time.date(),
-        client_name="Test", client_phone="123", total_price=1000
+        client_name="Test", client_phone="123", total_price=1000,
+        people_count=1
     )
     with pytest.raises(HTTPException) as excinfo:
         booking_service.create_booking(booking_data)
@@ -85,7 +89,8 @@ def test_create_booking_on_holiday_fails(booking_service, studio_settings, trave
         start_time=future_holiday,
         end_time=future_holiday + timedelta(hours=1),
         date=future_holiday.date(),
-        client_name="Test", client_phone="123", total_price=1000
+        client_name="Test", client_phone="123", total_price=1000,
+        people_count=1
     )
     with pytest.raises(HTTPException) as excinfo:
         booking_service.create_booking(booking_data)
@@ -102,7 +107,8 @@ def test_create_booking_outside_working_hours_fails(booking_service, studio_sett
         start_time=start_time,
         end_time=start_time + timedelta(hours=1),
         date=start_time.date(),
-        client_name="Test", client_phone="123", total_price=1000
+        client_name="Test", client_phone="123", total_price=1000,
+        people_count=1
     )
     with pytest.raises(HTTPException) as excinfo:
         booking_service.create_booking(booking_data)
@@ -119,7 +125,8 @@ def test_create_valid_booking_succeeds(booking_service, studio_settings, travel_
         start_time=start_time,
         end_time=start_time + timedelta(hours=2),
         date=start_time.date(),
-        client_name="Valid Client", client_phone="777", total_price=2000
+        client_name="Valid Client", client_phone="777", total_price=2000,
+        people_count=1
     )
 
     new_booking = booking_service.create_booking(booking_data)

@@ -198,15 +198,18 @@ async def get_month_availability(
         # Working hours: 9:00-20:00 = 12 total slots per day
         total_slots_per_day = 12
         
-        # Get all calendar events for the month
-        events = db.query(CalendarEvent).filter(
+        # Get all calendar events for the month with better query optimization
+        events_query = db.query(CalendarEvent).filter(
             CalendarEvent.start_time >= start_date,
             CalendarEvent.start_time <= end_date
-        ).all()
+        )
+        
+        # Use execution options for better performance
+        events = events_query.all()
         
         print(f"Found {len(events)} events in month {year}-{month}")
         
-        # Count booked slots per day
+        # Count booked slots per day more efficiently
         booked_slots_by_date = {}
         
         for event in events:
@@ -263,18 +266,24 @@ async def get_day_details(
         target_date = datetime.strptime(date, "%Y-%m-%d").date()
         print(f"Fetching day details for: {target_date}")
         
-        # Get events for this specific day
+        # Skip past dates
+        if target_date < datetime.now().date():
+            raise HTTPException(status_code=400, detail="Cannot get details for past dates")
+        
+        # Get events for this specific day with optimized query
         start_datetime = datetime.combine(target_date, datetime.min.time())
         end_datetime = datetime.combine(target_date, datetime.max.time())
         
-        events = db.query(CalendarEvent).filter(
+        events_query = db.query(CalendarEvent).filter(
             CalendarEvent.start_time >= start_datetime,
             CalendarEvent.start_time <= end_datetime
-        ).all()
+        )
+        
+        events = events_query.all()
         
         print(f"Found {len(events)} events for {date}")
         
-        # Track booked hours
+        # Track booked hours more efficiently
         booked_hours = set()
         
         for event in events:

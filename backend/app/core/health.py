@@ -4,12 +4,13 @@ Database Health Check and Monitoring Utilities for PostgreSQL
 import logging
 import time
 from typing import Dict, Any, Optional
-from sqlalchemy import text, inspect
+from sqlalchemy import text
 from sqlalchemy.exc import SQLAlchemyError
+from sqlalchemy import inspect
 from datetime import datetime, timezone
 
-from ..core.database import get_engine, get_db
-from ..core.config import get_settings
+from .database import get_engine, get_db
+from .config import get_settings
 
 logger = logging.getLogger(__name__)
 
@@ -83,7 +84,6 @@ class DatabaseHealth:
                 "checked_in": pool.checkedin(),
                 "checked_out": pool.checkedout(),
                 "overflow": pool.overflow(),
-                "invalid": pool.invalid(),
                 "timestamp": datetime.now(timezone.utc).isoformat()
             }
         except Exception as e:
@@ -100,9 +100,14 @@ class DatabaseHealth:
             queries = [
                 # Basic SELECT performance
                 ("SELECT COUNT(*) FROM users", "users_count"),
-                ("SELECT COUNT(*) FROM bookings", "bookings_count"),
                 ("SELECT COUNT(*) FROM calendar_events", "events_count"),
             ]
+            
+            # Only check bookings table if it exists
+            inspector = inspect(self.engine)
+            tables = inspector.get_table_names()
+            if "bookings" in tables:
+                queries.append(("SELECT COUNT(*) FROM bookings", "bookings_count"))
             
             results = {}
             for query, name in queries:

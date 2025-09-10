@@ -5,7 +5,7 @@ from datetime import datetime
 import logging
 from ..models.booking_enhanced import Booking, BookingState
 from ..services.booking_domain_service import BookingDomainService
-from ..core.event_bus import EventBus, create_event
+from ..core.event_bus import EventBus
 from ..core.websocket_manager import ws_manager
 
 logger = logging.getLogger(__name__)
@@ -169,17 +169,17 @@ class KanbanEngine:
             return False
         
         # Create and publish event for real-time updates
-        event = create_event(
-            event_type="kanban_card_moved",
-            payload={
-                "card_id": card_id,
-                "from_column_id": current_column.id if current_column else None,
-                "to_column_id": to_column_id,
-                "employee_id": employee_id,
-                "timestamp": datetime.now().isoformat()
-            }
-        )
-        await self.event_bus.publish(event)
+        # event = create_event(
+        #     event_type="kanban_card_moved",
+        #     payload={
+        #         "card_id": card_id,
+        #         "from_column_id": current_column.id if current_column else None,
+        #         "to_column_id": to_column_id,
+        #         "employee_id": employee_id,
+        #         "timestamp": datetime.now().isoformat()
+        #     }
+        # )
+        # await self.event_bus.publish(event)
         
         # Broadcast update via WebSocket
         try:

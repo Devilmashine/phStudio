@@ -4,8 +4,18 @@ from sqlalchemy import engine_from_config
 from sqlalchemy import pool
 
 from alembic import context
-from backend.app.core.config import get_settings
-from backend.app.models import *  # Импортируем все модели
+import sys
+import os
+sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+
+from app.core.config import get_settings
+from app.models.base import Base
+from app.models.base_enhanced import BaseEnhanced
+
+# Import all models to register them with metadata
+from app.models.employee_enhanced import Employee
+from app.models.booking_enhanced import Booking
+from app.models.domain_event import DomainEvent
 
 settings = get_settings()
 
@@ -20,7 +30,8 @@ if config.config_file_name is not None:
 
 # add your model's MetaData object here
 # for 'autogenerate' support
-target_metadata = Base.metadata
+# Use BaseEnhanced metadata for new models
+target_metadata = BaseEnhanced.metadata
 
 def run_migrations_offline() -> None:
     """Run migrations in 'offline' mode."""

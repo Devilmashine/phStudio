@@ -42,7 +42,7 @@ async def get_public_recent_bookings(
     service = BookingService(db)
     # Get recent bookings ordered by creation date
     from sqlalchemy import desc
-    from app.models.booking import Booking as BookingModel
+    from app.models.booking import BookingLegacy as BookingModel
     
     recent_bookings = db.query(BookingModel).order_by(desc(BookingModel.created_at)).limit(limit).all()
     

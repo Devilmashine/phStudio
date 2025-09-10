@@ -8,7 +8,7 @@ from ...core.database import get_db
 from ...models.employee_enhanced import Employee, EmployeeRole
 from ...repositories.employee_repository import EmployeeRepository
 from ...services.security_service import SecurityService
-from ...core.event_bus import event_bus
+from ...core.event_bus import get_event_bus
 from ...core.validation import EmployeeValidator
 from ...core.errors import create_validation_error, create_not_found_error
 

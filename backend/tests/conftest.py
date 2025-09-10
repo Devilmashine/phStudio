@@ -70,7 +70,7 @@ def db_session(test_engine):
     """
     # Import all models here to ensure they are registered with the Base
     from ..app.models import (
-        Base, User, UserRole, Booking, BookingStatus, Client, 
+        Base, User, UserRole, BookingLegacy as Booking, BookingStatus, Client, 
         CalendarEvent, GalleryImage, News, StudioSettings
     )
     
@@ -152,7 +152,7 @@ def studio_settings(db_session):
         "holidays": json.dumps(["2025-01-01"]),
         "work_start_time": "10:00", "work_end_time": "20:00",
         "base_price_per_hour": "1000", "weekend_price_multiplier": "1.5",
-        "telegram_notifications_enabled": "1", "email_notifications_enabled": "1",
+        "telegram_notifications_enabled": True, "email_notifications_enabled": True,
         "min_booking_duration": "1", "max_booking_duration": "8", "advance_booking_days": "30"
     }
     settings = StudioSettings(**settings_data)

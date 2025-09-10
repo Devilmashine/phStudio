@@ -97,3 +97,42 @@ def get_moscow_date_range(date_str: str):
     utc_end = moscow_end.astimezone(timezone.utc)
     
     return utc_start, utc_end
+
+
+def get_user_timezone(user_timezone: Optional[str] = None) -> timezone:
+    """
+    Get user's timezone, defaulting to Moscow timezone.
+    
+    Args:
+        user_timezone: User's timezone string (e.g., 'Europe/Moscow')
+        
+    Returns:
+        timezone: User's timezone or Moscow timezone as default
+    """
+    if user_timezone:
+        try:
+            return pytz.timezone(user_timezone)
+        except pytz.UnknownTimeZoneError:
+            # Fall back to Moscow timezone on error
+            pass
+    return MOSCOW_TZ
+
+
+def convert_to_user_timezone(dt: datetime, user_timezone: Optional[str] = None) -> datetime:
+    """
+    Convert datetime to user's timezone.
+    
+    Args:
+        dt: Datetime to convert
+        user_timezone: User's timezone string
+        
+    Returns:
+        datetime: Datetime in user's timezone
+    """
+    user_tz = get_user_timezone(user_timezone)
+    
+    if dt.tzinfo is None:
+        # Assume naive datetime is in UTC
+        dt = dt.replace(tzinfo=timezone.utc)
+    
+    return dt.astimezone(user_tz)

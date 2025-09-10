@@ -7,7 +7,7 @@ import logging
 from ...core.database import get_db
 from ...services.kanban_service import KanbanEngine, KanbanColumn, KanbanCard
 from ...services.booking_domain_service import BookingDomainService
-from ...core.event_bus import event_bus
+from ...core.event_bus import get_event_bus
 from ...repositories.booking_repository import BookingRepository
 
 logger = logging.getLogger(__name__)

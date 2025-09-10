@@ -3,7 +3,7 @@ from sqlalchemy.orm import Session
 from typing import List, Dict, Any
 from datetime import datetime, timedelta
 from app.core.database import get_db
-from app.models.booking import Booking
+from app.models.booking_enhanced import Booking
 from app.utils.timezone import get_moscow_date_range, to_moscow_time
 from pydantic import BaseModel
 

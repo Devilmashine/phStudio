@@ -4,7 +4,7 @@ import { ENV } from '../config/env';
 const api = axios.create({
   baseURL: ENV.API_URL,
   withCredentials: true, // Important for httpOnly cookies
-  timeout: 10000, // 10 second timeout
+  timeout: 30000, // Increased to 30 second timeout to prevent ETIMEDOUT errors
   headers: {
     'Content-Type': 'application/json',
   },
