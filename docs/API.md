@@ -1,120 +1,122 @@
-# API Документация
+# REST API
 
-## Аутентификация и безопасность
+Корневой URL по умолчанию — `http://localhost:8000/api`.
 
-Все защищенные эндпоинты требуют JWT токен в заголовке:
-```http
-Authorization: Bearer <token>
-```
+## Аутентификация
 
-### Получение токена
+Большинство административных эндпоинтов требуют Bearer-token с ролью `admin` или `manager`.
+
+### POST `/auth/login`
 ```http
 POST /api/auth/login
 Content-Type: application/json
 
 {
-    "username": "admin@example.com",
-    "password": "password123"
+  "username": "admin@example.com",
+  "password": "password"
 }
 ```
 
-Ответ:
+Успешный ответ:
 ```json
 {
-    "access_token": "eyJ0...",
-    "token_type": "bearer"
+  "access_token": "<JWT>",
+  "token_type": "bearer"
 }
 ```
 
-## Календарь и бронирования
+Используйте токен в заголовке `Authorization: Bearer <JWT>`.
 
-### Получение событий календаря
-```http
-GET /api/calendar-events?start_date=2025-08-01&end_date=2025-08-31&status=available
-Authorization: Bearer <token>
-```
+## Бронирования
 
-### Создание бронирования
-```http
-POST /api/bookings
-Content-Type: application/json
+### GET `/bookings?skip=0&limit=100`
+Возвращает список бронирований (для сотрудников/админов).
 
+### GET `/bookings/{booking_id}`
+Возвращает бронирование по идентификатору. 404, если не найдено.
+
+### POST `/bookings/public/`
+Публичное создание бронирования без авторизации.
+
+Пример тела:
+```json
 {
-    "date": "2025-08-01",
-    "times": ["10:00", "11:00"],
-    "name": "Иван",
-    "phone": "79999999999",
-    "email": "ivan@example.com",
-    "total_price": 5000,
-    "people_count": 2,
-    "notes": "Нужен визажист"
-}
+  "date": "2025-09-29",
+  "start_time": "2025-09-29T19:00:00+03:00",
+  "end_time": "2025-09-29T21:00:00+03:00",
+  "total_price": 5000,
+  "client_name": "Иван",
+  "client_phone": "+79999999999",
   "people_count": 2
 }
 ```
 
-### Webhook для Telegram
-```
-POST /api/telegram/webhook
-```
+Ошибки:
+- `409 Conflict` — слот пересекается с существующим бронированием;
+- `400/422` — некорректные данные (датчики, people_count и т.д.).
 
-### Получить все бронирования (для сотрудников/админов)
-```
-GET /api/bookings
-```
+### PATCH `/bookings/{booking_id}/status`
+Изменение статуса бронирования (`pending`, `confirmed`, `cancelled`, `completed`). Требует авторизации сотрудника.
 
-### Получить одно бронирование по id
-```
-GET /api/bookings/{booking_id}
-```
+## Календарь
 
-### Получить всех клиентов (для сотрудников/админов)
-```
-GET /api/clients
-```
+### GET `/calendar/month-availability?year=2025&month=9`
+Возвращает агрегацию по дням месяца.
 
-### Получить одного клиента по id
-```
-GET /api/clients/{client_id}
-```
-
-### Создать клиента (опционально, если не через бронирование)
-```
-POST /api/clients
-```
-
-### Получить всех сотрудников/админов
-```
-GET /api/users
-```
-
-## StudioSettings (Настройки студии)
-
-### GET /api/settings/
-- Получить текущие настройки студии (требуется роль admin/manager)
-- Ответ: объект StudioSettings
-
-### POST /api/settings/
-- Создать настройки студии (только для admin, если не существует)
-- Тело запроса: StudioSettingsCreate
-- Ответ: объект StudioSettings
-
-### PUT /api/settings/
-- Обновить настройки студии (только для admin)
-- Тело запроса: StudioSettingsUpdate
-- Ответ: объект StudioSettings
-
-#### Пример объекта StudioSettings
+Ответ:
 ```json
 {
-  "id": 1,
+  "2025-09-29": {
+    "available_slots": 10,
+    "total_slots": 12,
+    "booked_slots": 2
+  }
+}
+```
+
+### GET `/calendar/day-details?date=2025-09-29`
+Возвращает список часовых интервалов и флаг `available`.
+
+## Calendar events
+
+Эндпоинты `calendar-events` предназначены для управляемого календаря (администратор).
+
+- `GET /calendar-events?start_date=2025-09-01&end_date=2025-09-30`
+- `POST /calendar-events/`
+- `PUT /calendar-events/{id}`
+- `DELETE /calendar-events/{id}`
+
+### Пример создания события
+```json
+{
+  "title": "Fashion-съёмка",
+  "description": "Съёмка lookbook",
+  "start_time": "2025-09-29T19:00:00+03:00",
+  "end_time": "2025-09-29T21:00:00+03:00",
+  "people_count": 6,
+  "status": "pending"
+}
+```
+
+## Telegram интеграция
+
+### POST `/telegram/webhook`
+Принимает сообщения от Telegram-бота. Тело соответствует документации Telegram. Ответ всегда `{ "status": "ok" }` при успешном приёме.
+
+## Studio settings
+
+- `GET /settings/` — получить текущие настройки (admin/manager).
+- `POST /settings/` — создать набор настроек, если отсутствует.
+- `PUT /settings/` — обновить параметры (рабочие дни, тарифы, уведомления).
+
+Пример ответа:
+```json
+{
   "work_days": ["mon", "tue", "wed", "thu", "fri"],
   "work_start_time": "09:00",
   "work_end_time": "20:00",
   "base_price_per_hour": 2500,
   "weekend_price_multiplier": 1.5,
-  "telegram_notifications_enabled": true,
-  "email_notifications_enabled": true,
   "holidays": ["2025-01-01"],
   "min_booking_duration": 1,
   "max_booking_duration": 8,
@@ -122,27 +124,27 @@ GET /api/users
 }
 ```
 
----
+## Коды ошибок
+- `400 Bad Request` — неверные данные;
+- `401 Unauthorized` / `403 Forbidden` — отсутствует токен или недостаточно прав;
+- `404 Not Found` — объект не найден;
+- `409 Conflict` — слот пересекается или занят;
+- `422 Unprocessable Entity` — не пройдена валидация Pydantic;
+- `500 Internal Server Error` — непредвиденная ошибка сервера.
 
-## Примечания
-- Личный кабинет для клиентов не реализуется, но все данные о клиентах и бронированиях доступны сотрудникам и администраторам через защищённые эндпоинты.
-- Для доступа к защищённым эндпоинтам требуется Bearer-токен с ролью admin/manager.
-- Все новые поля и сущности отражены в структуре БД и документации.
+## Инструменты ручного тестирования
 
-## Ошибки
-- 400 — Неверный формат данных
-- 409 — Слот уже занят
-- 422 — Отсутствует обязательное поле (например, people_count)
-- 500 — Внутренняя ошибка сервера
-
-## Аутентификация
-- Для защищённых эндпоинтов используйте Bearer-токен (роль содержится в access_token).
-
-## Примеры ручного тестирования
-- Используйте curl/Postman, обязательно people_count в payload.
-
-## Финальный статус (2025)
-
-- Все эндпоинты актуальны, структура данных синхронизирована между backend и frontend
-- Вся валидация (people_count, service и др.) реализована строго
-- Документация и примеры актуальны
+Используйте curl или Postman. Пример запроса:
+```bash
+curl -X POST http://localhost:8000/api/bookings/public/ \
+  -H "Content-Type: application/json" \
+  -d '{
+    "date": "2025-09-29",
+    "start_time": "2025-09-29T19:00:00+03:00",
+    "end_time": "2025-09-29T21:00:00+03:00",
+    "total_price": 5000,
+    "client_name": "Test",
+    "client_phone": "+79999999999",
+    "people_count": 2
+  }'
+```
