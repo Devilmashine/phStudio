@@ -19,7 +19,7 @@ logger = logging.getLogger(__name__)
 class StressTestRunner:
     """Run stress tests on the API"""
     
-    def __init__(self, base_url: str = "http://localhost:8000"):
+    def __init__(self, base_url: str = "http://localhost:8888"):
         self.base_url = base_url
         self.results = {
             "test_runs": [],
@@ -297,7 +297,7 @@ if __name__ == "__main__":
     import sys
     
     parser = argparse.ArgumentParser(description="Stress test the Photo Studio API")
-    parser.add_argument("--url", default="http://localhost:8000", help="Base URL of the API")
+    parser.add_argument("--url", default="http://localhost:8888", help="Base URL of the API")
     parser.add_argument("--scenario", choices=STRESS_TEST_SCENARIOS.keys(), 
                        default="basic_load", help="Test scenario to run")
     parser.add_argument("--endpoint", help="Specific endpoint to test")

@@ -5,23 +5,27 @@ from datetime import datetime, timezone
 
 from .base import Base
 
-
 class BookingStatus(enum.Enum):
     PENDING = "pending"
     CONFIRMED = "confirmed"
     CANCELLED = "cancelled"
     COMPLETED = "completed"
 
+    @classmethod
+    def from_db_value(cls, value):
+        """Convert database value to enum"""
+        if value is None:
+            return None
+        return cls(value)
+
+    def to_db_value(self):
+        """Convert enum to database value"""
+        return self.value
 
 class BookingLegacy(Base):
     __tablename__ = "bookings_legacy"
     __table_args__ = (
         Index("idx_bookings_date_range", "start_time", "end_time"),
-        Index("idx_bookings_status", "status"),
-        Index("idx_bookings_phone_normalized", "phone_normalized"),
-        Index("idx_bookings_client_phone", "client_phone"),
-        Index("idx_bookings_date", "date"),
-        Index("idx_bookings_created_at", "created_at"),
         {"extend_existing": True},
     )
 

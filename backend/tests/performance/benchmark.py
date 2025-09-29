@@ -246,17 +246,17 @@ BENCHMARK_SCENARIOS = {
         "benchmarks": [
             {
                 "name": "Health Check",
-                "url": "http://localhost:8000/api/health",
+                "url": "http://localhost:8888/api/health",
                 "method": "GET"
             },
             {
                 "name": "Bookings List",
-                "url": "http://localhost:8000/api/bookings/",
+                "url": "http://localhost:8888/api/bookings/",
                 "method": "GET"
             },
             {
                 "name": "Calendar View",
-                "url": "http://localhost:8000/api/calendar/",
+                "url": "http://localhost:8888/api/calendar/",
                 "method": "GET"
             }
         ]

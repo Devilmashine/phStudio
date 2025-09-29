@@ -77,7 +77,7 @@ global.fetch = jest.fn();
 describe('Booking Integration Tests', () => {
   beforeAll(() => {
     // Setup test environment
-    process.env.VITE_API_URL = 'http://localhost:8000';
+    process.env.VITE_API_URL = 'http://localhost:8888';
   });
 
   afterAll(() => {
@@ -103,7 +103,7 @@ describe('Booking Integration Tests', () => {
 
       expect(result).toEqual(mockAuthResponse);
       expect(fetch).toHaveBeenCalledWith(
-        'http://localhost:8000/api/v1/auth/login',
+        'http://localhost:8888/api/v1/auth/login',
         expect.objectContaining({
           method: 'POST',
           headers: expect.objectContaining({
@@ -162,7 +162,7 @@ describe('Booking Integration Tests', () => {
 
       expect(result).toEqual(mockBookingResponse);
       expect(fetch).toHaveBeenCalledWith(
-        'http://localhost:8000/api/v1/bookings',
+        'http://localhost:8888/api/v1/bookings',
         expect.objectContaining({
           method: 'POST',
           headers: expect.objectContaining({
@@ -183,7 +183,7 @@ describe('Booking Integration Tests', () => {
 
       expect(result).toEqual(mockBookingResponse);
       expect(fetch).toHaveBeenCalledWith(
-        'http://localhost:8000/api/v1/bookings/1',
+        'http://localhost:8888/api/v1/bookings/1',
         expect.objectContaining({
           method: 'GET',
         })
@@ -232,7 +232,7 @@ describe('Booking Integration Tests', () => {
 
       expect(result).toEqual(updatedBooking);
       expect(fetch).toHaveBeenCalledWith(
-        'http://localhost:8000/api/v1/bookings/1',
+        'http://localhost:8888/api/v1/bookings/1',
         expect.objectContaining({
           method: 'PUT',
           body: JSON.stringify({ client_name: 'Петр Иванов' }),
@@ -255,7 +255,7 @@ describe('Booking Integration Tests', () => {
 
       expect(result).toEqual(confirmedBooking);
       expect(fetch).toHaveBeenCalledWith(
-        'http://localhost:8000/api/v1/bookings/1/state',
+        'http://localhost:8888/api/v1/bookings/1/state',
         expect.objectContaining({
           method: 'POST',
           body: JSON.stringify({
@@ -278,7 +278,7 @@ describe('Booking Integration Tests', () => {
 
       expect(result).toEqual(cancelledBooking);
       expect(fetch).toHaveBeenCalledWith(
-        'http://localhost:8000/api/v1/bookings/1/cancel',
+        'http://localhost:8888/api/v1/bookings/1/cancel',
         expect.objectContaining({
           method: 'POST',
           body: JSON.stringify({ reason: 'Клиент отменил' }),
@@ -295,7 +295,7 @@ describe('Booking Integration Tests', () => {
       await enhancedBookingApi.deleteBooking(1);
 
       expect(fetch).toHaveBeenCalledWith(
-        'http://localhost:8000/api/v1/bookings/1',
+        'http://localhost:8888/api/v1/bookings/1',
         expect.objectContaining({
           method: 'DELETE',
         })
@@ -340,7 +340,7 @@ describe('Booking Integration Tests', () => {
 
       expect(result).toEqual(mockAnalytics);
       expect(fetch).toHaveBeenCalledWith(
-        'http://localhost:8000/api/v1/bookings/analytics/summary',
+        'http://localhost:8888/api/v1/bookings/analytics/summary',
         expect.objectContaining({
           method: 'GET',
         })

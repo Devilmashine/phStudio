@@ -26,7 +26,7 @@ def test_user_model_structure():
 @pytest.mark.models
 def test_booking_model_structure():
     """Тест структуры модели Booking."""
-    from ..app.models.booking import Booking, BookingStatus
+    from ..app.models.booking import BookingLegacy as Booking, BookingStatus
     
     # Проверяем, что модель имеет необходимые поля
     assert hasattr(Booking, 'id')

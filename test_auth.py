@@ -2,7 +2,7 @@ import requests
 import json
 
 # Authenticate and get token
-auth_url = "http://localhost:8000/api/auth/token"
+auth_url = "http://localhost:8888/api/auth/token"
 auth_data = {
     "username": "testadmin",
     "password": "SecurePass123!"
@@ -19,7 +19,7 @@ if response.status_code == 200:
     print(f"Access token: {access_token}")
     
     # Create a booking
-    booking_url = "http://localhost:8000/api/bookings/"
+    booking_url = "http://localhost:8888/api/bookings/"
     headers = {
         "Authorization": f"Bearer {access_token}",
         "Content-Type": "application/json"

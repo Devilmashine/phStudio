@@ -1,7 +1,7 @@
 from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy.orm import Session
 from typing import List, Dict, Any
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone, time
 from app.core.database import get_db
 from app.services.calendar_event import CalendarEventService
 from app.schemas.calendar_event import CalendarEventCreate, CalendarEventUpdate, CalendarEventResponse, MessageResponse, IcalTokenResponse
@@ -11,6 +11,8 @@ from fastapi.responses import Response, StreamingResponse
 from ics import Calendar, Event as IcsEvent
 from secrets import token_urlsafe
 from app.models.calendar_event import CalendarEvent
+from app.models.booking import BookingLegacy
+from app.utils.timezone import to_moscow_time, get_moscow_date_range
 from pydantic import BaseModel
 from sqlalchemy import func, text
 
@@ -186,12 +188,12 @@ async def get_month_availability(
     Returns: {"2025-08-26": {"available_slots": 8, "total_slots": 12, "booked_slots": 4}}
     """
     try:
-        # Calculate month date range
-        start_date = datetime(year, month, 1)
+        # Calculate month date range (use timezone-aware datetimes - UTC)
+        start_date = datetime(year, month, 1, tzinfo=timezone.utc)
         if month == 12:
-            end_date = datetime(year + 1, 1, 1) - timedelta(seconds=1)
+            end_date = (datetime(year + 1, 1, 1, tzinfo=timezone.utc) - timedelta(seconds=1))
         else:
-            end_date = datetime(year, month + 1, 1) - timedelta(seconds=1)
+            end_date = (datetime(year, month + 1, 1, tzinfo=timezone.utc) - timedelta(seconds=1))
         
         print(f"Fetching month availability: {start_date} to {end_date}")
         
@@ -271,29 +273,65 @@ async def get_day_details(
             raise HTTPException(status_code=400, detail="Cannot get details for past dates")
         
         # Get events for this specific day with optimized query
-        start_datetime = datetime.combine(target_date, datetime.min.time())
-        end_datetime = datetime.combine(target_date, datetime.max.time())
-        
+        window_start_utc, window_end_utc = get_moscow_date_range(date)
+
         events_query = db.query(CalendarEvent).filter(
-            CalendarEvent.start_time >= start_datetime,
-            CalendarEvent.start_time <= end_datetime
+            CalendarEvent.start_time < window_end_utc,
+            CalendarEvent.end_time > window_start_utc
         )
         
         events = events_query.all()
         
         print(f"Found {len(events)} events for {date}")
         
-        # Track booked hours more efficiently
+        # Track booked hours more efficiently (from calendar events and bookings)
         booked_hours = set()
-        
-        for event in events:
-            start_hour = event.start_time.hour
-            end_hour = event.end_time.hour if event.end_time.date() == target_date else 24
-            
-            # Mark all hours in the event as booked
-            for hour in range(start_hour, min(end_hour, 21)):
-                if 9 <= hour <= 20:  # Only working hours
+
+        def mark_interval(start_dt, end_dt):
+            if start_dt is None or end_dt is None:
+                return
+            start_local = to_moscow_time(start_dt)
+            end_local = to_moscow_time(end_dt)
+            if end_local <= start_local:
+                end_local = start_local + timedelta(hours=1)
+
+            for hour in range(9, 21):
+                slot_start_local = to_moscow_time(
+                    datetime.combine(target_date, time(hour))
+                )
+                slot_end_local = slot_start_local + timedelta(hours=1)
+                if slot_start_local < end_local and slot_end_local > start_local:
                     booked_hours.add(hour)
+
+        # Mark hours from calendar events
+        for event in events:
+            mark_interval(event.start_time, event.end_time)
+
+        # Also include bookings (bookings_legacy) so frontend sees booked slots
+        try:
+            print(f"\n=== Processing bookings for {target_date} ===")
+            print(f"Search window (UTC): {window_start_utc} to {window_end_utc}")
+            bookings = db.query(BookingLegacy).filter(
+                BookingLegacy.start_time < window_end_utc,
+                BookingLegacy.end_time > window_start_utc
+            ).all()
+            print(f"Found {len(bookings)} bookings overlapping window")
+            for idx, b in enumerate(bookings, 1):
+                print(f"\nBooking #{idx}:")
+                print(f"  ID: {b.id}")
+                print(f"  Raw start_time: {b.start_time} ({type(b.start_time).__name__})")
+                print(f"  Raw end_time: {b.end_time} ({type(b.end_time).__name__})")
+                print(f"  Status: {b.status}")
+            for b in bookings:
+                # Skip obviously cancelled or completed bookings (if status exists)
+                status = getattr(b, 'status', None)
+                if status and str(status).lower() in ('cancelled', 'completed'):
+                    print(f"  Skipping booking {b.id} due to status {status}")
+                    continue
+                mark_interval(b.start_time, b.end_time)
+        except Exception:
+            # If bookings table doesn't exist or query fails, ignore and continue with events only
+            pass
         
         # Generate slots for 9:00-20:00
         slots = []

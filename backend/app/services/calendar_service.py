@@ -2,7 +2,7 @@ from datetime import datetime, timedelta
 from sqlalchemy.orm import Session
 from sqlalchemy import and_, or_
 from ..models.calendar_event import CalendarEvent
-from ..models.booking import Booking
+from ..models.booking import BookingLegacy as Booking, BookingStatus
 from ..schemas.calendar_event import CalendarEventCreate, CalendarEventResponse
 from typing import List, Optional
 import pytz
@@ -21,11 +21,12 @@ class CalendarService:
     def _update_availability_cache(self, event: CalendarEvent):
         """Обновляет кэш доступности события"""
         # Проверяем связанные бронирования
+        active_statuses = [BookingStatus.CONFIRMED, BookingStatus.PENDING]
         bookings = (
             self.db.query(Booking)
             .filter(
                 Booking.calendar_event_id == event.id,
-                Booking.status.in_(["confirmed", "pending"]),
+                Booking.status.in_(active_statuses),
             )
             .all()
         )

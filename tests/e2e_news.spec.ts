@@ -12,7 +12,7 @@ const managerHeaders = {
   'X-User-Name': 'manager',
 };
 
-const apiUrl = 'http://localhost:8000/api/news/';
+const apiUrl = 'http://localhost:8888/api/news/';
 
 test.describe('Новости (e2e)', () => {
   let createdId: number;

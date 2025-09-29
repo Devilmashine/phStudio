@@ -1,10 +1,11 @@
 from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy.orm import Session
 from typing import List, Dict, Any
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone, time
 from app.core.database import get_db
-from app.models.booking_enhanced import Booking
-from app.utils.timezone import get_moscow_date_range, to_moscow_time
+from app.models.booking import BookingLegacy
+from app.models.booking import BookingStatus
+from app.utils.timezone import get_moscow_date_range, to_moscow_time, MOSCOW_TZ
 from pydantic import BaseModel
 
 # Response models for new bulk endpoints
@@ -34,64 +35,77 @@ async def get_month_availability(
     Returns: {"2025-08-26": {"available_slots": 8, "total_slots": 12, "booked_slots": 4}}
     """
     try:
-        # Calculate month date range
-        start_date = datetime(year, month, 1)
+        # Calculate month date range in Moscow timezone and convert to UTC
+        moscow_start = MOSCOW_TZ.localize(datetime(year, month, 1, 0, 0, 0))
         if month == 12:
-            end_date = datetime(year + 1, 1, 1) - timedelta(seconds=1)
+            moscow_end = MOSCOW_TZ.localize(datetime(year + 1, 1, 1, 0, 0, 0)) - timedelta(seconds=1)
         else:
-            end_date = datetime(year, month + 1, 1) - timedelta(seconds=1)
-        
-        print(f"Fetching month availability: {start_date} to {end_date}")
-        
-        # Working hours: 9:00-20:00 = 12 total slots per day
+            moscow_end = MOSCOW_TZ.localize(datetime(year, month + 1, 1, 0, 0, 0)) - timedelta(seconds=1)
+
+        month_start_utc = moscow_start.astimezone(timezone.utc)
+        month_end_utc = moscow_end.astimezone(timezone.utc)
+
+        print(f"Fetching month availability (UTC): {month_start_utc} to {month_end_utc}")
+
         total_slots_per_day = 12
-        
-        # Get all bookings for the month
-        bookings = db.query(Booking).filter(
-            Booking.start_time >= start_date,
-            Booking.start_time <= end_date
+        booked_hours_by_date: Dict[str, set[int]] = {}
+
+        # Fetch bookings overlapping the month window
+        bookings = db.query(BookingLegacy).filter(
+            BookingLegacy.start_time < month_end_utc,
+            BookingLegacy.end_time > month_start_utc
         ).all()
-        
+
         print(f"Found {len(bookings)} bookings in month {year}-{month}")
-        
-        # Count booked slots per day
-        booked_slots_by_date = {}
-        
+
+        def status_value(status) -> str:
+            if isinstance(status, BookingStatus):
+                return status.value
+            return str(status).lower() if status else ""
+
         for booking in bookings:
-            booking_date = booking.start_time.date()
-            date_str = booking_date.strftime('%Y-%m-%d')
-            
-            # Calculate duration in hours (minimum 1 hour)
-            duration_hours = max(1, int((booking.end_time - booking.start_time).total_seconds() / 3600))
-            
-            if date_str not in booked_slots_by_date:
-                booked_slots_by_date[date_str] = 0
-            
-            booked_slots_by_date[date_str] += duration_hours
-        
-        # Generate response for all days in month
+            if status_value(getattr(booking, "status", None)) in {"cancelled", "completed"}:
+                continue
+
+            start_local = to_moscow_time(booking.start_time)
+            end_local = to_moscow_time(booking.end_time)
+
+            if end_local <= start_local:
+                end_local = start_local + timedelta(hours=1)
+
+            current = start_local.replace(minute=0, second=0, microsecond=0)
+
+            while current < end_local:
+                if 9 <= current.hour <= 20:
+                    date_str = current.strftime('%Y-%m-%d')
+                    booked_hours = booked_hours_by_date.setdefault(date_str, set())
+                    booked_hours.add(current.hour)
+
+                current += timedelta(hours=1)
+
         result = {}
-        current_date = start_date.date()
-        end_date_only = end_date.date()
-        
+        current_date = moscow_start.date()
+        end_date_only = moscow_end.date()
+
+        today_moscow = to_moscow_time(datetime.now(timezone.utc)).date()
+
         while current_date <= end_date_only:
-            # Skip past dates
-            if current_date >= datetime.now().date():
+            if current_date >= today_moscow:
                 date_str = current_date.strftime('%Y-%m-%d')
-                booked_slots = min(booked_slots_by_date.get(date_str, 0), total_slots_per_day)
+                booked_slots = len(booked_hours_by_date.get(date_str, set()))
                 available_slots = max(0, total_slots_per_day - booked_slots)
-                
+
                 result[date_str] = {
                     "available_slots": available_slots,
                     "total_slots": total_slots_per_day,
                     "booked_slots": booked_slots
                 }
-            
+
             current_date += timedelta(days=1)
-        
+
         print(f"Returning availability for {len(result)} days")
         return result
-        
+
     except Exception as e:
         print(f"Error in get_month_availability: {str(e)}")
         raise HTTPException(status_code=500, detail=f"Internal server error: {str(e)}")
@@ -108,84 +122,62 @@ async def get_day_details(
     """
     try:
         print(f"Fetching day details for: {date}")
-        
-        # Get UTC date range for the Moscow date
-        utc_start, utc_end = get_moscow_date_range(date)
-        
-        # Query bookings using UTC range
-        bookings = db.query(Booking).filter(
-            Booking.start_time >= utc_start,
-            Booking.start_time <= utc_end
+
+        target_date = datetime.strptime(date, "%Y-%m-%d").date()
+        window_start_utc, window_end_utc = get_moscow_date_range(date)
+
+        bookings = db.query(BookingLegacy).filter(
+            BookingLegacy.start_time < window_end_utc,
+            BookingLegacy.end_time > window_start_utc
         ).all()
-        
-        print(f"Found {len(bookings)} bookings for {date} (UTC range: {utc_start} to {utc_end})")
-        
-        # Track booked time slots (9:00-10:00, 10:00-11:00, etc.)
-        booked_slots = set()
-        
+
+        print(f"Found {len(bookings)} bookings for {date} (UTC range: {window_start_utc} to {window_end_utc})")
+
+        booked_hours = set()
+
+        def status_value(status) -> str:
+            if isinstance(status, BookingStatus):
+                return status.value
+            return str(status).lower() if status else ""
+
+        def mark_interval(start_dt, end_dt):
+            if start_dt is None or end_dt is None:
+                return
+
+            start_local = to_moscow_time(start_dt)
+            end_local = to_moscow_time(end_dt)
+
+            if end_local <= start_local:
+                end_local = start_local + timedelta(hours=1)
+
+            for hour in range(9, 21):
+                slot_start_local = to_moscow_time(
+                    datetime.combine(target_date, time(hour))
+                )
+                slot_end_local = slot_start_local + timedelta(hours=1)
+
+                if slot_start_local < end_local and slot_end_local > start_local:
+                    booked_hours.add(hour)
+
         for booking in bookings:
-            # Convert to Moscow time for hour calculation
-            moscow_start = to_moscow_time(booking.start_time)
-            moscow_end = to_moscow_time(booking.end_time)
-            
-            print(f"Booking: Moscow {moscow_start} to {moscow_end}")
-            
-            # Calculate which time slots are occupied
-            # Time slots are 1-hour blocks from 9:00 to 20:00 (9:00-10:00, 10:00-11:00, etc.)
-            
-            # For each possible slot, check if booking overlaps with it
-            for hour in range(9, 20):  # Slots from 9:00 to 19:00 (covering 9:00-20:00 range)
-                slot_start_hour = hour
-                slot_end_hour = hour + 1
-                
-                # Create datetime objects for slot boundaries (using the same date as the booking)
-                # This ensures we're comparing slots on the correct day
-                slot_start = moscow_start.replace(
-                    year=moscow_start.year,
-                    month=moscow_start.month,
-                    day=moscow_start.day,
-                    hour=slot_start_hour,
-                    minute=0,
-                    second=0,
-                    microsecond=0
-                )
-                slot_end = moscow_start.replace(
-                    year=moscow_start.year,
-                    month=moscow_start.month,
-                    day=moscow_start.day,
-                    hour=slot_end_hour,
-                    minute=0,
-                    second=0,
-                    microsecond=0
-                )
-                
-                # Check for overlap: booking overlaps with slot if:
-                # booking_start < slot_end AND booking_end > slot_start
-                # This correctly handles the case where a booking ends exactly at a slot boundary
-                if moscow_start < slot_end and moscow_end > slot_start:
-                    time_slot = f"{hour:02d}:00"
-                    booked_slots.add(time_slot)
-                    print(f"Marking slot {time_slot} as booked due to overlap: booking {moscow_start} to {moscow_end} overlaps with slot {slot_start} to {slot_end}")
-                    print(f"  Overlap check: {moscow_start} < {slot_end} AND {moscow_end} > {slot_start}")
-                    print(f"  Result: {moscow_start < slot_end} AND {moscow_end > slot_start} = {moscow_start < slot_end and moscow_end > slot_start}")
-        
-        # Generate slots for 9:00-20:00
+            if status_value(getattr(booking, "status", None)) in {"cancelled", "completed"}:
+                continue
+            mark_interval(booking.start_time, booking.end_time)
+
         slots = []
-        for hour in range(9, 21):  # 9:00 to 20:00
+        for hour in range(9, 21):
             time_str = f"{hour:02d}:00"
-            available = time_str not in booked_slots
-            
             slots.append({
                 "time": time_str,
-                "available": available
+                "available": hour not in booked_hours
             })
-        
+
         result = {
             "date": date,
             "slots": slots
         }
-        
-        print(f"Returning {len(slots)} slots for {date}, booked slots: {sorted(booked_slots)}")
+
+        print(f"Returning {len(slots)} slots for {date}, booked hours: {sorted(booked_hours)}")
         return result
         
     except ValueError as e:
