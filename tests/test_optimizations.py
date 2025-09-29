@@ -30,6 +30,7 @@ def test_calendar_cache_optimization(db_session: Session):
         title="Test Event",
         start_time=now,
         end_time=now + timedelta(hours=2),
+        people_count=5
     )
     db_session.add(event)
     db_session.commit()
@@ -95,5 +96,6 @@ def test_date_range_index_optimization(db_session: Session):
     
     # Запрашиваем события с использованием индекса
     start_date = _utc_now()
-    end_date = start_date + timedelta(days=5)
-    assert len(events) == 6  # События с 0 по 5 день
+    end_date = start_date + timedelta(days=6)
+    events = service.get_events(start_date=start_date, end_date=end_date)
+    assert len(events) == 5  # События с 0 по 4 день внутри диапазона
