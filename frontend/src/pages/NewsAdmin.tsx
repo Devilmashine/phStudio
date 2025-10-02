@@ -1,11 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { fetchNews, NewsItem, createNews, updateNews, deleteNews } from '../services/newsService';
-
-const getAdminHeaders = () => ({
-  'X-User-Role': 'admin',
-  'X-User-Id': '1',
-  'X-User-Name': 'admin',
-});
+import { useToast } from '../components/Toast';
 
 const NewsAdmin: React.FC = () => {
   const [news, setNews] = useState<NewsItem[]>([]);
@@ -13,6 +8,7 @@ const NewsAdmin: React.FC = () => {
   const [error, setError] = useState<string | null>(null);
   const [form, setForm] = useState<{ title: string; content: string }>({ title: '', content: '' });
   const [editId, setEditId] = useState<number | null>(null);
+  const toast = useToast?.();
 
   const loadNews = async () => {
     setLoading(true);
@@ -32,17 +28,22 @@ const NewsAdmin: React.FC = () => {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    setError(null);
     try {
       if (editId) {
-        await updateNews(editId, form, getAdminHeaders());
+        await updateNews(editId, form);
+        toast?.show('Новость обновлена');
       } else {
-        await createNews({ ...form, published: 1 }, getAdminHeaders());
+        await createNews({ ...form, published: 1 });
+        toast?.show('Новость опубликована');
       }
       setForm({ title: '', content: '' });
       setEditId(null);
       await loadNews();
-    } catch {
-      setError('Ошибка сохранения');
+    } catch (err) {
+      console.error(err);
+      setError('Ошибка сохранения новости');
+      toast?.show('Ошибка сохранения');
     }
   };
 
@@ -52,11 +53,15 @@ const NewsAdmin: React.FC = () => {
   };
 
   const handleDelete = async (id: number) => {
+    setError(null);
     try {
-      await deleteNews(id, getAdminHeaders());
+      await deleteNews(id);
+      toast?.show('Новость удалена');
       await loadNews();
-    } catch {
-      setError('Ошибка удаления');
+    } catch (err) {
+      console.error(err);
+      setError('Ошибка удаления новости');
+      toast?.show('Ошибка удаления');
     }
   };
 

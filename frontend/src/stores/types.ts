@@ -11,7 +11,8 @@ export enum BookingState {
   IN_PROGRESS = "in_progress",
   COMPLETED = "completed",
   CANCELLED = "cancelled",
-  NO_SHOW = "no_show"
+  NO_SHOW = "no_show",
+  RESCHEDULED = "rescheduled"
 }
 
 export enum SpaceType {
@@ -314,6 +315,46 @@ export interface ApiError {
   code: string;
   details?: Record<string, any>;
   field_errors?: Record<string, string[]>;
+}
+
+// CRM Dashboard Types
+export interface CRMPipelineStage {
+  state: BookingState;
+  label: string;
+  count: number;
+  percentage: number;
+}
+
+export interface CRMEmployeePerformance {
+  employee_id: number;
+  full_name: string;
+  role: string;
+  completed_bookings: number;
+  active_bookings: number;
+  revenue_generated: number;
+}
+
+export interface CRMRevenuePoint {
+  date: string;
+  revenue: number;
+  booking_count: number;
+}
+
+export interface CRMDashboardOverview {
+  total_bookings: number;
+  active_bookings: number;
+  completed_today: number;
+  revenue_30_days: number;
+  avg_booking_value: number;
+  occupancy_rate: number;
+}
+
+export interface CRMDashboardResponse {
+  overview: CRMDashboardOverview;
+  pipeline: CRMPipelineStage[];
+  top_employees: CRMEmployeePerformance[];
+  revenue_trend: CRMRevenuePoint[];
+  generated_at: string;
 }
 
 // Event Types for Real-time Updates

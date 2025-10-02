@@ -3,22 +3,37 @@
  * Компонент для отображения графика бронирований
  */
 
-import React from 'react';
-import { EnhancedBooking, BookingState } from '../../../stores/types';
+import React, { useMemo } from 'react';
+import { EnhancedBooking, BookingState, CRMRevenuePoint } from '../../../stores/types';
 import LoadingSpinner from '../../common/LoadingSpinner';
 import { ChartBarIcon } from '@heroicons/react/24/outline';
 
 interface BookingChartProps {
   bookings: EnhancedBooking[];
   loading: boolean;
+  revenueTrend?: CRMRevenuePoint[];
 }
 
 export const BookingChart: React.FC<BookingChartProps> = ({
   bookings,
-  loading
+  loading,
+  revenueTrend
 }) => {
   // Generate chart data for the last 7 days
-  const generateChartData = () => {
+  const chartData = useMemo(() => {
+    if (revenueTrend && revenueTrend.length > 0) {
+      return revenueTrend.slice(-7).map(point => ({
+        date: point.date,
+        total: point.booking_count,
+        completed: point.booking_count, // Aggregated data already reflects completed revenue
+        label: new Date(point.date).toLocaleDateString('ru-RU', {
+          weekday: 'short',
+          day: '2-digit'
+        }),
+        revenue: point.revenue,
+      }));
+    }
+
     const last7Days = Array.from({ length: 7 }, (_, i) => {
       const date = new Date();
       date.setDate(date.getDate() - (6 - i));
@@ -34,16 +49,36 @@ export const BookingChart: React.FC<BookingChartProps> = ({
         date,
         total,
         completed,
+        revenue: dayBookings
+          .filter(b => b.state === BookingState.COMPLETED)
+          .reduce((sum, booking) => sum + booking.total_price, 0),
         label: new Date(date).toLocaleDateString('ru-RU', { 
           weekday: 'short', 
           day: '2-digit' 
         })
       };
     });
-  };
+  }, [bookings, revenueTrend]);
 
-  const chartData = generateChartData();
   const maxValue = Math.max(...chartData.map(d => d.total), 1);
+  const totalBookings = useMemo(
+    () => chartData.reduce((sum, d) => sum + d.total, 0),
+    [chartData]
+  );
+  const totalCompleted = useMemo(
+    () => chartData.reduce((sum, d) => sum + d.completed, 0),
+    [chartData]
+  );
+  const totalRevenue = useMemo(
+    () => chartData.reduce((sum, d) => sum + (d.revenue || 0), 0),
+    [chartData]
+  );
+  const completionPercent = Math.round(
+    (totalCompleted / Math.max(totalBookings, 1)) * 100
+  );
+  const summaryGridClass = revenueTrend && revenueTrend.length > 0
+    ? 'grid grid-cols-4 gap-4'
+    : 'grid grid-cols-3 gap-4';
 
   if (loading) {
     return (
@@ -143,10 +178,10 @@ export const BookingChart: React.FC<BookingChartProps> = ({
             </div>
 
             {/* Summary */}
-            <div className="grid grid-cols-3 gap-4 pt-4 border-t border-gray-200 dark:border-gray-700">
+            <div className={`${summaryGridClass} pt-4 border-t border-gray-200 dark:border-gray-700`}>
               <div className="text-center">
                 <div className="text-lg font-semibold text-gray-900 dark:text-white">
-                  {chartData.reduce((sum, d) => sum + d.total, 0)}
+                  {totalBookings}
                 </div>
                 <div className="text-sm text-gray-500 dark:text-gray-400">
                   Всего за неделю
@@ -154,7 +189,7 @@ export const BookingChart: React.FC<BookingChartProps> = ({
               </div>
               <div className="text-center">
                 <div className="text-lg font-semibold text-green-600 dark:text-green-400">
-                  {chartData.reduce((sum, d) => sum + d.completed, 0)}
+                  {totalCompleted}
                 </div>
                 <div className="text-sm text-gray-500 dark:text-gray-400">
                   Завершено
@@ -162,15 +197,22 @@ export const BookingChart: React.FC<BookingChartProps> = ({
               </div>
               <div className="text-center">
                 <div className="text-lg font-semibold text-indigo-600 dark:text-indigo-400">
-                  {Math.round(
-                    (chartData.reduce((sum, d) => sum + d.completed, 0) / 
-                     Math.max(chartData.reduce((sum, d) => sum + d.total, 0), 1)) * 100
-                  )}%
+                  {completionPercent}%
                 </div>
                 <div className="text-sm text-gray-500 dark:text-gray-400">
                   Процент завершения
                 </div>
               </div>
+              {revenueTrend && revenueTrend.length > 0 && (
+                <div className="text-center">
+                  <div className="text-lg font-semibold text-emerald-600 dark:text-emerald-400">
+                    {totalRevenue.toLocaleString('ru-RU')} ₽
+                  </div>
+                  <div className="text-sm text-gray-500 dark:text-gray-400">
+                    Выручка
+                  </div>
+                </div>
+              )}
             </div>
           </div>
         )}

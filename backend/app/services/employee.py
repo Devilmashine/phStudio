@@ -1,6 +1,11 @@
 from sqlalchemy.orm import Session
-from app.models.employee_enhanced import Employee
+from passlib.context import CryptContext
+from uuid import uuid4
+
+from app.models.employee_enhanced import Employee, EmployeeStatus
 from app.schemas.employee import EmployeeCreate, EmployeeUpdate
+
+pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto", bcrypt__rounds=12)
 
 class EmployeeService:
     @staticmethod
@@ -13,7 +18,13 @@ class EmployeeService:
 
     @staticmethod
     def create_employee(db: Session, employee: EmployeeCreate):
-        db_employee = Employee(**employee.dict())
+        data = employee.dict()
+        raw_password = data.pop("password")
+        data["password_hash"] = pwd_context.hash(raw_password)
+        data.setdefault("employee_id", f"EMP-{uuid4().hex[:6].upper()}")
+        data.setdefault("status", EmployeeStatus.ACTIVE)
+
+        db_employee = Employee(**data)
         db.add(db_employee)
         db.commit()
         db.refresh(db_employee)

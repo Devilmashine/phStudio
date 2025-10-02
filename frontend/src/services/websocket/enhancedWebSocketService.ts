@@ -11,6 +11,7 @@ import {
   BookingUpdatedEvent,
   BookingCancelledEvent
 } from '../../stores/types';
+import authService from '../authService';
 
 interface WebSocketConfig {
   url: string;
@@ -31,7 +32,7 @@ class EnhancedWebSocketService {
 
   constructor(config: Partial<WebSocketConfig> = {}) {
     this.config = {
-      url: config.url || this.getWebSocketUrl(),
+      url: config.url || '/api/v2/ws/kanban',
       reconnectInterval: config.reconnectInterval || 3000,
       maxReconnectAttempts: config.maxReconnectAttempts || 5,
       heartbeatInterval: config.heartbeatInterval || 30000,
@@ -40,10 +41,25 @@ class EnhancedWebSocketService {
     this.setupEventHandlers();
   }
 
-  private getWebSocketUrl(): string {
+  private getWebSocketUrl(): string | null {
+    const token = authService.getToken();
+    if (!token) {
+      return null;
+    }
+
+    const base = this.config.url || '/api/v2/ws/kanban';
+
+    if (base.startsWith('ws')) {
+      const separator = base.includes('?') ? '&' : '?';
+      return `${base}${separator}token=${encodeURIComponent(token)}`;
+    }
+
     const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
     const host = window.location.host;
-    return `${protocol}//${host}/api/v2/ws/kanban`;
+    const path = base.startsWith('/') ? base : `/${base}`;
+    const separator = path.includes('?') ? '&' : '?';
+
+    return `${protocol}//${host}${path}${separator}token=${encodeURIComponent(token)}`;
   }
 
   private setupEventHandlers(): void {
@@ -69,7 +85,14 @@ class EnhancedWebSocketService {
       this.isManualClose = false;
 
       try {
-        this.ws = new WebSocket(this.config.url);
+        const url = this.getWebSocketUrl();
+        if (!url) {
+          this.isConnecting = false;
+          reject(new Error('Authentication token is required for WebSocket connection'));
+          return;
+        }
+
+        this.ws = new WebSocket(url);
 
         this.ws.onopen = () => {
           console.log('WebSocket connected');

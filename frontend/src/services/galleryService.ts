@@ -1,3 +1,5 @@
+import api from './api';
+
 export interface GalleryImage {
   id: number;
   filename: string;
@@ -6,31 +8,22 @@ export interface GalleryImage {
   uploaded_at?: string;
 }
 
-const API_URL = '/gallery/';  // Removed /api prefix since it's already in the base URL
+const basePath = '/gallery';
 
 export async function fetchGallery(): Promise<GalleryImage[]> {
-  const res = await fetch(API_URL);
-  if (!res.ok) throw new Error('Ошибка загрузки галереи');
-  return res.json();
+  const { data } = await api.get<GalleryImage[]>(`${basePath}/`);
+  return data;
 }
 
-export async function uploadImage(file: File, description: string, headers: Record<string, string>): Promise<GalleryImage> {
+export async function uploadImage(file: File, description: string): Promise<GalleryImage> {
   const formData = new FormData();
   formData.append('file', file);
   formData.append('description', description);
-  const res = await fetch(API_URL + 'upload', {
-    method: 'POST',
-    headers,
-    body: formData,
-  });
-  if (!res.ok) throw new Error('Ошибка загрузки изображения');
-  return res.json();
+
+  const { data } = await api.post<GalleryImage>(`${basePath}/upload`, formData);
+  return data;
 }
 
-export async function deleteImage(id: number, headers: Record<string, string>): Promise<void> {
-  const res = await fetch(`${API_URL}${id}`, {
-    method: 'DELETE',
-    headers,
-  });
-  if (!res.ok) throw new Error('Ошибка удаления изображения');
+export async function deleteImage(id: number): Promise<void> {
+  await api.delete(`${basePath}/${id}`);
 }

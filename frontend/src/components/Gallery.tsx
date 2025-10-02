@@ -2,12 +2,6 @@ import React, { useEffect, useState, useRef } from 'react';
 import { fetchGallery, uploadImage, deleteImage, GalleryImage } from '../services/galleryService';
 import { useToast } from './Toast';
 
-const getAdminHeaders = () => ({
-  'X-User-Role': 'admin',
-  'X-User-Id': '1',
-  'X-User-Name': 'admin',
-});
-
 const Gallery: React.FC = () => {
   const [images, setImages] = useState<GalleryImage[]>([]);
   const [loading, setLoading] = useState(true);
@@ -36,8 +30,9 @@ const Gallery: React.FC = () => {
   const handleUpload = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!file) return;
+    setError(null);
     try {
-      await uploadImage(file, description, getAdminHeaders());
+      await uploadImage(file, description);
       setFile(null);
       setDescription('');
       if (fileInputRef.current) fileInputRef.current.value = '';
@@ -50,8 +45,9 @@ const Gallery: React.FC = () => {
   };
 
   const handleDelete = async (id: number) => {
+    setError(null);
     try {
-      await deleteImage(id, getAdminHeaders());
+      await deleteImage(id);
       toast?.show('Изображение удалено');
       await loadGallery();
     } catch {

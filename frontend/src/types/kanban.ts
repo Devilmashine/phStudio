@@ -18,5 +18,5 @@ export interface KanbanCard {
 
 export interface MoveCardRequest {
   to_column_id: string;
-  employee_id: number;
+  employee_id?: number;
 }

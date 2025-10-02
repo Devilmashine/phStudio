@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import axios from 'axios';
+import api from '../../services/api';
 
 const CalendarLinks: React.FC = () => {
   const [icalToken, setIcalToken] = useState<string | null>(null);
@@ -8,10 +8,34 @@ const CalendarLinks: React.FC = () => {
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    // Получить userId и ical_token из профиля пользователя (например, из localStorage или API)
-    const user = JSON.parse(localStorage.getItem('user') || '{}');
-    setUserId(user.id || null);
-    setIcalToken(user.ical_token || null);
+    const loadProfile = async () => {
+      const stored = sessionStorage.getItem('user') ?? localStorage.getItem('user');
+      if (stored) {
+        try {
+          const parsed = JSON.parse(stored);
+          if (parsed?.id) {
+            setUserId(parsed.id);
+            setIcalToken(parsed.ical_token || null);
+            return;
+          }
+        } catch {
+          // ignore JSON errors and fallback to API
+        }
+      }
+
+      try {
+        const { data } = await api.get('/auth/users/me');
+        setUserId(data.id);
+        setIcalToken(data.ical_token || null);
+        sessionStorage.setItem('user', JSON.stringify(data));
+        localStorage.setItem('user', JSON.stringify(data));
+      } catch (err) {
+        console.error(err);
+        setError('Не удалось загрузить профиль пользователя');
+      }
+    };
+
+    loadProfile();
   }, []);
 
   const handleResetToken = async () => {
@@ -19,11 +43,12 @@ const CalendarLinks: React.FC = () => {
     setLoading(true);
     setError(null);
     try {
-      const res = await axios.post(`/api/calendar-events/ical-token/reset/${userId}`);
-      setIcalToken(res.data.ical_token);
-      // Обновить localStorage
-      const user = JSON.parse(localStorage.getItem('user') || '{}');
-      user.ical_token = res.data.ical_token;
+      const { data } = await api.post(`/calendar-events/ical-token/reset/${userId}`);
+      setIcalToken(data.ical_token);
+      const stored = sessionStorage.getItem('user') ?? localStorage.getItem('user') ?? '{}';
+      const user = JSON.parse(stored);
+      user.ical_token = data.ical_token;
+      sessionStorage.setItem('user', JSON.stringify(user));
       localStorage.setItem('user', JSON.stringify(user));
     } catch (e: any) {
       setError(e?.response?.data?.detail || 'Ошибка при сбросе токена');

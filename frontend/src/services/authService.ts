@@ -9,14 +9,23 @@ interface DecodedToken {
   exp: number;
 }
 
-interface User {
+export interface UserProfile {
+  id: number;
   username: string;
+  email: string;
+  full_name?: string;
   role: 'admin' | 'manager' | 'user';
+  ical_token?: string | null;
 }
 
 // Secure token management without localStorage
-let currentUser: User | null = null;
+let currentUser: UserProfile | null = null;
 let accessToken: string | null = null;
+
+const storeUserProfile = (profile: UserProfile) => {
+  sessionStorage.setItem('user', JSON.stringify(profile));
+  localStorage.setItem('user', JSON.stringify(profile));
+};
 
 const login = async (username: string, password: string) => {
   const params = new URLSearchParams();
@@ -33,10 +42,21 @@ const login = async (username: string, password: string) => {
   if (response.data.access_token) {
     accessToken = response.data.access_token;
     const decoded = decodeJwt<DecodedToken>(accessToken);
-    currentUser = { username: decoded.sub, role: decoded.role };
-    
-    // Store only non-sensitive user info in sessionStorage (cleared on tab close)
-    sessionStorage.setItem('user', JSON.stringify(currentUser));
+    currentUser = {
+      id: -1,
+      username: decoded.sub,
+      email: '',
+      role: decoded.role,
+    } as UserProfile;
+
+    try {
+      const profileResponse = await api.get<UserProfile>(`${API_URL}/users/me`);
+      currentUser = profileResponse.data;
+      storeUserProfile(currentUser);
+    } catch (profileError) {
+      console.warn('Failed to load user profile after login:', profileError);
+      storeUserProfile(currentUser);
+    }
   }
   return response.data;
 };
@@ -48,6 +68,7 @@ const logout = async () => {
   
   // Clear sessionStorage
   sessionStorage.removeItem('user');
+  localStorage.removeItem('user');
   
   // Call logout endpoint to clear httpOnly cookie
   try {
@@ -57,11 +78,11 @@ const logout = async () => {
   }
 };
 
-const getCurrentUser = (): User | null => {
+const getCurrentUser = (): UserProfile | null => {
   if (currentUser) return currentUser;
   
-  // Try to restore from sessionStorage on page refresh
-  const userStr = sessionStorage.getItem('user');
+  // Try to restore from sessionStorage/localStorage on page refresh
+  const userStr = sessionStorage.getItem('user') ?? localStorage.getItem('user');
   if (userStr) {
     try {
       currentUser = JSON.parse(userStr);
@@ -87,8 +108,21 @@ const refreshToken = async (): Promise<boolean> => {
     if (response.data.access_token) {
       accessToken = response.data.access_token;
       const decoded = decodeJwt<DecodedToken>(accessToken);
-      currentUser = { username: decoded.sub, role: decoded.role };
-      sessionStorage.setItem('user', JSON.stringify(currentUser));
+      currentUser = {
+        id: -1,
+        username: decoded.sub,
+        email: '',
+        role: decoded.role,
+      } as UserProfile;
+
+      try {
+        const profileResponse = await api.get<UserProfile>(`${API_URL}/users/me`);
+        currentUser = profileResponse.data;
+      } catch (profileError) {
+        console.warn('Failed to refresh user profile:', profileError);
+      }
+
+      storeUserProfile(currentUser);
       return true;
     }
   } catch (error) {

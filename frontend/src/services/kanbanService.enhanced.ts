@@ -4,7 +4,7 @@
  */
 
 import { KanbanColumn, KanbanCard, MoveCardRequest } from '../types/kanban';
-import authService from './authService';
+import api from './api';
 
 export interface KanbanBoardData {
   columns: KanbanColumn[];
@@ -20,208 +20,127 @@ export interface KanbanFilters {
 }
 
 class KanbanService {
-  private baseUrl = '/api';
-  
-  private async makeRequest<T>(
-    endpoint: string,
-    options: RequestInit = {}
-  ): Promise<T> {
-    const token = authService.getToken();
-    
-    const response = await fetch(`${this.baseUrl}${endpoint}`, {
-      ...options,
-      headers: {
-        'Content-Type': 'application/json',
-        ...(token && { 'Authorization': `Bearer ${token}` }),
-        ...options.headers,
-      },
-    });
-    
-    if (!response.ok) {
-      const errorData = await response.json().catch(() => ({}));
-      throw new Error(errorData.message || `HTTP error! status: ${response.status}`);
+  private buildParams(filters?: KanbanFilters): Record<string, string> {
+    const params: Record<string, string> = {};
+    if (!filters) {
+      return params;
     }
-    
-    return response.json();
+
+    Object.entries(filters).forEach(([key, value]) => {
+      if (!value) return;
+
+      switch (key) {
+        case 'dateFrom':
+          params['date_from'] = value;
+          break;
+        case 'dateTo':
+          params['date_to'] = value;
+          break;
+        case 'clientName':
+          params['client_name'] = value;
+          break;
+        case 'spaceType':
+          params['space_type'] = value;
+          break;
+        default:
+          params[key] = value;
+      }
+    });
+    return params;
   }
-  
-  /**
-   * Get complete Kanban board data
-   */
+
   async getBoardData(filters?: KanbanFilters): Promise<KanbanBoardData> {
     try {
-      const queryParams = new URLSearchParams();
-      
-      if (filters) {
-        Object.entries(filters).forEach(([key, value]) => {
-          if (value) queryParams.append(key, value);
-        });
-      }
-      
-      const query = queryParams.toString();
-      const endpoint = `/kanban/board${query ? `?${query}` : ''}`;
-      
-      return await this.makeRequest<KanbanBoardData>(endpoint);
+      const { data } = await api.get<KanbanBoardData>('/kanban/board', {
+        params: this.buildParams(filters),
+      });
+      return data;
     } catch (error) {
       console.error('Failed to fetch Kanban board data:', error);
       throw new Error(`Unable to load board data: ${error instanceof Error ? error.message : 'Unknown error'}`);
     }
   }
-  
-  /**
-   * Get all Kanban columns
-   */
+
   async getColumns(): Promise<KanbanColumn[]> {
-    return this.makeRequest<KanbanColumn[]>('/kanban/columns');
+    const { data } = await api.get<KanbanColumn[]>('/kanban/columns');
+    return data;
   }
-  
-  /**
-   * Get cards for specific column
-   */
+
   async getColumnCards(columnId: string, filters?: KanbanFilters): Promise<KanbanCard[]> {
-    const queryParams = new URLSearchParams();
-    
-    if (filters) {
-      Object.entries(filters).forEach(([key, value]) => {
-        if (value) queryParams.append(key, value);
-      });
-    }
-    
-    const query = queryParams.toString();
-    const endpoint = `/kanban/columns/${columnId}/cards${query ? `?${query}` : ''}`;
-    
-    return this.makeRequest<KanbanCard[]>(endpoint);
+    const { data } = await api.get<KanbanCard[]>(`/kanban/columns/${columnId}/cards`, {
+      params: this.buildParams(filters),
+    });
+    return data;
   }
-  
-  /**
-   * Move a card to different column
-   */
+
   async moveCard(cardId: number, moveRequest: MoveCardRequest): Promise<KanbanCard> {
     try {
-      return await this.makeRequest<KanbanCard>(`/kanban/cards/${cardId}/move`, {
-        method: 'POST',
-        body: JSON.stringify(moveRequest),
-      });
+      const { data } = await api.post<KanbanCard>(`/kanban/cards/${cardId}/move`, moveRequest);
+      return data;
     } catch (error) {
       console.error(`Failed to move card ${cardId}:`, error);
       throw new Error(`Unable to move card: ${error instanceof Error ? error.message : 'Unknown error'}`);
     }
   }
-  
-  /**
-   * Get card details
-   */
+
   async getCard(cardId: number): Promise<KanbanCard> {
-    return this.makeRequest<KanbanCard>(`/kanban/cards/${cardId}`);
+    const { data } = await api.get<KanbanCard>(`/kanban/cards/${cardId}`);
+    return data;
   }
-  
-  /**
-   * Update card details
-   */
+
   async updateCard(cardId: number, updates: Partial<KanbanCard>): Promise<KanbanCard> {
-    return this.makeRequest<KanbanCard>(`/kanban/cards/${cardId}`, {
-      method: 'PATCH',
-      body: JSON.stringify(updates),
-    });
+    const { data } = await api.patch<KanbanCard>(`/kanban/cards/${cardId}`, updates);
+    return data;
   }
-  
-  /**
-   * Delete card (cancel booking)
-   */
+
   async deleteCard(cardId: number): Promise<void> {
-    return this.makeRequest<void>(`/kanban/cards/${cardId}`, {
-      method: 'DELETE',
-    });
+    await api.delete(`/kanban/cards/${cardId}`);
   }
-  
-  /**
-   * Batch move multiple cards
-   */
+
   async batchMoveCards(moves: Array<{ cardId: number; moveRequest: MoveCardRequest }>): Promise<KanbanCard[]> {
-    return this.makeRequest<KanbanCard[]>('/kanban/cards/batch-move', {
-      method: 'POST',
-      body: JSON.stringify({ moves }),
-    });
+    const { data } = await api.post<KanbanCard[]>('/kanban/cards/batch-move', { moves });
+    return data;
   }
-  
-  /**
-   * Create new column
-   */
+
   async createColumn(column: Omit<KanbanColumn, 'id'>): Promise<KanbanColumn> {
-    return this.makeRequest<KanbanColumn>('/kanban/columns', {
-      method: 'POST',
-      body: JSON.stringify(column),
-    });
+    const { data } = await api.post<KanbanColumn>('/kanban/columns', column);
+    return data;
   }
-  
-  /**
-   * Update column
-   */
+
   async updateColumn(columnId: string, updates: Partial<KanbanColumn>): Promise<KanbanColumn> {
-    return this.makeRequest<KanbanColumn>(`/kanban/columns/${columnId}`, {
-      method: 'PATCH',
-      body: JSON.stringify(updates),
-    });
+    const { data } = await api.patch<KanbanColumn>(`/kanban/columns/${columnId}`, updates);
+    return data;
   }
-  
-  /**
-   * Delete column
-   */
+
   async deleteColumn(columnId: string): Promise<void> {
-    return this.makeRequest<void>(`/kanban/columns/${columnId}`, {
-      method: 'DELETE',
-    });
+    await api.delete(`/kanban/columns/${columnId}`);
   }
-  
-  /**
-   * Reorder columns
-   */
+
   async reorderColumns(columnOrders: Array<{ id: string; order: number }>): Promise<KanbanColumn[]> {
-    return this.makeRequest<KanbanColumn[]>('/kanban/columns/reorder', {
-      method: 'POST',
-      body: JSON.stringify({ columnOrders }),
-    });
+    const { data } = await api.post<KanbanColumn[]>('/kanban/columns/reorder', { columnOrders });
+    return data;
   }
-  
-  /**
-   * Get Kanban board statistics
-   */
+
   async getBoardStats(dateFrom?: string, dateTo?: string): Promise<{
     totalCards: number;
     cardsByColumn: Record<string, number>;
     averageTimeInColumn: Record<string, number>;
     revenueByColumn: Record<string, number>;
   }> {
-    const queryParams = new URLSearchParams();
-    if (dateFrom) queryParams.append('dateFrom', dateFrom);
-    if (dateTo) queryParams.append('dateTo', dateTo);
-    
-    const query = queryParams.toString();
-    const endpoint = `/kanban/stats${query ? `?${query}` : ''}`;
-    
-    return this.makeRequest(endpoint);
+    const params: Record<string, string> = {};
+    if (dateFrom) params.dateFrom = dateFrom;
+    if (dateTo) params.dateTo = dateTo;
+    const { data } = await api.get('/kanban/stats', { params });
+    return data;
   }
-  
-  /**
-   * Search cards across all columns
-   */
+
   async searchCards(query: string, filters?: KanbanFilters): Promise<KanbanCard[]> {
-    try {
-      const queryParams = new URLSearchParams();
-      queryParams.append('q', query);
-      
-      if (filters) {
-        Object.entries(filters).forEach(([key, value]) => {
-          if (value) queryParams.append(key, value);
-        });
-      }
-      
-      const searchQuery = queryParams.toString();
-      return await this.makeRequest<KanbanCard[]>(`/kanban/search?${searchQuery}`);
-    } catch (error) {
-      console.error(`Failed to search cards with query "${query}":`, error);
-      throw new Error(`Search failed: ${error instanceof Error ? error.message : 'Unknown error'}`);
+    if (!query.trim()) {
+      return [];
     }
+
+    const board = await this.getBoardData({ ...filters, clientName: query });
+    return Object.values(board.cards || {}).flat();
   }
 }
 

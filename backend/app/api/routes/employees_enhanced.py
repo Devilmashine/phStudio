@@ -5,7 +5,10 @@ from pydantic import BaseModel
 import logging
 
 from ...core.database import get_db
-from ...models.employee_enhanced import Employee, EmployeeRole
+from uuid import uuid4
+from passlib.context import CryptContext
+
+from ...models.employee_enhanced import Employee, EmployeeRole, EmployeeStatus
 from ...repositories.employee_repository import EmployeeRepository
 from ...services.security_service import SecurityService
 from ...core.event_bus import get_event_bus
@@ -15,6 +18,8 @@ from ...core.errors import create_validation_error, create_not_found_error
 logger = logging.getLogger(__name__)
 
 router = APIRouter(prefix="/employees", tags=["employees"])
+
+password_context = CryptContext(schemes=["bcrypt"], deprecated="auto", bcrypt__rounds=12)
 
 # Pydantic models for API
 class EmployeeCreate(BaseModel):
@@ -105,17 +110,18 @@ async def create_employee(
     
     # Create employee
     try:
-        # In a real implementation, we would hash the password
-        # For now, we'll store it as-is (NOT recommended for production)
+        password_hash = password_context.hash(employee_data.password)
+        generated_employee_id = f"EMP-{uuid4().hex[:6].upper()}"
+
         employee = Employee(
             full_name=employee_data.full_name,
             username=employee_data.username,
             email=employee_data.email,
-            password_hash=employee_data.password,  # In real implementation, hash this!
             role=employee_data.role,
             phone=employee_data.phone,
             department=employee_data.department,
-            employee_id=f"EMP{employee_data.username.upper()}"  # Simple ID generation
+            employee_id=generated_employee_id,
+            status=EmployeeStatus.ACTIVE,
         )
         
         # Save to database

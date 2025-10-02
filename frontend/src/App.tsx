@@ -1,4 +1,5 @@
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
+import { UserCog } from 'lucide-react';
 import Navbar from './components/Navbar';
 import Hero from './components/Hero';
 import Studios from './components/Studios';
@@ -20,6 +21,7 @@ import UserManagement from './components/UserManagement';
 import CookieConsentBanner from './components/CookieConsentBanner';
 import { EnhancedAdminDashboard } from './components/enhanced';
 import { DarkModeProvider } from './contexts/DarkModeContext';
+import KanbanBoard from './components/KanbanBoard';
 
 const Dashboard = () => (
   <div>
@@ -47,9 +49,10 @@ function App() {
                       <div className="flex justify-center mt-8">
                         <a
                           href="/admin"
-                          className="text-indigo-600 hover:underline font-semibold border border-indigo-600 px-4 py-2 rounded-lg transition-colors"
+                          className="inline-flex items-center justify-center w-12 h-12 border border-indigo-600 rounded-full text-indigo-600 hover:bg-indigo-50 transition-colors"
+                          aria-label="Вход для сотрудников"
                         >
-                          Войти в админ-панель
+                          <UserCog className="h-6 w-6" />
                         </a>
                       </div>
                     </>
@@ -68,7 +71,7 @@ function App() {
                   <Route path="settings" element={<StudioSettingsForm />} />
                   <Route path="gallery" element={<Gallery />} />
                   <Route path="news" element={<NewsAdmin />} />
-                  <Route path="schedule" element={<div>Расписание (заглушка)</div>} />
+                  <Route path="schedule" element={<KanbanBoard />} />
                   <Route path="calendar" element={<AdminCalendarPage />} />
                   <Route path="users" element={<UserManagement />} />
                   <Route path="*" element={<EnhancedAdminDashboard />} />

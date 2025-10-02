@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import axios from 'axios';
+import api from '../../services/api';
 import LoadingSpinner from '../common/LoadingSpinner';
 
 interface CalendarEvent {
@@ -27,13 +27,11 @@ const CalendarEventsTable: React.FC = () => {
     setLoading(true);
     setError(null);
     try {
-      let url = '/api/calendar-events';
-      if (statusFilter !== 'all') {
-        url += `?status=${statusFilter}`;
-      }
-      const res = await axios.get(url);
-      setEvents(res.data);
-    } catch {
+      const params = statusFilter !== 'all' ? { status: statusFilter } : undefined;
+      const { data } = await api.get('/calendar-events', { params });
+      setEvents(data);
+    } catch (err) {
+      console.error(err);
       setError('Ошибка загрузки событий');
     } finally {
       setLoading(false);
@@ -51,12 +49,15 @@ const CalendarEventsTable: React.FC = () => {
     setError(null);
     try {
       if (action === 'delete') {
-        await axios.delete(`/api/calendar-events/${id}`);
+        await api.delete(`/calendar-events/${id}`);
       } else {
-        await axios.patch(`/api/calendar-events/${id}`, { status: action === 'confirm' ? 'confirmed' : 'cancelled' });
+        await api.patch(`/calendar-events/${id}`, {
+          status: action === 'confirm' ? 'confirmed' : 'cancelled',
+        });
       }
       fetchEvents();
-    } catch {
+    } catch (err) {
+      console.error(err);
       setError('Ошибка при выполнении действия');
     } finally {
       setLoading(false);

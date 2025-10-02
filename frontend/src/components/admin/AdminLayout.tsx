@@ -1,18 +1,19 @@
 import React, { useState, ReactNode } from 'react';
 import { NavLink, useNavigate } from 'react-router-dom';
-import { 
-  HomeIcon, 
-  CogIcon, 
-  PhotoIcon as PhotographIcon, 
-  NewspaperIcon, 
-  CalendarDaysIcon as CalendarIcon, 
-  UserGroupIcon, 
+import {
+  HomeIcon,
+  CogIcon,
+  PhotoIcon as PhotographIcon,
+  NewspaperIcon,
+  CalendarDaysIcon as CalendarIcon,
+  UserGroupIcon,
   ChartBarIcon,
   Bars3Icon as MenuIcon,
   XMarkIcon as XIcon,
   MoonIcon,
   SunIcon
 } from '@heroicons/react/24/outline';
+import { ShieldCheckIcon } from '@heroicons/react/24/solid';
 import { useDarkMode } from '../../contexts/DarkModeContext';
 
 interface AdminLayoutProps {
@@ -20,7 +21,7 @@ interface AdminLayoutProps {
 }
 
 const navigation = [
-  { name: 'Дашборд', href: 'dashboard', icon: HomeIcon },
+  { name: 'CRM-дэшборд', href: 'dashboard', icon: HomeIcon },
   { name: 'Настройки студии', href: 'settings', icon: CogIcon },
   { name: 'Галерея', href: 'gallery', icon: PhotographIcon },
   { name: 'Новости', href: 'news', icon: NewspaperIcon },
@@ -43,7 +44,7 @@ const AdminLayout: React.FC<AdminLayoutProps> = ({ children }) => {
   };
 
   return (
-    <div className={`flex h-screen ${darkMode ? 'dark bg-gray-900' : 'bg-gray-50'}`}>
+    <div className={`flex min-h-screen ${darkMode ? 'dark bg-gray-900' : 'bg-gray-50'}`}>
       {/* Mobile sidebar */}
       {sidebarOpen && (
         <div className="fixed inset-0 z-40 md:hidden">
@@ -60,8 +61,11 @@ const AdminLayout: React.FC<AdminLayoutProps> = ({ children }) => {
               </button>
             </div>
             <div className="flex-1 h-0 pt-5 pb-4 overflow-y-auto">
-              <div className="flex-shrink-0 flex items-center px-4">
-                <h1 className="text-xl font-bold text-indigo-600 dark:text-indigo-400">Админ-панель</h1>
+              <div className="flex-shrink-0 flex items-center px-4 space-x-3">
+                <div className="w-9 h-9 rounded-full border border-indigo-400 dark:border-indigo-300 flex items-center justify-center">
+                  <ShieldCheckIcon className="h-4 w-4 text-indigo-500 dark:text-indigo-300" />
+                </div>
+                <span className="text-lg font-bold text-indigo-600 dark:text-indigo-300">Employee CRM</span>
               </div>
               <nav className="mt-5 px-2 space-y-1">
                 {navigation.map((item) => (
@@ -91,8 +95,11 @@ const AdminLayout: React.FC<AdminLayoutProps> = ({ children }) => {
       <div className="hidden md:flex md:w-64 md:flex-col md:fixed md:inset-y-0">
         <div className="flex-1 flex flex-col min-h-0 border-r border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800">
           <div className="flex-1 flex flex-col pt-5 pb-4 overflow-y-auto">
-            <div className="flex items-center flex-shrink-0 px-4">
-              <h1 className="text-xl font-bold text-indigo-600 dark:text-indigo-400">Админ-панель</h1>
+            <div className="flex items-center flex-shrink-0 px-4 space-x-3">
+              <div className="w-9 h-9 rounded-full border border-indigo-400 dark:border-indigo-300 flex items-center justify-center">
+                <ShieldCheckIcon className="h-4 w-4 text-indigo-500 dark:text-indigo-300" />
+              </div>
+              <span className="text-lg font-bold text-indigo-600 dark:text-indigo-300">Employee CRM</span>
             </div>
             <nav className="mt-5 flex-1 px-2 bg-white dark:bg-gray-800 space-y-1">
               {navigation.map((item) => (
@@ -132,7 +139,10 @@ const AdminLayout: React.FC<AdminLayoutProps> = ({ children }) => {
           <div className="py-6">
             <div className="max-w-7xl mx-auto px-4 sm:px-6 md:px-8">
               <div className="flex justify-between items-center py-4">
-                <h1 className="text-2xl font-semibold text-gray-900 dark:text-white">Админ-панель</h1>
+                <div className="flex items-center space-x-3">
+                  <ShieldCheckIcon className="h-6 w-6 text-indigo-500 dark:text-indigo-300" />
+                  <h1 className="text-2xl font-semibold text-gray-900 dark:text-white">Employee CRM</h1>
+                </div>
                 <div className="flex items-center space-x-4">
                   <button
                     onClick={toggleDarkMode}

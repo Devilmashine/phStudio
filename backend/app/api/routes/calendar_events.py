@@ -16,11 +16,7 @@ from app.utils.timezone import to_moscow_time, get_moscow_date_range
 from pydantic import BaseModel
 from sqlalchemy import func, text
 
-router = APIRouter(
-    tags=["calendar-events"],
-    # Отключаем автоматический редирект при отсутствии завершающего слеша
-    redirect_slashes=False,
-)
+router = APIRouter(tags=["calendar-events"])
 
 # Response models for new bulk endpoints
 class MonthAvailabilitySlots(BaseModel):

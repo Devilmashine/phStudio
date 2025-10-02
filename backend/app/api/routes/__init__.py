@@ -4,6 +4,7 @@ from .gallery import router as gallery_router
 from .news import router as news_router
 from .auth import router as auth_router
 from .booking import router as booking_router
+from .employee_crm import router as employee_crm_router
 
 __all__ = [
     "calendar_events_router",
@@ -12,4 +13,5 @@ __all__ = [
     "news_router",
     "auth_router",
     "booking_router",
+    "employee_crm_router",
 ]

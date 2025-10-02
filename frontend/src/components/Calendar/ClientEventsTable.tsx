@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import axios from 'axios';
+import api from '../../services/api';
 
 interface CalendarEvent {
   id: number;
@@ -19,9 +19,10 @@ const ClientEventsTable: React.FC = () => {
       setLoading(true);
       setError(null);
       try {
-        const res = await axios.get('/api/calendar-events');
-        setEvents(res.data);
-      } catch {
+        const { data } = await api.get('/calendar-events');
+        setEvents(data);
+      } catch (err) {
+        console.error(err);
         setError('Ошибка загрузки событий');
       } finally {
         setLoading(false);
