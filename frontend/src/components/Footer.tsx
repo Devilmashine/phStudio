@@ -13,22 +13,22 @@ const Footer = React.memo(() => {
               <span className="text-xl font-bold">Эф Студия</span>
             </div>
             <p className="text-gray-400">
-              Профессиональная фотостудия для фотографов, видеооператоров и креативщиков.
+              Профессиональная фотостудия для фотографов, видеооператоров и креативных команд.
             </p>
             <p className="text-gray-400">
               Сайт создан @Devilmashine
             </p>
             <p className="text-sm text-gray-500">
-              &ldquo;Luxe Studio: Where Elegance Meets Precision&rdquo; - Your Premier Booking Experience
+              &laquo;Эф Студия: когда элегантность встречает точность&raquo; — ваш премиальный опыт бронирования
             </p>
           </div>
           <div>
             <h3 className="text-lg font-semibold mb-4">Навигация</h3>
             <ul className="space-y-2">
-              <li><a href="#studios" className="text-gray-400 hover:text-white">Пространство</a></li>
-              <li><a href="#portfolio" className="text-gray-400 hover:text-white">Portfolio</a></li>
-              <li><a href="#pricing" className="text-gray-400 hover:text-white">Pricing</a></li>
-              <li><a href="#booking" className="text-gray-400 hover:text-white">Book Now</a></li>
+              <li><a href="#studios" className="text-gray-400 hover:text-white">Студии</a></li>
+              <li><a href="#portfolio" className="text-gray-400 hover:text-white">Портфолио</a></li>
+              <li><a href="#pricing" className="text-gray-400 hover:text-white">Тарифы</a></li>
+              <li><a href="#booking" className="text-gray-400 hover:text-white">Забронировать</a></li>
               <li><Link to="/privacy" className="text-gray-400 hover:text-white">Политика конфиденциальности</Link></li>
             </ul>
           </div>
@@ -37,11 +37,11 @@ const Footer = React.memo(() => {
             <ul className="space-y-2">
               <li className="flex items-center space-x-2">
                 <Phone className="h-5 w-5 text-indigo-400" />
-                <span className="text-gray-400">+1 (555) 123-4567</span>
+                <span className="text-gray-400">+7 (900) 123-45-67</span>
               </li>
               <li className="flex items-center space-x-2">
                 <Mail className="h-5 w-5 text-indigo-400" />
-                <span className="text-gray-400">info@luxestudio.com</span>
+                <span className="text-gray-400">info@efstudio.ru</span>
               </li>
               <li className="flex items-center space-x-2">
                 <MapPin className="h-5 w-5 text-indigo-400" />
@@ -57,7 +57,7 @@ const Footer = React.memo(() => {
           </div>
         </div>
         <div className="border-t border-gray-800 mt-12 pt-8 text-center text-gray-400">
-          <p>&copy; {new Date().getFullYear()} эФ Студия. Все права защищены.</p>
+          <p>&copy; {new Date().getFullYear()} Эф Студия. Все права защищены.</p>
         </div>
       </div>
     </footer>

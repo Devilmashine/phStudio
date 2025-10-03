@@ -2,11 +2,10 @@ import React from 'react';
 import { useBookingForm } from '../../hooks/useBookingForm';
 import Calendar from '../Calendar';
 import TimeSlots from '../TimeSlots';
-import Modal from '../Modal';
 import BookingDetails from './BookingDetails';
 import TermsCheckboxes from './TermsCheckboxes';
 import ContactForm from './ContactForm';
-import { termsContent, privacyContent } from '../../data/terms';
+import LegalDocumentModal from '../LegalDocumentModal';
 
 const BookingForm = () => {
   const {
@@ -107,13 +106,19 @@ const BookingForm = () => {
         </div>
       </div>
 
-      <Modal isOpen={showTermsModal} onClose={() => setShowTermsModal(false)} title="Публичная оферта">
-        <div className="prose prose-sm max-w-none">{termsContent}</div>
-      </Modal>
+      <LegalDocumentModal
+        isOpen={showTermsModal}
+        onClose={() => setShowTermsModal(false)}
+        title="Публичная оферта"
+        documentPath="/legal/public-offer.html"
+      />
 
-      <Modal isOpen={showPrivacyModal} onClose={() => setShowPrivacyModal(false)} title="Политика обработки персональных данных">
-        <div className="prose prose-sm max-w-none">{privacyContent}</div>
-      </Modal>
+      <LegalDocumentModal
+        isOpen={showPrivacyModal}
+        onClose={() => setShowPrivacyModal(false)}
+        title="Согласие на обработку персональных данных"
+        documentPath="/legal/personal-data-consent.html"
+      />
     </section>
   );
 };

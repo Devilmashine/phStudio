@@ -6,6 +6,7 @@ Handles versioning, publishing, and retrieval of legal documents.
 import hashlib
 from typing import Dict, Any, List, Optional
 from datetime import datetime, timezone
+from pathlib import Path
 from sqlalchemy.orm import Session
 from sqlalchemy import and_, desc
 
@@ -24,8 +25,20 @@ class LegalDocumentService:
         "studio_rules": "Правила студии"
     }
     
+    BASE_DIR = Path(__file__).resolve().parents[3]
+    LEGAL_DOCS_DIR = BASE_DIR / "docs" / "legal"
+
     def __init__(self, db: Session):
         self.db = db
+
+    @classmethod
+    def _load_document_from_disk(cls, filename: str, fallback: str) -> str:
+        file_path = cls.LEGAL_DOCS_DIR / filename
+
+        try:
+            return file_path.read_text(encoding="utf-8")
+        except (FileNotFoundError, OSError, UnicodeDecodeError):
+            return fallback
     
     def create_document(
         self,
@@ -191,44 +204,14 @@ class LegalDocumentService:
         
         # Privacy Policy
         if not self.get_active_document("privacy_policy"):
-            privacy_content = """
-# Политика обработки персональных данных
-
-## 1. Общие положения
-
-1.1. Настоящая Политика определяет порядок обработки и защиты персональных данных клиентов фотостудии.
-
-1.2. Политика разработана в соответствии с Федеральным законом от 27.07.2006 № 152-ФЗ "О персональных данных".
-
-## 2. Собираемые данные
-
-2.1. Мы собираем следующие персональные данные:
-- Имя
-- Номер телефона
-- Информация о бронированиях
-
-## 3. Цели обработки
-
-3.1. Персональные данные обрабатываются в целях:
-- Оформления бронирования
-- Связи с клиентом
-- Информирования об услугах и акциях
-- Улучшения качества обслуживания
-
-## 4. Хранение и защита
-
-4.1. Мы принимаем необходимые организационные и технические меры для защиты персональных данных.
-
-4.2. Срок хранения персональных данных составляет 7 лет с момента последнего бронирования.
-
-## 5. Права субъекта персональных данных
-
-5.1. Вы имеете право:
-- Получать информацию об обработке своих персональных данных
-- Требовать уточнения или удаления своих персональных данных
-- Отозвать согласие на обработку персональных данных
-"""
-            
+            privacy_fallback = (
+                "<article><h1>Политика обработки персональных данных</h1>"
+                "<p>Документ недоступен, используется резервная версия.</p></article>"
+            )
+            privacy_content = self._load_document_from_disk(
+                "privacy-policy.html",
+                privacy_fallback
+            )
             default_documents["privacy_policy"] = self.create_document(
                 document_type="privacy_policy",
                 title="Политика обработки персональных данных",
@@ -239,39 +222,14 @@ class LegalDocumentService:
         
         # Terms of Service
         if not self.get_active_document("terms_of_service"):
-            terms_content = """
-# Пользовательское соглашение (Публичная оферта)
-
-## 1. Общие положения
-
-1.1. Настоящее соглашение является публичной офертой для заключения договора на оказание услуг фотостудии.
-
-1.2. Акцептом настоящей оферты является совершение действий по бронированию услуг.
-
-## 2. Предмет договора
-
-2.1. Исполнитель предоставляет Заказчику в аренду помещение фотостудии с оборудованием.
-
-2.2. Срок аренды определяется при бронировании.
-
-## 3. Права и обязанности сторон
-
-3.1. Заказчик обязуется:
-- Своевременно оплачивать услуги
-- Бережно относиться к имуществу студии
-- Соблюдать правила студии
-
-3.2. Исполнитель обязуется:
-- Предоставить помещение в состоянии, пригодном для использования
-- Обеспечить работоспособность оборудования
-
-## 4. Отмена бронирования
-
-4.1. Отмена возможна не позднее 24 часов до начала аренды.
-
-4.2. При отмене менее чем за 24 часа предоплата не возвращается.
-"""
-            
+            terms_fallback = (
+                "<article><h1>Пользовательское соглашение</h1>"
+                "<p>Документ недоступен, используется резервная версия.</p></article>"
+            )
+            terms_content = self._load_document_from_disk(
+                "public-offer.html",
+                terms_fallback
+            )
             default_documents["terms_of_service"] = self.create_document(
                 document_type="terms_of_service",
                 title="Пользовательское соглашение",
@@ -282,38 +240,52 @@ class LegalDocumentService:
         
         # Cookie Policy
         if not self.get_active_document("cookie_policy"):
-            cookie_content = """
-# Политика использования файлов cookie
-
-## 1. Что такое cookie
-
-1.1. Cookie — это небольшие текстовые файлы, которые сохраняются на вашем устройстве при посещении сайта.
-
-## 2. Типы используемых cookie
-
-2.1. **Необходимые cookie** — обеспечивают базовую функциональность сайта
-
-2.2. **Функциональные cookie** — запоминают ваши настройки и предпочтения
-
-2.3. **Аналитические cookie** — помогают нам анализировать использование сайта
-
-2.4. **Маркетинговые cookie** — используются для показа релевантной рекламы
-
-## 3. Управление cookie
-
-3.1. Вы можете в любое время изменить настройки cookie в вашем браузере.
-
-3.2. Отключение cookie может повлиять на функциональность сайта.
-
-## 4. Согласие
-
-4.1. Продолжая использовать сайт, вы соглашаетесь с использованием cookie.
-"""
-            
+            cookie_fallback = (
+                "<article><h1>Политика использования файлов cookie</h1>"
+                "<p>Документ недоступен, используется резервная версия.</p></article>"
+            )
+            cookie_content = self._load_document_from_disk(
+                "cookie-policy.html",
+                cookie_fallback
+            )
             default_documents["cookie_policy"] = self.create_document(
                 document_type="cookie_policy",
                 title="Политика использования файлов cookie",
                 content=cookie_content,
+                version="1.0",
+                effective_date=datetime.now(timezone.utc)
+            )
+
+        if not self.get_active_document("studio_rules"):
+            rules_fallback = (
+                "<article><h1>Правила студии</h1>"
+                "<p>Документ недоступен, используется резервная версия.</p></article>"
+            )
+            rules_content = self._load_document_from_disk(
+                "studio-rules.html",
+                rules_fallback
+            )
+            default_documents["studio_rules"] = self.create_document(
+                document_type="studio_rules",
+                title="Правила студии",
+                content=rules_content,
+                version="1.0",
+                effective_date=datetime.now(timezone.utc)
+            )
+
+        if not self.get_active_document("public_offer"):
+            offer_fallback = (
+                "<article><h1>Публичная оферта</h1>"
+                "<p>Документ недоступен, используется резервная версия.</p></article>"
+            )
+            offer_content = self._load_document_from_disk(
+                "public-offer.html",
+                offer_fallback
+            )
+            default_documents["public_offer"] = self.create_document(
+                document_type="public_offer",
+                title="Публичная оферта",
+                content=offer_content,
                 version="1.0",
                 effective_date=datetime.now(timezone.utc)
             )

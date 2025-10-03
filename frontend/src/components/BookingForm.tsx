@@ -5,9 +5,8 @@ import { studio } from '../data/studio';
 import Calendar from './Calendar';
 import TimeSlots from './TimeSlots';
 import Legend, { TimeSlotsLegendItems } from './common/Legend';
-import Modal from './Modal';
 import CheckboxField from './ui/CheckboxField';
-import { termsContent } from '../data/terms';
+import LegalDocumentModal from './LegalDocumentModal';
 import { createBooking } from '../services/booking';
 import { formatPhoneNumber } from '../utils/validation/phoneValidation';
 
@@ -73,6 +72,7 @@ export default function BookingForm() {
   const [termsAccepted, setTermsAccepted] = useState(false);
   const [privacyAccepted, setPrivacyAccepted] = useState(false);
   const [showTermsModal, setShowTermsModal] = useState(false);
+  const [showPrivacyModal, setShowPrivacyModal] = useState(false);
   const [peopleCount, setPeopleCount] = useState(1);
   const [peopleError, setPeopleError] = useState('');
   const [studioRulesAccepted, setStudioRulesAccepted] = useState(false);
@@ -326,7 +326,24 @@ export default function BookingForm() {
                   required
                 />
                 <span className="text-sm text-gray-600">
-                  Я даю согласие на обработку персональных данных и принимаю условия{' '}
+                  Я даю{' '}
+                  <button
+                    type="button"
+                    onClick={() => setShowPrivacyModal(true)}
+                    className="text-indigo-600 hover:underline"
+                  >
+                    согласие
+                  </button>
+                  {' '}на обработку персональных данных, ознакомился с{' '}
+                  <a
+                    href="/legal/personal-data-consent.html"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-indigo-600 hover:underline"
+                  >
+                    текстом согласия
+                  </a>
+                  {' '}и принимаю условия{' '}
                   <Link to="/privacy" target="_blank" className="text-indigo-600 hover:underline">
                     Политики конфиденциальности
                   </Link>
@@ -368,44 +385,24 @@ export default function BookingForm() {
           </form>
         </div>
 
-        {/* Модальные окна для терминов и политики конфиденциальности */}
-        {showTermsModal && (
-          <Modal 
-            isOpen={true}
-            onClose={() => setShowTermsModal(false)}
-            title="Публичная оферта"
-          >
-            <div className="prose prose-sm max-w-none">
-              {termsContent.split('\n\n').map((paragraph, index) => (
-                <p key={index} className="mb-4">
-                  {paragraph}
-                </p>
-              ))}
-            </div>
-          </Modal>
-        )}
-        {showStudioRulesModal && (
-          <Modal 
-            isOpen={true}
-            onClose={() => setShowStudioRulesModal(false)}
-            title="Правила студии"
-          >
-            <div className="prose prose-sm max-w-none">
-              <ul className="list-disc pl-5 space-y-2">
-                <li>Максимум 5 человек бесплатно, за каждого дополнительного — 200 руб/час.</li>
-                <li>В студии запрещено курить, распивать алкоголь, использовать открытый огонь.</li>
-                <li>Использование реквизита и оборудования — бережно, после использования вернуть на место.</li>
-                <li>Дети допускаются только в сопровождении взрослых.</li>
-                <li>Время бронирования включает время на сборы и уборку.</li>
-                <li>Запрещено шуметь, мешать другим арендаторам и нарушать общественный порядок.</li>
-                <li>За порчу имущества взыскивается компенсация по оценке студии.</li>
-                <li>Соблюдайте чистоту, уважайте персонал и других гостей.</li>
-                <li>Администрация оставляет за собой право отказать в обслуживании без объяснения причин.</li>
-                <li>Подробные правила — на сайте и у администратора.</li>
-              </ul>
-            </div>
-          </Modal>
-        )}
+        <LegalDocumentModal
+          isOpen={showTermsModal}
+          onClose={() => setShowTermsModal(false)}
+          title="Публичная оферта"
+          documentPath="/legal/public-offer.html"
+        />
+        <LegalDocumentModal
+          isOpen={showPrivacyModal}
+          onClose={() => setShowPrivacyModal(false)}
+          title="Согласие на обработку персональных данных"
+          documentPath="/legal/personal-data-consent.html"
+        />
+        <LegalDocumentModal
+          isOpen={showStudioRulesModal}
+          onClose={() => setShowStudioRulesModal(false)}
+          title="Правила студии"
+          documentPath="/legal/studio-rules.html"
+        />
       </div>
     </section>
   );
